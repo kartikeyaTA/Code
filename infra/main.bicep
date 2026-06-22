@@ -13,7 +13,7 @@ param location string
 param Project string
 
 @description('The name of the project Manager')
-param Project ManagedBy
+param ManagedBy string
 
 // Create the Resource Group
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {

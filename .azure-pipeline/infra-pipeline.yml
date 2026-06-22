@@ -31,7 +31,7 @@ stages:
           az deployment sub what-if \
             --location eastus2 \
             --template-file infra/main.bicep \
-            --parameters infra/dev.bicepparam
+            --parameters infra/environment/dev.bicepparam
           
           echo "Provisioning core resource group..."
           az deployment sub create \

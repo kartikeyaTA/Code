@@ -1,4 +1,4 @@
-using 'main.bicep' // Points to your infrastructure file path
+using '../main.bicep' // Points to your infrastructure file path
 
 param envName = 'dev'
 param resourceGroupName = 'ai-chatbot-dev'
