@@ -15,7 +15,13 @@ param Project string
 @description('The name of the project Manager')
 param ManagedBy string
 
-// Create the Resource Group
+@description('The name of the vnet')
+param vnetNameParam string
+
+@description('The name of the nat')
+param natGatewayNameParam string
+
+// 1. Create the Resource Group directly here (gives us the 'rg' identifier)
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
@@ -26,5 +32,24 @@ resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   }
 }
 
-output resourceGroupName string = rg.name
-output resourceGroupId string = rg.id
+// 2. Deploy your Network Module inside the Resource Group
+module network './modules/networking.bicep' = {
+  name: 'networking-deployment'
+  scope: rg // Now this perfectly matches the resource group above!
+  params: {
+    envName: envName
+    location: location
+    vnetNameParam: vnetNameParam
+    natGatewayNameParam: natGatewayNameParam
+  }
+}
+
+// 3. Deploy your Security Module inside the Resource Group
+module securityModule './modules/security.bicep' = {
+  name: 'security-deployment'
+  scope: rg // Fixed: Unique identifier 'securityModule' avoids duplication
+  params: {
+    envName: envName
+    location: location
+  }
+}
