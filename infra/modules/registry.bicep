@@ -4,7 +4,7 @@ param envName string
 param location string 
 param logAnalyticsWorkspaceId string // Required to stream metric telemetry
 
-var acrName = 'aichatregistry-${envName}'
+var acrName = 'aichatregistry${envName}'
 
 // 1. Azure Container Registry Definition
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {

@@ -1,7 +1,7 @@
 using '../main.bicep' // Points to your infrastructure file path
 
 param envName = 'dev'
-param resourceGroupName = 'ai-chatbot-dev'
+param resourceGroupName = 'ai-chatbot-dev1'
 param location = 'eastus2' 
 param Project = 'AI-Chat-ServiceNow-dev'
 param ManagedBy = 'IAC_Bicep'

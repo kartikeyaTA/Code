@@ -13,10 +13,10 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' exis
   name: 'cog-openai-chat-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: 'kv-ai-chat-${envName}'
+  name: 'testkaraichat${envName}'
 }
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: 'aichatregistry-${envName}'
+  name: 'aichatregistry${envName}'
 }
 
 // Immutable Azure Built-In Role Definition Guids
