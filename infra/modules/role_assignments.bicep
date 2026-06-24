@@ -57,31 +57,32 @@ resource snowKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!
   scope: kv
   properties: { principalId: snowShimPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
+
 // ============================================================================
-// 2. DATA PLANE & AI SERVICES ASSIGNMENTS
+// 2. DATA PLANE & AI SERVICES ASSIGNMENTS (FIXED: Added empty guards)
 // ============================================================================
-resource chatStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource chatStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(chatBackendPrincipalId)) {
   name: guid(st.id, chatBackendPrincipalId, storageBlobDataContributorRole)
   scope: st
   properties: { principalId: chatBackendPrincipalId, roleDefinitionId: storageBlobDataContributorRole, principalType: 'ServicePrincipal' }
 }
 
-resource chatOpenAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource chatOpenAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(chatBackendPrincipalId)) {
   name: guid(cogn.id, chatBackendPrincipalId, cognitiveServicesOpenAIUserRole)
   scope: cogn
   properties: { principalId: chatBackendPrincipalId, roleDefinitionId: cognitiveServicesOpenAIUserRole, principalType: 'ServicePrincipal' }
 }
 
-resource voiceOpenAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource voiceOpenAiRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(voiceBackendPrincipalId)) {
   name: guid(cogn.id, voiceBackendPrincipalId, cognitiveServicesOpenAIUserRole)
   scope: cogn
   properties: { principalId: voiceBackendPrincipalId, roleDefinitionId: cognitiveServicesOpenAIUserRole, principalType: 'ServicePrincipal' }
 }
 
 // ============================================================================
-// 3. SECURE CONTAINER REGISTRY IMAGE PULL ASSIGNMENT
+// 3. SECURE CONTAINER REGISTRY IMAGE PULL ASSIGNMENT (FIXED: Added empty guard)
 // ============================================================================
-resource acaAcrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource acaAcrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(acaEnvironmentPrincipalId)) {
   name: guid(registry.id, acaEnvironmentPrincipalId, acrPullRole)
   scope: registry
   properties: { principalId: acaEnvironmentPrincipalId, roleDefinitionId: acrPullRole, principalType: 'ServicePrincipal' }

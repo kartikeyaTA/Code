@@ -34,7 +34,7 @@ resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01'
   scope: keyVault
   properties: {
     principalId: appGatewayIdentity.properties.principalId // Dynamically targets the new identity
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '46334583-8a30-417c-b847-e6d2def263d0') // Static Azure ID for Key Vault Secrets User
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Static Azure ID for Key Vault Secrets User
     principalType: 'ServicePrincipal'
   }
 }
