@@ -38,4 +38,4 @@ stages:
             --name 'deploy-rg-dev' \
             --location eastus2 \
             --template-file infra/main.bicep \
-            --parameters infra/dev.bicepparam
+            --parameters infra/environment/dev.bicepparam

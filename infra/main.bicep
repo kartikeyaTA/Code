@@ -55,7 +55,7 @@ module security './modules/security.bicep' = {
   }
 }
 
-module telmetry './modules/telmetry.bicep' = {
+module telmetry './modules/telemetry.bicep' = {
   name: 'telmetry-deployment'
   scope: rg // Now this perfectly matches the resource group above!
   params: {
@@ -133,8 +133,10 @@ module apim './modules/apim.bicep' = {
     frontendUrl: apps.outputs.internalFrontendUrl
     chatBackendUrl: apps.outputs.internalChatBackendUrl
     voiceBackendUrl: apps.outputs.internalVoiceBackendUr
-    entraTenantId: entra.outputs.tenantId
-    frontendClientId: entra.outputs.frontendClientId
+    entraTenantId: 'test'
+    frontendClientId: 'test'
+    //entraTenantId: entra.outputs.tenantId
+    //frontendClientId: entra.outputs.frontendClientId
   }
 }
 
