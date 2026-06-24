@@ -29,8 +29,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // 3. Explicitly grant "Key Vault Secrets User" to the WAF Identity
-// FIX: Added the if (!empty(...)) gate to prevent crashing on unpropagated Entra ID tokens
-resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(appGatewayIdentity.properties.principalId)) {
+// FIX: Removed the invalid 'if' condition to fix BCP177 compiler error
+resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
   scope: keyVault
   properties: {
