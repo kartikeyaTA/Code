@@ -7,7 +7,7 @@ param registryLoginServer string
 
 // References to existing resources for RBAC scoping
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
-  name: 'stachattranscripts-${envName}'
+  name: 'stachattranscripts${envName}'
 }
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
   name: 'cog-openai-chat-${envName}'

@@ -70,7 +70,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
             {
               name: 'aca-runtime-delegation'
               properties: {
-                serviceName: 'Microsoft.App/managedEnvironments' // Hands control over to the Container Apps infrastructure
+                serviceName: 'Microsoft.App/environments' // Hands control over to the Container Apps infrastructure
               }
             }
           ]

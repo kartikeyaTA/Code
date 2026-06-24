@@ -5,7 +5,7 @@ param location string
 param vnetId string
 param endpointsSubnetId string
 
-var storageAccountName = 'stachattranscripts-${envName}'
+var storageAccountName = 'stachattranscripts${envName}'
 var privateEndpointName = 'pe-storage-blob-${envName}'
 var blobDnsZoneName = 'privatelink.blob.${environment().suffixes.storage}'
 
