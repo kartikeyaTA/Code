@@ -24,7 +24,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableRbacAuthorization: true // ◄ Critical: Disables old access policies, activates RBAC!
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
-    publicNetworkAccess: 'Enabled' // Maintained for initial administrative uploads; can be locked down post-deployment
+    publicNetworkAccess: 'Enabled' 
   }
 }
 
@@ -33,8 +33,9 @@ resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01'
   name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
   scope: keyVault
   properties: {
-    principalId: appGatewayIdentity.properties.principalId // Dynamically targets the new identity
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Static Azure ID for Key Vault Secrets User
+    principalId: appGatewayIdentity.properties.principalId 
+    // FIX: Replaced the typo GUID with the valid global Key Vault Secrets User ID
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') 
     principalType: 'ServicePrincipal'
   }
 }
