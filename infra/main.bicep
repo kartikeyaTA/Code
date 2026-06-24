@@ -124,7 +124,3 @@ output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
 output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
 
-output internalFrontendUrl string = apps.outputs.frontendFqdn
-output internalChatBackendUrl string = apps.outputs.chatBackendFqdn
-output internalVoiceBackendUrl string = apps.outputs.voiceBackendFqdn
-output internalSnowShimUrl string = apps.outputs.snowShimFqdn
