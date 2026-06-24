@@ -189,3 +189,6 @@ output frontendFqdn string = frontendApp.properties.configuration.ingress.fqdn
 output chatBackendFqdn string = chatBackendApp.properties.configuration.ingress.fqdn
 output voiceBackendFqdn string = voiceBackendApp.properties.configuration.ingress.fqdn
 output snowShimFqdn string = snowShimApp.properties.configuration.ingress.fqdn
+output chatBackendPrincipalId string = chatBackendApp.identity.principalId
+output voiceBackendPrincipalId string = voiceBackendApp.identity.principalId
+output snowShimPrincipalId string = snowShimApp.identity.principalId

@@ -7,5 +7,5 @@ param Project = 'AI-Chat-ServiceNow-dev'
 param ManagedBy = 'IAC_Bicep'
 param publisherEmail  = 'kartikeya532001@gmail.com'
 param publisherName  = 'Enterprise-Cloud-Core'
-param customDomainName string = 'yourcompany.com'
+param customDomainName = 'yourcompany.com'
 

@@ -55,8 +55,8 @@ module security './modules/security.bicep' = {
   }
 }
 
-module telmetry './modules/telemetry.bicep' = {
-  name: 'telmetry-deployment'
+module telemetry './modules/telemetry.bicep' = {
+  name: 'telemetry-deployment'
   scope: rg // Now this perfectly matches the resource group above!
   params: {
     envName: envName
@@ -130,9 +130,9 @@ module apim './modules/apim.bicep' = {
     logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
     publisherEmail: publisherEmail
     publisherName: publisherName
-    frontendUrl: apps.outputs.internalFrontendUrl
-    chatBackendUrl: apps.outputs.internalChatBackendUrl
-    voiceBackendUrl: apps.outputs.internalVoiceBackendUr
+    frontendUrl: apps.outputs.frontendFqdn
+    chatBackendUrl: apps.outputs.chatBackendFqdn
+    voiceBackendUrl: apps.outputs.voiceBackendFqdn
     entraTenantId: 'test'
     frontendClientId: 'test'
     //entraTenantId: entra.outputs.tenantId
@@ -185,7 +185,7 @@ output vnetId string = network.outputs.vnetId
 output keyVaultUri string = security.outputs.keyVaultUri
 output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
-output aiProjectConnection string = '${aiFoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
+output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
 
 output internalFrontendUrl string = apps.outputs.frontendFqdn
 output internalChatBackendUrl string = apps.outputs.chatBackendFqdn
