@@ -42,6 +42,7 @@ resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01'
 
 // Export security tokens so main.bicep can map them to downstream network/compute blocks
 output keyVaultId string = keyVault.id
+output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output appGatewayIdentityId string = appGatewayIdentity.id
 output appGatewayIdentityPrincipalId string = appGatewayIdentity.properties.principalId
