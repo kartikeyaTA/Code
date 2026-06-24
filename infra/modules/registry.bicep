@@ -20,7 +20,8 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' =
 }
 
 // 2. Diagnostic Settings for Centralized Logging Core Compliance
-resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01' = {
+// FIX: Appended '-preview' to match the supported regional provider extension in eastus2
+resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: 'acr-diagnostic-metrics'
   scope: containerRegistry // Binds monitoring straight to this registry instance
   properties: {

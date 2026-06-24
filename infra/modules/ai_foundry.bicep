@@ -31,15 +31,16 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
 resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: cognitiveAccount
   name: 'gpt-4o'
+  // FIX: Moved SKU up to its own top-level block and removed deprecated scaleType
+  sku: {
+    name: 'Standard'
+    capacity: 50 // Allocated Tokens-Per-Minute capacity setting
+  }
   properties: {
     model: {
       format: 'OpenAI'
       name: 'gpt-4o'
       version: '2024-05-13' // Utilizing a stable enterprise version stamp
-    }
-    scaleSettings: {
-      scaleType: 'Standard'
-      capacity: 50 // Allocated Tokens-Per-Minute capacity setting
     }
   }
 }
@@ -49,6 +50,10 @@ resource aiHub 'Microsoft.MachineLearningServices/workspaces@2024-04-01-preview'
   name: aiHubName
   location: location
   kind: 'Hub' // Specifies this as a parent corporate governance control hub
+  // FIX: Added required Managed Identity configuration
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     friendlyName: 'AI Chat Platform Master Hub'
     storageAccount: storageAccountId
@@ -78,6 +83,10 @@ resource aiProject 'Microsoft.MachineLearningServices/workspaces@2024-04-01-prev
   name: aiProjectName
   location: location
   kind: 'Project' // Specifies this as a working project environment linked to a parent hub
+  // FIX: Added required Managed Identity configuration
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     friendlyName: 'AI Chat Production Workspace'
     hubResourceId: aiHub.id // Explicit link to parent hub permissions configuration
