@@ -109,57 +109,11 @@ module containerEnv './modules/container_env.bicep' = {
   }
 }
 
-module apps './modules/apps.bicep' = {
-  name: 'apps-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    environmentId: containerEnv.outputs.environmentId // Hosting inside Step 7 cluster
-    registryLoginServer: registry.outputs.registryLoginServer // Link for passwordless image pulls
-  }
-}
 
-module apim './modules/apim.bicep' = {
-  name: 'apim-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    apimSubnetId: network.outputs.apimSubnetId
-    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
-    publisherEmail: publisherEmail
-    publisherName: publisherName
-    frontendUrl: apps.outputs.frontendFqdn
-    chatBackendUrl: apps.outputs.chatBackendFqdn
-    voiceBackendUrl: apps.outputs.voiceBackendFqdn
-    entraTenantId: 'test'
-    frontendClientId: 'test'
-    //entraTenantId: entra.outputs.tenantId
-    //frontendClientId: entra.outputs.frontendClientId
-  }
-}
 
-module appGateway './modules/app_gateway.bicep' = {
-  name: 'app-gateway-edge-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    agwSubnetId: network.outputs.agwSubnetId
-    appGatewayIdentityId: security.outputs.appGatewayIdentityId
-    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress
-    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
-  }
-}
 
-//module entra './modules/entra.bicep' = {
-  //name: 'entra-identity-deployment'
-  //params: {
-  //  envName: envName
-    //customDomainName: customDomainName
-  //}
-//}
+
+
 
 
 

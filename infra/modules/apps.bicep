@@ -23,7 +23,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' e
 var acrPullRoleId     = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 var blobCtrlRoleId    = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // FIXED: Updated to correct Data Contributor ID
 var openAiUserRoleId  = '5e0c59e6-11cb-4ab3-b101-73b46716af50' // FIXED: Updated to correct Cognitive User ID
-var kvSecretsRoleId   = '4633458b-17de-408a-b874-0445c86b69e6' // FIXED: Updated to exact stable global GUID
+var kvSecretsRoleId   = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
 
 // Public Bootstrap Image to break deployment deadlocks
 var bootstrapImage = 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
@@ -40,7 +40,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
-        external: false 
+        external: false // Hidden inside environment load balancer; APIM proxy targeted
         targetPort: 80
         transport: 'auto'
       }
@@ -68,7 +68,7 @@ resource frontendAppOpenAiUser 'Microsoft.Authorization/roleAssignments@2022-04-
   properties: { principalId: frontendApp.identity.principalId, roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUserRoleId), principalType: 'ServicePrincipal' }
 }
 resource frontendAppKvSecrets 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(frontendApp.id, 'frontend-kv-secrets')
+  name: guid(frontendApp.id, 'chat-kv-secrets')
   scope: keyVault
   properties: { principalId: frontendApp.identity.principalId, roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kvSecretsRoleId), principalType: 'ServicePrincipal' }
 }
@@ -84,8 +84,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      // FIX: Set targetPort to 80 temporarily so the placeholder health checks resolve instantly
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 8000, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -94,6 +93,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+// Chat Backend Permissions Mapping
 resource chatAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(chatBackendApp.id, 'chat-acr-pull')
   scope: containerRegistry
@@ -126,8 +126,7 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      // FIX: Set targetPort to 80 temporarily so the placeholder health checks resolve instantly
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 8001, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -136,6 +135,7 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+// Voice Backend Permissions Mapping
 resource voiceAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(voiceBackendApp.id, 'voice-acr-pull')
   scope: containerRegistry
@@ -163,8 +163,7 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      // FIX: Set targetPort to 80 temporarily so the placeholder health checks resolve instantly
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 8002, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -173,6 +172,7 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+// ServiceNow Shim Permissions Mapping
 resource snowAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(snowShimApp.id, 'snow-acr-pull')
   scope: containerRegistry

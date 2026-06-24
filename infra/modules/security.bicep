@@ -30,7 +30,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 
 // 3. Explicitly grant "Key Vault Secrets User" to the WAF Identity
 // FIX: Removed the invalid 'if' condition to fix BCP177 compiler error
-
+resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
+  scope: keyVault
+  properties: {
+    principalId: appGatewayIdentity.properties.principalId 
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') 
+    principalType: 'ServicePrincipal'
+  }
+}
 
 // Export security tokens so main.bicep can map them to downstream network/compute blocks
 output keyVaultId string = keyVault.id
