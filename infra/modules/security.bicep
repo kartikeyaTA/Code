@@ -1,24 +1,19 @@
+metadata description = 'Provisions the secure Key Vault with RBAC authorization and the standalone Application Gateway Managed Identity.'
+
 param envName string
-param location string
+param location string 
+var keyVaultName = 'kv-ai-chat-${envName}'
+var appGatewayIdentityName = 'id-app-gateway-${envName}'
 
-// Azure Key Vault and Storage names must be globally unique
-var logWorkspaceName = 'log-aichat-${envName}'
-var keyVaultName = 'kv-aichat-${envName}-${uniqueString(resourceGroup().id)}'
-var storageName = 'sttrawdaichat${uniqueString(resourceGroup().id)}'
-
-resource logWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: logWorkspaceName
+// 1. Create the Standalone User-Assigned Managed Identity for the Edge WAF
+resource appGatewayIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: appGatewayIdentityName
   location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-    retentionInDays: 30
-  }
 }
 
+// 2. Central Key Vault with Modern RBAC Azure Authorization Enabled
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: substring(keyVaultName, 0, min(length(keyVaultName), 24))
+  name: keyVaultName
   location: location
   properties: {
     sku: {
@@ -26,23 +21,26 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
     }
     tenantId: subscription().tenantId
-    enableRbacAuthorization: true // Modern Azure standard using RBAC roles over old access policies
-    publicNetworkAccess: 'Disabled'
+    enableRbacAuthorization: true // ◄ Critical: Disables old access policies, activates RBAC!
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    publicNetworkAccess: 'Enabled' // Maintained for initial administrative uploads; can be locked down post-deployment
   }
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: substring(storageName, 0, min(length(storageName), 24))
-  location: location
-  kind: 'StorageV2'
-  sku: {
-    name: 'Standard_LRS'
-  }
+// 3. Explicitly grant "Key Vault Secrets User" to the WAF Identity
+resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
+  scope: keyVault
   properties: {
-    publicNetworkAccess: 'Disabled'
-    allowBlobPublicAccess: false
+    principalId: appGatewayIdentity.properties.principalId // Dynamically targets the new identity
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '46334583-8a30-417c-b847-e6d2def263d0') // Static Azure ID for Key Vault Secrets User
+    principalType: 'ServicePrincipal'
   }
 }
 
-output logWorkspaceId string = logWorkspace.id
+// Export security tokens so main.bicep can map them to downstream network/compute blocks
 output keyVaultId string = keyVault.id
+output keyVaultUri string = keyVault.properties.vaultUri
+output appGatewayIdentityId string = appGatewayIdentity.id
+output appGatewayIdentityPrincipalId string = appGatewayIdentity.properties.principalId
