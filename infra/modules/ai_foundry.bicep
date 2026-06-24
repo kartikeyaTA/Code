@@ -43,6 +43,9 @@ resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-
       version: '2024-11-20' // Utilizing a stable enterprise version stamp
     }
   }
+  dependsOn: [
+    cognitiveAccount
+  ]
 }
 
 // 2. Azure AI Foundry Governance Hub Workspace
