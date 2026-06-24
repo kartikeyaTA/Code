@@ -29,12 +29,12 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 }
 
 // 3. Explicitly grant "Key Vault Secrets User" to the WAF Identity
-resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+// FIX: Added the if (!empty(...)) gate to prevent crashing on unpropagated Entra ID tokens
+resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(appGatewayIdentity.properties.principalId)) {
   name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
   scope: keyVault
   properties: {
     principalId: appGatewayIdentity.properties.principalId 
-    // FIX: Replaced the typo GUID with the valid global Key Vault Secrets User ID
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') 
     principalType: 'ServicePrincipal'
   }
