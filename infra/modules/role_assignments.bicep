@@ -28,36 +28,35 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing =
 // ============================================================================
 // 1. KEY VAULT SECRETS USER ASSIGNMENTS
 // ============================================================================
-resource agwKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource agwKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(appGatewayPrincipalId)) {
   name: guid(kv.id, appGatewayPrincipalId, keyVaultSecretsUserRole)
   scope: kv
   properties: { principalId: appGatewayPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
 
-resource apimKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource apimKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(apimPrincipalId)) {
   name: guid(kv.id, apimPrincipalId, keyVaultSecretsUserRole)
   scope: kv
   properties: { principalId: apimPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
 
-resource chatKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource chatKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(chatBackendPrincipalId)) {
   name: guid(kv.id, chatBackendPrincipalId, keyVaultSecretsUserRole)
   scope: kv
   properties: { principalId: chatBackendPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
 
-resource voiceKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource voiceKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(voiceBackendPrincipalId)) {
   name: guid(kv.id, voiceBackendPrincipalId, keyVaultSecretsUserRole)
   scope: kv
   properties: { principalId: voiceBackendPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
 
-resource snowKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource snowKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(snowShimPrincipalId)) {
   name: guid(kv.id, snowShimPrincipalId, keyVaultSecretsUserRole)
   scope: kv
   properties: { principalId: snowShimPrincipalId, roleDefinitionId: keyVaultSecretsUserRole, principalType: 'ServicePrincipal' }
 }
-
 // ============================================================================
 // 2. DATA PLANE & AI SERVICES ASSIGNMENTS
 // ============================================================================

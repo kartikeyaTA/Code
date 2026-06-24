@@ -53,6 +53,9 @@ module security './modules/security.bicep' = {
     envName: envName
     location: location
   }
+  dependsOn: [
+    rg
+  ]
 }
 
 module telemetry './modules/telemetry.bicep' = {
@@ -178,6 +181,16 @@ module rbac './modules/role_assignments.bicep' = {
     snowShimPrincipalId: apps.outputs.snowShimPrincipalId
     acaEnvironmentPrincipalId: containerEnv.outputs.environmentId
   }
+  dependsOn: [
+    security
+    storage
+    network
+    apim
+    apps
+    containerEnv
+    registry
+    rg
+  ]
 }
 
 output resourceGroupId string = rg.id
