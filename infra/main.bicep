@@ -161,24 +161,7 @@ module appGateway './modules/app_gateway.bicep' = {
   //}
 //}
 
-module rbac './modules/role_assignments.bicep' = {
-  name: 'security-rbac-matrix-deployment'
-  scope: rg
-  params: {
-    keyVaultName: security.outputs.keyVaultName
-    storageAccountName: storage.outputs.storageAccountName
-    openAiAccountName: aifoundry.outputs.openAiAccountName
-    acrName: registry.outputs.registryName
-    
-    // Injecting principal identification tags cleanly 
-    appGatewayPrincipalId: security.outputs.appGatewayIdentityPrincipalId
-    apimPrincipalId: apim.outputs.apimId
-    chatBackendPrincipalId: apps.outputs.chatBackendPrincipalId // Make sure to export this principalId from apps.bicep!
-    voiceBackendPrincipalId: apps.outputs.voiceBackendPrincipalId
-    snowShimPrincipalId: apps.outputs.snowShimPrincipalId
-    acaEnvironmentPrincipalId: containerEnv.outputs.environmentId
-  }
-}
+
 
 output resourceGroupId string = rg.id
 output vnetId string = network.outputs.vnetId
