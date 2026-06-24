@@ -143,3 +143,4 @@ resource dnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-
 output aiHubId string = aiHub.id
 output aiProjectId string = aiProject.id
 output openAiEndpoint string = cognitiveAccount.properties.endpoint
+output openAiAccountName string = cognitiveAccount.name
