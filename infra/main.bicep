@@ -174,7 +174,7 @@ module rbac './modules/role_assignments.bicep' = {
     acrName: 'aichatregistry-${envName}'
     
     // Injecting principal identification tags cleanly 
-    appGatewayPrincipalId: security.outputs.appGatewayIdentityId
+    appGatewayPrincipalId: security.outputs.appGatewayIdentityPrincipalId
     apimPrincipalId: apim.outputs.apimId
     chatBackendPrincipalId: apps.outputs.chatBackendPrincipalId // Make sure to export this principalId from apps.bicep!
     voiceBackendPrincipalId: apps.outputs.voiceBackendPrincipalId
