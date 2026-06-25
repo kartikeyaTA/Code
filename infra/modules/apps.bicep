@@ -84,7 +84,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 8000, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -126,7 +126,7 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 8001, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -163,7 +163,7 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 8002, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'auto' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {

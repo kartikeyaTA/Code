@@ -119,10 +119,21 @@ module containerEnv './modules/container_env.bicep' = {
   }
 }
 
-
-
-
-
+module apps './modules/apps.bicep' = {
+  name: 'apps-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    environmentId: containerEnv.outputs.environmentId // Hosting inside Step 7 cluster
+    registryLoginServer: registry.outputs.registryLoginServer // Link for passwordless image pulls
+  }
+  dependsOn: [
+    security
+    aifoundry
+    openAiModels
+  ]
+}
 
 
 output resourceGroupId string = rg.id
