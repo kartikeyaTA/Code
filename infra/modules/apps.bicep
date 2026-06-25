@@ -21,12 +21,12 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' e
 
 // Immutable Azure Built-In Role Definition Guids
 var acrPullRoleId     = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-var blobCtrlRoleId    = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // FIXED: Updated to correct Data Contributor ID
-var openAiUserRoleId  = '5e0c59e6-11cb-4ab3-b101-73b46716af50' // FIXED: Updated to correct Cognitive User ID
-var kvSecretsRoleId   = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
+var blobCtrlRoleId    = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' 
+var openAiUserRoleId  = '5e0c59e6-11cb-4ab3-b101-73b46716af50' 
+var kvSecretsRoleId   = '4633458b-17de-408a-b874-0445c86b69e6' 
 
-// Public Bootstrap Image to break deployment deadlocks
-var bootstrapImage = 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
+// Private Registry Bootstrap Image path inside your internal network
+var bootstrapImage = '${registryLoginServer}/aci-helloworld:latest'
 
 // ============================================================================
 // 1. FRONTEND APP (React SPA - Completely Isolated Compute)
@@ -40,11 +40,25 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
-        external: false // Hidden inside environment load balancer; APIM proxy targeted
+        external: false 
         targetPort: 80
         transport: 'http'
       }
-      registries: [ { server: registryLoginServer, identity: 'system' } ]
+      // FIX: Securely pulls credentials from Key Vault reference to bypass 401 Entra replication lag
+      secrets: [
+        {
+          name: 'acr-password'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/acr-password'
+          identity: 'SystemAssigned'
+        }
+      ]
+      registries: [
+        {
+          server: registryLoginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
     }
     template: {
       containers: [ { name: 'react-spa', image: bootstrapImage } ]
@@ -68,7 +82,7 @@ resource frontendAppOpenAiUser 'Microsoft.Authorization/roleAssignments@2022-04-
   properties: { principalId: frontendApp.identity.principalId, roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUserRoleId), principalType: 'ServicePrincipal' }
 }
 resource frontendAppKvSecrets 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(frontendApp.id, 'chat-kv-secrets')
+  name: guid(frontendApp.id, 'frontendApp-kv-secrets')
   scope: keyVault
   properties: { principalId: frontendApp.identity.principalId, roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kvSecretsRoleId), principalType: 'ServicePrincipal' }
 }
@@ -85,7 +99,20 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: { external: false, targetPort: 80, transport: 'http' }
-      registries: [ { server: registryLoginServer, identity: 'system' } ]
+      secrets: [
+        {
+          name: 'acr-password'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/acr-password'
+          identity: 'SystemAssigned'
+        }
+      ]
+      registries: [
+        {
+          server: registryLoginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
     }
     template: {
       containers: [ { name: 'fastapi-chat', image: bootstrapImage } ]
@@ -93,7 +120,6 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Chat Backend Permissions Mapping
 resource chatAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(chatBackendApp.id, 'chat-acr-pull')
   scope: containerRegistry
@@ -127,7 +153,20 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: { external: false, targetPort: 80, transport: 'http' }
-      registries: [ { server: registryLoginServer, identity: 'system' } ]
+      secrets: [
+        {
+          name: 'acr-password'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/acr-password'
+          identity: 'SystemAssigned'
+        }
+      ]
+      registries: [
+        {
+          server: registryLoginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
     }
     template: {
       containers: [ { name: 'fastapi-voice', image: bootstrapImage } ]
@@ -135,7 +174,6 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Voice Backend Permissions Mapping
 resource voiceAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(voiceBackendApp.id, 'voice-acr-pull')
   scope: containerRegistry
@@ -164,7 +202,20 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: { external: false, targetPort: 80, transport: 'http' }
-      registries: [ { server: registryLoginServer, identity: 'system' } ]
+      secrets: [
+        {
+          name: 'acr-password'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/acr-password'
+          identity: 'SystemAssigned'
+        }
+      ]
+      registries: [
+        {
+          server: registryLoginServer
+          username: containerRegistry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
     }
     template: {
       containers: [ { name: 'python-snow', image: bootstrapImage } ]
@@ -172,7 +223,6 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// ServiceNow Shim Permissions Mapping
 resource snowAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(snowShimApp.id, 'snow-acr-pull')
   scope: containerRegistry
