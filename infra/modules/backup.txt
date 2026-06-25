@@ -1,0 +1,76 @@
+module apps './modules/apps.bicep' = {
+  name: 'apps-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    environmentId: containerEnv.outputs.environmentId // Hosting inside Step 7 cluster
+    registryLoginServer: registry.outputs.registryLoginServer // Link for passwordless image pulls
+  }
+}
+
+module apim './modules/apim.bicep' = {
+  name: 'apim-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    apimSubnetId: network.outputs.apimSubnetId
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+    publisherEmail: publisherEmail
+    publisherName: publisherName
+    frontendUrl: apps.outputs.frontendFqdn
+    chatBackendUrl: apps.outputs.chatBackendFqdn
+    voiceBackendUrl: apps.outputs.voiceBackendFqdn
+    entraTenantId: 'test'
+    frontendClientId: 'test'
+    //entraTenantId: entra.outputs.tenantId
+    //frontendClientId: entra.outputs.frontendClientId
+  }
+}
+
+module appGateway './modules/app_gateway.bicep' = {
+  name: 'app-gateway-edge-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    agwSubnetId: network.outputs.agwSubnetId
+    appGatewayIdentityId: security.outputs.appGatewayIdentityId
+    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+  }
+}
+
+module rbac './modules/role_assignments.bicep' = {
+  name: 'security-rbac-matrix-deployment'
+  scope: rg
+  params: {
+    keyVaultName: security.outputs.keyVaultName
+    storageAccountName: storage.outputs.storageAccountName
+    openAiAccountName: aifoundry.outputs.openAiAccountName
+    acrName: registry.outputs.registryName
+    
+    // Injecting principal identification tags cleanly 
+    appGatewayPrincipalId: security.outputs.appGatewayIdentityPrincipalId
+    apimPrincipalId: apim.outputs.apimId
+    chatBackendPrincipalId: apps.outputs.chatBackendPrincipalId // Make sure to export this principalId from apps.bicep!
+    voiceBackendPrincipalId: apps.outputs.voiceBackendPrincipalId
+    snowShimPrincipalId: apps.outputs.snowShimPrincipalId
+    acaEnvironmentPrincipalId: containerEnv.outputs.environmentId
+  }
+}
+
+
+module entra './modules/entra.bicep' = {
+  name: 'entra-identity-deployment'
+  params: {
+    envName: envName
+    customDomainName: customDomainName
+  }
+}
+
+output internalFrontendUrl string = apps.outputs.frontendFqdn
+output internalChatBackendUrl string = apps.outputs.chatBackendFqdn
+output internalVoiceBackendUrl string = apps.outputs.voiceBackendFqdn
+output internalSnowShimUrl string = apps.outputs.snowShimFqdn
