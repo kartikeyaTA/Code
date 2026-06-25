@@ -10,7 +10,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing 
   name: 'stachattranscripts${envName}'
 }
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: 'cog-openai-chat-${envName}'
+  name: 'cog-openai-chat1-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: 'testkaraichat1${envName}'

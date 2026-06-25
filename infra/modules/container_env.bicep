@@ -3,7 +3,6 @@ metadata description = 'Deploys an internally-isolated Azure Container Apps Mana
 param envName string
 param location string 
 param acaSubnetId string
-param logAnalyticsWorkspaceId string
 
 // Reference the existing telemetry workspace to dynamically fetch operational ingestion keys
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
