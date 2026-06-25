@@ -98,6 +98,17 @@ module aifoundry './modules/ai_foundry.bicep' = {
   }
 }
 
+module openAiModels './modules/openai_models.bicep' = {
+  name: 'openai-models-deployment'
+  scope: rg
+  params: {
+    cognitiveAccountName: aiFoundry.outputs.openAiAccountName
+  }
+  dependsOn: [
+    aiFoundry 
+  ]
+}
+
 module containerEnv './modules/container_env.bicep' = {
   name: 'container-env-deployment'
   scope: rg

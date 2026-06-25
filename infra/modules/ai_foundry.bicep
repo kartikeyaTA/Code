@@ -1,4 +1,4 @@
-metadata description = 'Provisions the private Azure AI Foundry Hub, Child Project workspace, and Cognitive Services GPT-4o model deployments.'
+metadata description = 'Provisions the private Azure AI Foundry Hub, Child Project workspace, and Cognitive Services baseline account.'
 
 param envName string
 param location string 
@@ -27,33 +27,11 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
 }
 
-// Deploy the GPT-4o Model Deployment inside the AI Engine
-resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
-  parent: cognitiveAccount
-  name: 'gpt-4o'
-  // FIX: Moved SKU up to its own top-level block and removed deprecated scaleType
-  sku: {
-    name: 'Standard'
-    capacity: 50 // Allocated Tokens-Per-Minute capacity setting
-  }
-  properties: {
-    model: {
-      format: 'OpenAI'
-      name: 'gpt-4o'
-      version: '2024-11-20' // Utilizing a stable enterprise version stamp
-    }
-  }
-  dependsOn: [
-    cognitiveAccount
-  ]
-}
-
 // 2. Azure AI Foundry Governance Hub Workspace
 resource aiHub 'Microsoft.MachineLearningServices/workspaces@2024-04-01-preview' = {
   name: aiHubName
   location: location
   kind: 'Hub' // Specifies this as a parent corporate governance control hub
-  // FIX: Added required Managed Identity configuration
   identity: {
     type: 'SystemAssigned'
   }
@@ -86,7 +64,6 @@ resource aiProject 'Microsoft.MachineLearningServices/workspaces@2024-04-01-prev
   name: aiProjectName
   location: location
   kind: 'Project' // Specifies this as a working project environment linked to a parent hub
-  // FIX: Added required Managed Identity configuration
   identity: {
     type: 'SystemAssigned'
   }
