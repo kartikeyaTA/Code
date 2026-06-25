@@ -102,10 +102,10 @@ module openAiModels './modules/openai_models.bicep' = {
   name: 'openai-models-deployment'
   scope: rg
   params: {
-    cognitiveAccountName: aiFoundry.outputs.openAiAccountName
+    cognitiveAccountName: aifoundry.outputs.openAiAccountName
   }
   dependsOn: [
-    aiFoundry 
+    aifoundry 
   ]
 }
 
