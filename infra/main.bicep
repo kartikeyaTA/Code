@@ -24,7 +24,9 @@ param publisherName string
 @description('The corporate custom domain assigned to the platform used to register the OAuth redirect handshake.')
 param customDomainName string
 
-// 1. Create the Resource Group directly here (gives us the 'rg' identifier)
+// ============================================================================
+// 1. RESOURCE GROUP PROVISIONING
+// ============================================================================
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
@@ -35,20 +37,21 @@ resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   }
 }
 
-// 2. Deploy your Network Module inside the Resource Group
+// ============================================================================
+// 2. INFRASTRUCTURE MODULE DEPLOYMENTS
+// ============================================================================
 module network './modules/networking.bicep' = {
   name: 'networking-deployment'
-  scope: rg // Now this perfectly matches the resource group above!
+  scope: rg 
   params: {
     envName: envName
     location: location
   }
 }
 
-// 3. Deploy your Security Module inside the Resource Group
 module security './modules/security.bicep' = {
   name: 'security-deployment'
-  scope: rg // Fixed: Unique identifier 'securityModule' avoids duplication
+  scope: rg 
   params: {
     envName: envName
     location: location
@@ -57,7 +60,7 @@ module security './modules/security.bicep' = {
 
 module telemetry './modules/telemetry.bicep' = {
   name: 'telemetry-deployment'
-  scope: rg // Now this perfectly matches the resource group above!
+  scope: rg 
   params: {
     envName: envName
     location: location
@@ -66,7 +69,7 @@ module telemetry './modules/telemetry.bicep' = {
 
 module storage './modules/storage.bicep' = {
   name: 'storage-deployment'
-  scope: rg // Now this perfectly matches the resource group above!
+  scope: rg 
   params: {
     envName: envName
     location: location
@@ -77,7 +80,7 @@ module storage './modules/storage.bicep' = {
 
 module registry './modules/registry.bicep' = {
   name: 'registry-deployment'
-  scope: rg // Now this perfectly matches the resource group above!
+  scope: rg 
   params: {
     envName: envName
     location: location
@@ -87,7 +90,7 @@ module registry './modules/registry.bicep' = {
 
 module aifoundry './modules/ai_foundry.bicep' = {
   name: 'aifoundry-deployment'
-  scope: rg // Now this perfectly matches the resource group above!
+  scope: rg 
   params: {
     envName: envName
     location: location
@@ -115,18 +118,21 @@ module containerEnv './modules/container_env.bicep' = {
   params: {
     envName: envName
     location: location
-    acaSubnetId: network.outputs.acaSubnetId // Mapping to delegated /23 subnet
+    acaSubnetId: network.outputs.acaSubnetId 
   }
 }
 
+// ============================================================================
+// 3. CORE SERVICE APPLICATIONS
+// ============================================================================
 module apps './modules/apps.bicep' = {
   name: 'apps-deployment'
   scope: rg
   params: {
     envName: envName
     location: location
-    environmentId: containerEnv.outputs.environmentId // Hosting inside Step 7 cluster
-    registryLoginServer: registry.outputs.registryLoginServer // Link for passwordless image pulls
+    environmentId: containerEnv.outputs.environmentId 
+    registryLoginServer: registry.outputs.registryLoginServer 
   }
   dependsOn: [
     security
@@ -135,7 +141,48 @@ module apps './modules/apps.bicep' = {
   ]
 }
 
+// ============================================================================
+// 4. PRIVATE API MANAGEMENT INGRESS GATEWAY
+// ============================================================================
+module apim './modules/apim.bicep' = {
+  name: 'apim-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    apimSubnetId: network.outputs.apimSubnetId // Deploys cleanly inside private subnet block
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+    chatBackendUrl: apps.outputs.chatBackendFqdn // Dynamically maps to our verified python URL output
+    publisherEmail: publisherEmail
+    publisherName: publisherName
+  }
+  dependsOn: [
+    apps
+  ]
+}
 
+// ============================================================================
+// 5. PUBLIC WEB APPLICATION FIREWALL (WAF) INGRESS EDGE
+// ============================================================================
+module waf './modules/app_gateway.bicep' = {
+  name: 'waf-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    agwSubnetId: network.outputs.agwSubnetId
+    appGatewayIdentityId: security.outputs.appGatewayIdentityId // Uses pre-warmed framework identity
+    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress // Loops directly to the internal APIM instance
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+  }
+  dependsOn: [
+    apim
+  ]
+}
+
+// ============================================================================
+// GLOBAL ARCHITECTURAL OUTPUT TRACKING
+// ============================================================================
 output resourceGroupId string = rg.id
 output vnetId string = network.outputs.vnetId
 output keyVaultUri string = security.outputs.keyVaultUri
@@ -143,3 +190,6 @@ output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
 output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
 
+// Entry points for external web browsers
+output apimPrivateIpAddress string = apim.outputs.apimPrivateIpAddress
+output publicWafEdgeIpAddress string = waf.outputs.publicIpAddress

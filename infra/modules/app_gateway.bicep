@@ -1,4 +1,4 @@
-metadata description = 'Provisions the public-facing Layer-7 Application Gateway with Web Application Firewall (WAF) and Key Vault SSL binding.'
+metadata description = 'Provisions a public-facing Layer-7 Application Gateway with WAF routing directly to our pass-through APIM core via Public IP.'
 
 param envName string
 param location string 
@@ -11,7 +11,7 @@ var publicIpName = 'pip-agw-${envName}'
 var wafPolicyName = 'waf-policy-chat-${envName}'
 var appGatewayName = 'agw-edge-chat-${envName}'
 
-// 1. Dedicated Public IP for the Application Edge Ingress
+// 1. Public IP address entry-point (Your direct browser access link)
 resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
   name: publicIpName
   location: location
@@ -21,8 +21,9 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
   }
 }
 
-// 2. Web Application Firewall (WAF v2) Core Policy Engine
-resource wafPolicy 'Microsoft.Network/WebApplicationFirewallPolicies@2023-11-01' = {
+// 2. Core Web Application Firewall (WAF v2) Policy Engine
+// Core name updated to match the casing expected by Microsoft.Network providers
+resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2023-11-01' = {
   name: wafPolicyName
   location: location
   properties: {
@@ -30,13 +31,13 @@ resource wafPolicy 'Microsoft.Network/WebApplicationFirewallPolicies@2023-11-01'
       requestBodyCheck: true
       maxRequestBodySizeInKb: 512
       state: 'Enabled'
-      mode: 'Prevention' // ◄ Hard-blocks threats; change to 'Detection' during initial dev testing if needed
+      mode: 'Prevention' // Blocks vulnerabilities instantly
     }
     managedRules: {
       managedRuleSets: [
         {
           ruleSetType: 'OWASP'
-          ruleSetVersion: '3.2' // Default industry standard scrubbing rules
+          ruleSetVersion: '3.2'
         }
       ]
     }
@@ -50,18 +51,17 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${appGatewayIdentityId}': {} // Binds the pre-authorized identity from Step 3
+      '${appGatewayIdentityId}': {}
     }
   }
   properties: {
     sku: {
       name: 'WAF_v2'
       tier: 'WAF_v2'
-      capacity: 1 // Autoscales dynamically in higher tiers
+      capacity: 1
     }
     firewallPolicy: { id: wafPolicy.id }
     
-    // Subnet Ingress Configuration
     gatewayIPConfigurations: [
       {
         name: 'agw-ip-config'
@@ -76,33 +76,39 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
       }
     ]
     
-    // Front door ports (Port 80 for bootstrap validation; route to 443 with your SSL Cert secret later)
     frontendPorts: [
       { name: 'port-80', properties: { port: 80 } }
     ]
     
-    // Backend Pool pointing directly to your Private APIM Gateway instance
+    // Maps directly to the Internal APIM instance's private virtual IP via internal variables
     backendAddressPools: [
       {
         name: 'apim-backend-pool'
         properties: {
-          backendAddresses: [ { ipAddress: apimPrivateIpAddress } ] // Routes directly to Step 9
+          backendAddresses: [
+            {
+              ipAddress: apimPrivateIpAddress
+            }
+          ]
         }
       }
     ]
     
+    // Crucial: Overrides the Host Header to match APIM's certificate expectation
     backendHttpSettingsCollection: [
       {
         name: 'apim-http-settings'
         properties: {
-          port: 80
-          protocol: 'Http'
+          port: 443                           // Target APIM's true secure port
+          protocol: 'Https'                   // Elevate protocol from Http to Https
           cookieBasedAffinity: 'Disabled'
-          requestTimeout: 30
+          requestTimeout: 30  
+          pickHostNameFromBackendAddress: false // Force custom header injection
+          hostName: 'apim-gateway-chat-dev.azure-api.net' // Inject valid TLS identifier
         }
       }
     ]
-    
+
     httpListeners: [
       {
         name: 'http-listener'
@@ -129,15 +135,15 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
   }
 }
 
-// 4. Attach Diagnostic Logs to Stream WAF Access and Block Events to Telemetry Hub
-resource agwDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01' = {
+// 4. Attach Diagnostic Telemetry for WAF Logs
+resource agwDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: 'agw-waf-telemetry'
   scope: appGateway
   properties: {
     workspaceId: logAnalyticsWorkspaceId
     logs: [
       { category: 'ApplicationGatewayAccessLog', enabled: true }
-      { category: 'ApplicationGatewayFirewallLog', enabled: true } // Crucial for tracking blocked hack attempts
+      { category: 'ApplicationGatewayFirewallLog', enabled: true }
     ]
   }
 }

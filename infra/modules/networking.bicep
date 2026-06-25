@@ -1,4 +1,4 @@
-metadata description = 'Establishes the foundational Virtual Network, subnet segmentation, and outbound NAT Gateway architecture.'
+metadata description = 'Establishes the foundational Virtual Network, subnet segmentation, dedicated APIM NSG safety profiles, and outbound NAT Gateway architecture.'
 
 param envName string
 param location string 
@@ -6,8 +6,55 @@ param location string
 var vnetName = 'vnet-ai-chat-${envName}'
 var natGatewayName = 'nat-outbound-${envName}'
 var publicIpName = 'pip-nat-${envName}'
+var apimNsgName = 'nsg-apim-${envName}'
 
-// 1. Static Public IP Address for the Outbound NAT Gateway
+// ============================================================================
+// 1. SECURITY PLANE: SECURITY GROUPS WITH ALLOWANCE RULES
+// ============================================================================
+resource apimNsg 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
+  name: apimNsgName
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'Allow_APIM_Management_Inbound'
+        properties: {
+          description: 'Mandatory Azure platform control plane routing port for internal APIM deployments.'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '3443'
+          sourceAddressPrefix: 'ApiManagement'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 100
+          direction: 'Inbound'
+        }
+      }
+      // ◄ FIXED: Allows the upstream Web Application Firewall to cross subnet boundaries over Web Channels
+      {
+        name: 'Allow_WAF_to_APIM_Inbound'
+        properties: {
+          description: 'Allows the public-facing App Gateway WAF subnet to pass through incoming traffic to the APIM proxy tier.'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRanges: [
+            '80'
+            '443'
+          ]
+          sourceAddressPrefix: '10.0.1.0/24'       // Explicit route from your snet-agw layer
+          destinationAddressPrefix: '10.0.2.0/24'  // Targeting your internal snet-apim cluster
+          access: 'Allow'
+          priority: 110
+          direction: 'Inbound'
+        }
+      }
+    ]
+  }
+}
+
+// ============================================================================
+// 2. EDGE PLANE: OUTBOUND PUBLIC NAT ENGINE
+// ============================================================================
 resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
   name: publicIpName
   location: location
@@ -15,11 +62,10 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
     name: 'Standard'
   }
   properties: {
-    publicIPAllocationMethod: 'Static' // Enforces that this IP will never change
+    publicIPAllocationMethod: 'Static' 
   }
 }
 
-// 2. NAT Gateway Appliance for Secure, Predictable Outbound External Routing
 resource natGateway 'Microsoft.Network/natGateways@2023-11-01' = {
   name: natGatewayName
   location: location
@@ -29,48 +75,53 @@ resource natGateway 'Microsoft.Network/natGateways@2023-11-01' = {
   properties: {
     publicIpAddresses: [
       {
-        id: publicIP.id // Binds our static public IP to the NAT engine
+        id: publicIP.id 
       }
     ]
     idleTimeoutInMinutes: 5
   }
 }
 
-// 3. Core Virtual Network with Microservice and Data Subnet Zoning
+// ============================================================================
+// 3. CORE NETWORK PLANE: VIRTUAL NETWORK WITH BINDINGS
+// ============================================================================
 resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
   name: vnetName
   location: location
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.0.0.0/16' // The overall master network wrapper
+        '10.0.0.0/16' 
       ]
     }
     subnets: [
       {
         name: 'snet-agw'
         properties: {
-          addressPrefix: '10.0.1.0/24' // Public WAF subnet boundary
+          addressPrefix: '10.0.1.0/24' 
         }
       }
       {
         name: 'snet-apim'
         properties: {
-          addressPrefix: '10.0.2.0/24' // Private APIM management hub boundary
+          addressPrefix: '10.0.2.0/24' 
+          networkSecurityGroup: {
+            id: apimNsg.id
+          }
         }
       }
       {
         name: 'snet-container-apps'
         properties: {
-          addressPrefix: '10.0.4.0/23' // /23 allocation (512 IPs) for auto-scaling containers
+          addressPrefix: '10.0.4.0/23' 
           natGateway: {
-            id: natGateway.id // Forces all outbound internet traffic from this subnet through the NAT
+            id: natGateway.id 
           }
           delegations: [
             {
               name: 'aca-runtime-delegation'
               properties: {
-                serviceName: 'Microsoft.App/environments' // Hands control over to the Container Apps infrastructure
+                serviceName: 'Microsoft.App/environments' 
               }
             }
           ]
@@ -79,19 +130,21 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
       {
         name: 'snet-private-endpoints'
         properties: {
-          addressPrefix: '10.0.6.0/24' // Deep-isolation bucket for data/AI services
-          privateEndpointNetworkPolicies: 'Disabled' // Mandatory setting for private endpoints to attach successfully
+          addressPrefix: '10.0.6.0/24' 
+          privateEndpointNetworkPolicies: 'Disabled' 
         }
       }
     ]
   }
 }
 
-// Export specific infrastructure reference tokens for downstream modules
+// ============================================================================
+// STRUCTURAL REFERENCE TOKEN OUTPUTS
+// ============================================================================
 output vnetId string = vnet.id
 output vnetName string = vnet.name
 output agwSubnetId string = '${vnet.id}/subnets/snet-agw'
 output apimSubnetId string = '${vnet.id}/subnets/snet-apim'
 output acaSubnetId string = '${vnet.id}/subnets/snet-container-apps'
 output endpointsSubnetId string = '${vnet.id}/subnets/snet-private-endpoints'
-output natPublicIpAddress string = publicIP.properties.ipAddress // Outputs the IP string for documentation or whitelisting
+output natPublicIpAddress string = publicIP.properties.ipAddress
