@@ -42,7 +42,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
       ingress: {
         external: false // Hidden inside environment load balancer; APIM proxy targeted
         targetPort: 80
-        transport: 'auto'
+        transport: 'http'
       }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
@@ -84,7 +84,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'http' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -126,7 +126,7 @@ resource voiceBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'http' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
@@ -163,7 +163,7 @@ resource snowShimApp 'Microsoft.App/containerApps@2024-03-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       activeRevisionsMode: 'Single'
-      ingress: { external: false, targetPort: 80, transport: 'auto' }
+      ingress: { external: false, targetPort: 80, transport: 'http' }
       registries: [ { server: registryLoginServer, identity: 'system' } ]
     }
     template: {
