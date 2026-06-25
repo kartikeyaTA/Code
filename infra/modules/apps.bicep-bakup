@@ -13,7 +13,7 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' exis
   name: 'cog-openai-chat-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: 'testkaraichat${envName}'
+  name: 'testkaraichat1${envName}'
 }
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: 'aichatregistry${envName}'
