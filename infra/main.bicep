@@ -105,7 +105,6 @@ module containerEnv './modules/container_env.bicep' = {
     envName: envName
     location: location
     acaSubnetId: network.outputs.acaSubnetId // Mapping to delegated /23 subnet
-    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
   }
 }
 
