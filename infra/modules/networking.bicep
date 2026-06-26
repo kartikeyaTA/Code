@@ -125,10 +125,10 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
               service: 'Microsoft.AzureActiveDirectory'
             }
             {
-              service: 'Microsoft.ServiceBus' // ◄ Corrected standard spelling from 'StoageBus'
+              service: 'Microsoft.ServiceBus' 
             }
             {
-              service: 'Microsoft.KeyVault'    // ◄ Corrected standard spelling from 'Vault'
+              service: 'Microsoft.KeyVault'    
             }
             {
               service: 'Microsoft.EventHub'
