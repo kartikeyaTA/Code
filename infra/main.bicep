@@ -145,7 +145,42 @@ module apps './modules/apps.bicep' = {
 // ============================================================================
 // 4. PRIVATE API MANAGEMENT INGRESS GATEWAY
 // ============================================================================
+module apim './modules/apim.bicep' = {
+  name: 'apim-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    apimSubnetId: network.outputs.apimSubnetId // Deploys cleanly inside private subnet block
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+    chatBackendUrl: apps.outputs.chatBackendFqdn // Dynamically maps to our verified python URL output
+    publisherEmail: publisherEmail
+    publisherName: publisherName
+    containerenvIP: containerEnv.outputs.environmentStaticIp
+  }
+  dependsOn: [
+    apps
+  ]
+}
 
+// ============================================================================
+// 5. PUBLIC WEB APPLICATION FIREWALL (WAF) INGRESS EDGE
+// ============================================================================
+module waf './modules/app_gateway.bicep' = {
+  name: 'waf-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    agwSubnetId: network.outputs.agwSubnetId
+    appGatewayIdentityId: security.outputs.appGatewayIdentityId // Uses pre-warmed framework identity
+    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress // Loops directly to the internal APIM instance
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+  }
+  dependsOn: [
+    apim
+  ]
+}
 
 // ============================================================================
 // GLOBAL ARCHITECTURAL OUTPUT TRACKING
