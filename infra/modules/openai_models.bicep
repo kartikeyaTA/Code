@@ -8,20 +8,20 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' exis
 }
 
 // Deploy the GPT-4o Model Deployment inside the verified AI Engine
-resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview' = {
+resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview' = {
   parent: cognitiveAccount
-  name: 'gpt-4o'
+  name: 'gpt-4o-mini' // Changing deployment name to match model
   sku: {
     name: 'GlobalStandard'
-    capacity: 50 // Allocated Tokens-Per-Minute capacity setting
+    capacity: 50 
   }
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4o'
-      version: '2024-08-06'
+      name: 'gpt-4o-mini'    // SWAP MODEL: Future-proof, highly stable version
+      version: '2024-07-18'  // Use the exact active GA version code
     }
-    versionUpgradeOption: 'OnceNewDefaultVersionAvailable' // Automatically handles roll-forward
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
     raiPolicyName: 'Microsoft.Default'
   }
 }
