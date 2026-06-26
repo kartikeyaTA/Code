@@ -89,6 +89,8 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 80 \
               --ingress external \
+              --min-replicas 1 \
+              --max-replicas 3 \
               --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
@@ -109,5 +111,7 @@ stages:
               --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
+              --min-replicas 1 \
+              --max-replicas 3 \
               --set-env-vars "AZURE_CLIENT_ID=$DYNAMIC_CLIENT_ID" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
