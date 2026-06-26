@@ -156,7 +156,5 @@ output keyVaultUri string = security.outputs.keyVaultUri
 output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
 output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
-
+output chatBackendUrl  string = apps.outputs.chatBackendFqdn
 // Entry points for external web browsers
-output apimPrivateIpAddress string = apim.outputs.apimPrivateIpAddress
-output publicWafEdgeIpAddress string = waf.outputs.publicIpAddress
