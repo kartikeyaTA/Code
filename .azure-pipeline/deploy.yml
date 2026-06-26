@@ -2,7 +2,6 @@ trigger:
   branches:
     include:
       - dev
-
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -50,7 +49,6 @@ stages:
           echo "Fetching Client ID for identity $(managedIdentityName)..."
           CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
           
-          # CRITICAL FIX: Convert the bash variable into a pipeline variable
           echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
           
           az keyvault secret set \
@@ -58,7 +56,7 @@ stages:
             --name "vault-secret" \
             --value "$(Build.BuildId)"
 
-    # 3. Deploy to Azure Container Apps
+    # 3. Native Azure Container App Deployment (Handles Create/Update automatically)
     - task: AzureContainerApps@1
       displayName: 'Deploy to Azure Container Apps'
       inputs:
@@ -67,10 +65,12 @@ stages:
         containerAppName: '$(containerAppName)'
         resourceGroup: '$(resourceGroup)'
         
-        secrets: |
-          vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret
+        # Fixed to target your container's port 80 natively
+        targetPort: '80' 
         
-        # CRITICAL FIX: Use the pipeline syntax $(DYNAMIC_CLIENT_ID) here
+        # Kept inline on a single line to completely avoid the URL format error
+        secrets: 'vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret'
+        
         envVariables: |
           AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)
           MY_DUMMY_SECRET=secretref:vault-secret
