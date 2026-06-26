@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Query  # ◄ FIXED: Added Query import
+from fastapi import FastAPI, Query
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
@@ -10,6 +10,9 @@ SECRET_VAL = os.getenv("MY_DUMMY_SECRET", "Secret not injected yet")
 
 # 2. Storage Account Target (Passed as an Env Var)
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME", "")
+
+# 3. Fetch the Client ID of the User-Assigned Managed Identity injected by your Pipeline
+AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 
 @app.get("/")
 def read_root():
@@ -24,8 +27,12 @@ def list_blobs(container: str = Query(None)):
         return {"error": "STORAGE_ACCOUNT_NAME environment variable is missing."}
     
     try:
-        # Initialize the client once outside the conditional checks to keep things DRY
-        credential = DefaultAzureCredential()
+        # ◄ FIXED: Pass the Client ID explicitly so the SDK targets your User-Assigned Identity
+        if AZURE_CLIENT_ID:
+            credential = DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID)
+        else:
+            credential = DefaultAzureCredential()
+            
         account_url = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
         blob_service_client = BlobServiceClient(account_url, credential=credential)
         
@@ -36,7 +43,7 @@ def list_blobs(container: str = Query(None)):
             
             return {
                 "StorageAccount": STORAGE_ACCOUNT_NAME,
-                "Container": container,  # ◄ FIXED: Returns the requested name string, not the full list
+                "Container": container,
                 "Files": blobs_list
             }
         
