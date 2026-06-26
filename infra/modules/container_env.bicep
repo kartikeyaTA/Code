@@ -36,3 +36,4 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
 // Export the Environment ID string so the actual apps can deploy inside this cluster shell in Step 8
 output environmentId string = managedEnvironment.id
 output environmentDefaultDomain string = managedEnvironment.properties.defaultDomain
+output environmentStaticIp string = managedEnvironment.properties.staticIp

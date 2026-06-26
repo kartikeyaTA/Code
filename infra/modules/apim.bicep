@@ -4,6 +4,7 @@ param envName string
 param location string
 param apimSubnetId string
 param logAnalyticsWorkspaceId string
+param containerenvIP string
 
 // Target URL generated from our apps deployment block
 param chatBackendUrl string
@@ -41,8 +42,8 @@ resource chatBackendProxy 'Microsoft.ApiManagement/service/backends@2023-05-01-p
   parent: apimInstance
   properties: {
     description: 'Internal route to the FastAPI Chat container'
-    url: 'http://${chatBackendUrl}'
-    protocol: 'http'
+    url: 'https://${containerenvIP}:443'
+    protocol: 'https'
   }
 }
 
@@ -56,6 +57,7 @@ resource chatApi 'Microsoft.ApiManagement/service/apis@2023-05-01-preview' = {
     displayName: 'Chat Core API'
     path: 'backend' // ◄ Traffic hitting http://<APIM_IP>/backend will proxy to the container
     protocols: ['https','http']
+    subscriptionRequired: false
   }
 }
 
@@ -67,6 +69,9 @@ resource chatApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01
     <policies>
       <inbound>
         <base />
+        <set-header name="Host" exists-action="override">
+          <value>${chatBackendUrl}</value>
+        </set-header>
         <set-backend-service backend-id="chat-backend-target" />
       </inbound>
     </policies>

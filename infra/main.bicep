@@ -101,16 +101,6 @@ module aifoundry './modules/ai_foundry.bicep' = {
   }
 }
 
-module openAiModels './modules/openai_models.bicep' = {
-  name: 'openai-models-deployment'
-  scope: rg
-  params: {
-    cognitiveAccountName: aifoundry.outputs.openAiAccountName
-  }
-  dependsOn: [
-    aifoundry 
-  ]
-}
 
 module containerEnv './modules/container_env.bicep' = {
   name: 'container-env-deployment'

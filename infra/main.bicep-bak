@@ -155,6 +155,7 @@ module apim './modules/apim.bicep' = {
     chatBackendUrl: apps.outputs.chatBackendFqdn // Dynamically maps to our verified python URL output
     publisherEmail: publisherEmail
     publisherName: publisherName
+    containerenvIP: containerEnv.outputs.environmentStaticIp
   }
   dependsOn: [
     apps
