@@ -57,7 +57,6 @@ stages:
             --name "vault-secret" \
             --value "$(Build.BuildId)"
 
-    # 3. Clean CLI Deployment (Bypasses the buggy container app wrapper completely)
     - task: AzureCLI@2
       displayName: 'Deploy to Azure Container Apps via Native CLI'
       inputs:
