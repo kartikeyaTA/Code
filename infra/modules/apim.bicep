@@ -74,7 +74,7 @@ resource chatApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01
       <inbound>
         <base />
         <set-header name="Host" exists-action="override">
-          <value>${trim(chatBackendUrl)</value>
+          <value>${trim(replace(replace(chatBackendUrl, 'https://', ''), 'http://', ''))}</value>
         </set-header>
         <set-backend-service backend-id="chat-backend-target" />
       </inbound>
