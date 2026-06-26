@@ -40,6 +40,16 @@ resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01'
   }
 }
 
+resource pipelineKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, pipelineServicePrincipalObjectId, 'KeyVaultSecretsOfficer')
+  scope: keyVault
+  properties: {
+    principalId: pipelineServicePrincipalObjectId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b8663623-ca61-4af3-92a7-96d5d0f571e2') // Key Vault Secrets Officer
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Export security tokens so main.bicep can map them to downstream network/compute blocks
 output keyVaultId string = keyVault.id
 output keyVaultName string = keyVault.name

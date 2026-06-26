@@ -45,6 +45,7 @@ resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previe
   }
 }
 
+
 // Export credentials for downstream Azure Container App environment tracking
 output registryId string = containerRegistry.id
 output registryLoginServer string = containerRegistry.properties.loginServer
