@@ -104,7 +104,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
           cookieBasedAffinity: 'Disabled'
           requestTimeout: 30  
           pickHostNameFromBackendAddress: false // Force custom header injection
-          hostName: 'apim-gateway-chat-dev.azure-api.net' // Inject valid TLS identifier
+          hostName: 'apim-gateway-chat1-dev.azure-api.net' // Inject valid TLS identifier
         }
       }
     ]
