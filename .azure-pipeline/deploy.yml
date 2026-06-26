@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - dev
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -15,7 +16,7 @@ variables:
   keyVaultName: 'testkaraichat2dev'
   resourceGroup: 'ai-chatbot-dev2'
   containerAppName: 'ca-chat-backend-dev'
-  containerAppEnv: 'aca-env-chat-dev' # Explicitly setting this fixes the 'undefined' parsing bug
+  containerAppEnv: 'aca-env-chat-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -38,7 +39,7 @@ stages:
           $(tag)
           latest
 
-    # 2. Dynamically fetch Managed Identity Client ID & Set Key Vault Secret
+    # 2. Dynamically fetch Managed Identity Client ID AND Resource ID
     - task: AzureCLI@2
       displayName: 'Fetch Identity and Update Key Vault'
       name: FetchAzureData
@@ -47,16 +48,19 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          echo "Fetching Client ID for identity $(managedIdentityName)..."
+          echo "Fetching Identity Details for $(managedIdentityName)..."
           CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
+          IDENTITY_RESOURCE_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query id -o tsv)
           
           echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
+          echo "##vso[task.setvariable variable=DYNAMIC_IDENTITY_RESOURCE_ID]$IDENTITY_RESOURCE_ID"
           
           az keyvault secret set \
             --vault-name "$(keyVaultName)" \
             --name "vault-secret" \
             --value "$(Build.BuildId)"
 
+    # 3. Secure Deployment via Native CLI with Identity Fixed
     - task: AzureCLI@2
       displayName: 'Deploy to Azure Container Apps via Native CLI'
       inputs:
@@ -64,26 +68,34 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          echo "Checking if Container App $(containerAppName) exists..."
-          APP_EXISTS=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query name -o tsv 2>/dev/null || echo "not_found")
+          echo "Checking if Container App $(containerAppName) exists and its status..."
           
-          if [ "$APP_EXISTS" == "not_found" ]; then
-            echo "App not found. Performing full creation sequence..."
+          # Fetch provisioning state to detect broken configurations
+          APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
+          echo "Current Container App State: $APP_STATE"
+
+          # Recovery and Routing Logic
+          if [ "$APP_STATE" == "not_found" ] || [ "$APP_STATE" == "Failed" ]; then
+            if [ "$APP_STATE" == "Failed" ]; then
+              echo "Target app is in a failed state due to a previous bad run. Purging broken deployment..."
+              az containerapp delete --name "$(containerAppName)" --resource-group "$(resourceGroup)" --yes
+            fi
+
+            echo "Performing full creation sequence..."
             az containerapp create \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 80 \
-              --ingress internal \
-              --transport http \
-              --user-assigned "$(DYNAMIC_CLIENT_ID)" \
+              --ingress external \
+              --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
               --registry-server "$(acrName).azurecr.io" \
-              --registry-identity "$(DYNAMIC_CLIENT_ID)" \
+              --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
               --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
+              --set-env-vars "AZURE_CLIENT_ID=$DYNAMIC_CLIENT_ID" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           else
-            echo "App found. Running dedicated secret update sequence..."
+            echo "App found and healthy. Running dedicated secret update sequence..."
             az containerapp secret set \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
@@ -94,5 +106,8 @@ stages:
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
+              --registry-server "$(acrName).azurecr.io" \
+              --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
+              --set-env-vars "AZURE_CLIENT_ID=$DYNAMIC_CLIENT_ID" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
