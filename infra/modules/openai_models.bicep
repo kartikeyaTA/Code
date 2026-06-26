@@ -8,18 +8,18 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' exis
 }
 
 // Deploy the GPT-4o Model Deployment inside the verified AI Engine
-resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview' = {
   parent: cognitiveAccount
   name: 'gpt-4o'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 50 // Allocated Tokens-Per-Minute capacity setting
   }
   properties: {
     model: {
       format: 'OpenAI'
       name: 'gpt-4o'
-      version: '2025-11-13' // Utilizing a stable enterprise version stamp
+      version: '2024-11-20' // Utilizing a stable enterprise version stamp
     }
   }
 }
