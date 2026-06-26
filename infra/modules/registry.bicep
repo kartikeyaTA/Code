@@ -5,6 +5,7 @@ param location string
 param logAnalyticsWorkspaceId string // Required to stream metric telemetry
 param managedIdentityName string
 var acrName = 'aichatregistry${envName}'
+var acrPullRoleDefinitionId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 // 1. Azure Container Registry Definition
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
