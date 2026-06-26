@@ -68,19 +68,14 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          echo "Checking if Container App $(containerAppName) exists and its status..."
+          echo "Checking if Container App $(containerAppName) exists..."
           
-          # Fetch provisioning state to detect broken configurations
+          # Fetch provisioning state to detect configuration status
           APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
           echo "Current Container App State: $APP_STATE"
 
-          # Recovery and Routing Logic
-          if [ "$APP_STATE" == "not_found" ] || [ "$APP_STATE" == "Failed" ]; then
-            if [ "$APP_STATE" == "Failed" ]; then
-              echo "Target app is in a failed state due to a previous bad run. Purging broken deployment..."
-              az containerapp delete --name "$(containerAppName)" --resource-group "$(resourceGroup)" --yes
-            fi
-
+          # 1. APPLICATION DOES NOT EXIST: Create from scratch
+          if [ "$APP_STATE" == "not_found" ]; then
             echo "Performing full creation sequence..."
             az containerapp create \
               --name "$(containerAppName)" \
@@ -91,27 +86,45 @@ stages:
               --ingress external \
               --min-replicas 1 \
               --max-replicas 3 \
-              --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --registry-server "$(acrName).azurecr.io" \
-              --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
+              --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --env-vars "AZURE_CLIENT_ID=$DYNAMIC_CLIENT_ID" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+          
+          # 2. APPLICATION EXISTS: Update elements correctly sequentially
           else
-            echo "App found and healthy. Running dedicated secret update sequence..."
+            echo "App found. Running dedicated configuration updates..."
+            
+            # Step A: Update Identity bindings if needed
+            echo "Ensuring identity assignment..."
+            az containerapp identity assign \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            # Step B: Secure Registry Configuration with dedicated command
+            echo "Updating container registry configuration..."
+            az containerapp registry set \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --server "$(acrName).azurecr.io" \
+              --identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            # Step C: Update secrets references
+            echo "Syncing system secrets configuration..."
             az containerapp secret set \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret"
 
+            # Step D: Deploy Image, Replica Limits, and Env variables using valid flags
             echo "Upgrading existing container app image and application state seamlessly..."
             az containerapp update \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --user-assigned "$DYNAMIC_IDENTITY_RESOURCE_ID" \
-              --registry-server "$(acrName).azurecr.io" \
-              --registry-identity "$DYNAMIC_IDENTITY_RESOURCE_ID" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$DYNAMIC_CLIENT_ID" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
