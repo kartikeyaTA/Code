@@ -78,6 +78,17 @@ module storage './modules/storage.bicep' = {
   }
 }
 
+module openAiModels './modules/openai_models.bicep' = {
+  name: 'openai-models-deployment'
+  scope: rg
+  params: {
+    cognitiveAccountName: aifoundry.outputs.openAiAccountName
+  }
+  dependsOn: [
+    aifoundry 
+  ]
+}
+
 module registry './modules/registry.bicep' = {
   name: 'registry-deployment'
   scope: rg 
