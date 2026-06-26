@@ -85,7 +85,7 @@ module registry './modules/registry.bicep' = {
     envName: envName
     location: location
     logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
-    managedIdentityName: identityModule.outputs.appGatewayIdentityName
+    managedIdentityName: security.outputs.appGatewayIdentityName
   }
 }
 
