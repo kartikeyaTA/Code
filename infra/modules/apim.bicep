@@ -43,7 +43,11 @@ resource chatBackendProxy 'Microsoft.ApiManagement/service/backends@2023-05-01-p
   properties: {
     description: 'Internal route to the FastAPI Chat container'
     url: 'https://${containerenvIP}:443'
-    protocol: 'https'
+    protocol: 'http'
+    tls: {
+      validateCertificateChain: false
+      validateCertificateName: false
+    }
   }
 }
 
@@ -70,7 +74,7 @@ resource chatApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01
       <inbound>
         <base />
         <set-header name="Host" exists-action="override">
-          <value>${chatBackendUrl}</value>
+          <value>${trim(chatBackendUrl)</value>
         </set-header>
         <set-backend-service backend-id="chat-backend-target" />
       </inbound>
