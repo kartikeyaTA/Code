@@ -175,6 +175,7 @@ module waf './modules/app_gateway.bicep' = {
     agwSubnetId: network.outputs.agwSubnetId
     appGatewayIdentityId: security.outputs.appGatewayIdentityId // Uses pre-warmed framework identity
     apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress // Loops directly to the internal APIM instance
+    apimGatewayUrl: apim.outputs.apimGatewayUrl
     logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
   }
   dependsOn: [

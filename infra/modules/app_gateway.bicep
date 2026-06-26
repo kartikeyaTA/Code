@@ -6,10 +6,14 @@ param agwSubnetId string
 param appGatewayIdentityId string
 param apimPrivateIpAddress string
 param logAnalyticsWorkspaceId string
+param apimGatewayUrl string // Expecting gatewayUrl output from your APIM module
 
 var publicIpName = 'pip-agw-${envName}'
 var wafPolicyName = 'waf-policy-chat-${envName}'
 var appGatewayName = 'agw-edge-chat-${envName}'
+
+// Sanitized hostname string: Automatically extracts just the FQDN domain from the APIM Gateway URL
+var cleanApimHost = replace(replace(apimGatewayUrl, 'https://', ''), '/', '')
 
 // 1. Public IP address entry-point (Your direct browser access link)
 resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
@@ -22,7 +26,6 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-11-01' = {
 }
 
 // 2. Core Web Application Firewall (WAF v2) Policy Engine
-// Core name updated to match the casing expected by Microsoft.Network providers
 resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2023-11-01' = {
   name: wafPolicyName
   location: location
@@ -31,7 +34,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
       requestBodyCheck: true
       maxRequestBodySizeInKb: 512
       state: 'Enabled'
-      mode: 'Prevention' // Blocks vulnerabilities instantly
+      mode: 'Prevention' 
     }
     managedRules: {
       managedRuleSets: [
@@ -80,7 +83,6 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
       { name: 'port-80', properties: { port: 80 } }
     ]
     
-    // Maps directly to the Internal APIM instance's private virtual IP via internal variables
     backendAddressPools: [
       {
         name: 'apim-backend-pool'
@@ -93,18 +95,42 @@ resource appGateway 'Microsoft.Network/applicationGateways@2023-11-01' = {
         }
       }
     ]
+
+    probes: [
+      {
+        name: 'apim-health-probe'
+        properties: {
+          protocol: 'Https'
+          host: cleanApimHost // ◄ FIXED: Uses clean parsed hostname parameter
+          path: '/status-0123456789abcdef'
+          interval: 30
+          timeout: 30
+          unhealthyThreshold: 3
+          pickHostNameFromBackendHttpSettings: false
+          minServers: 0
+          match: {
+            statusCodes: [
+              '200-399'
+            ]
+          }
+        }
+      }
+    ]
     
-    // Crucial: Overrides the Host Header to match APIM's certificate expectation
     backendHttpSettingsCollection: [
       {
         name: 'apim-http-settings'
         properties: {
-          port: 443                           // Target APIM's true secure port
-          protocol: 'Https'                   // Elevate protocol from Http to Https
+          port: 443                            
+          protocol: 'Https'                    
           cookieBasedAffinity: 'Disabled'
           requestTimeout: 30  
-          pickHostNameFromBackendAddress: false // Force custom header injection
-          hostName: 'apim-gateway-chat1-dev.azure-api.net' // Inject valid TLS identifier
+          pickHostNameFromBackendAddress: false 
+          hostName: cleanApimHost // ◄ FIXED: Uses clean parsed hostname parameter
+          // ◄ FIXED: Added missing probe relationship hook
+          probe: {
+            id: resourceId('Microsoft.Network/applicationGateways/probes', appGatewayName, 'apim-health-probe')
+          }
         }
       }
     ]
