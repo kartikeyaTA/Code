@@ -94,8 +94,5 @@ stages:
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --user-assigned "$(DYNAMIC_CLIENT_ID)" \
-              --registry-server "$(acrName).azurecr.io" \
-              --registry-identity "$(DYNAMIC_CLIENT_ID)" \
               --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
