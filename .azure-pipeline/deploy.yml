@@ -57,7 +57,7 @@ stages:
           
           az keyvault secret set \
             --vault-name "$(keyVaultName)" \
-            --name "vault-secret" \
+            --name "vault-secret1" \
             --value "$(Build.BuildId)"          
 
     # 3. Secure Deployment via Native CLI with Identity Fixed
@@ -88,9 +88,9 @@ stages:
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
-              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
-          
+              --secrets "vault-secret1=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret1" \
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret1" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+
           # 2. APPLICATION EXISTS: Update elements correctly sequentially
           else
             echo "App found. Running dedicated configuration updates..."
@@ -115,7 +115,7 @@ stages:
             az containerapp secret set \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
-              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret"
+              --secrets "vault-secret1=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret1"
 
             # Step D: Deploy Image, Replica Limits, and Env variables using valid flags
             echo "Upgrading existing container app image and application state seamlessly..."
@@ -125,5 +125,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret1" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
