@@ -2,7 +2,7 @@ metadata description = 'Provisions the secure Key Vault with RBAC authorization 
 
 param envName string
 param location string 
-var keyVaultName = 'testkaraichat1${envName}'
+var keyVaultName = 'testkaraichat2${envName}'
 var appGatewayIdentityName = 'id-app-gateway-${envName}'
 
 // 1. Create the Standalone User-Assigned Managed Identity for the Edge WAF

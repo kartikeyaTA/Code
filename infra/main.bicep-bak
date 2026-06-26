@@ -122,11 +122,63 @@ module containerEnv './modules/container_env.bicep' = {
   }
 }
 
+// ============================================================================
+// 3. CORE SERVICE APPLICATIONS
+// ============================================================================
+module apps './modules/apps.bicep' = {
+  name: 'apps-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    environmentId: containerEnv.outputs.environmentId 
+    registryLoginServer: registry.outputs.registryLoginServer 
+  }
+  dependsOn: [
+    security
+    aifoundry
+    openAiModels
+  ]
+}
 
+// ============================================================================
+// 4. PRIVATE API MANAGEMENT INGRESS GATEWAY
+// ============================================================================
+module apim './modules/apim.bicep' = {
+  name: 'apim-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    apimSubnetId: network.outputs.apimSubnetId // Deploys cleanly inside private subnet block
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+    chatBackendUrl: apps.outputs.chatBackendFqdn // Dynamically maps to our verified python URL output
+    publisherEmail: publisherEmail
+    publisherName: publisherName
+  }
+  dependsOn: [
+    apps
+  ]
+}
 
-
-
-
+// ============================================================================
+// 5. PUBLIC WEB APPLICATION FIREWALL (WAF) INGRESS EDGE
+// ============================================================================
+module waf './modules/app_gateway.bicep' = {
+  name: 'waf-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    agwSubnetId: network.outputs.agwSubnetId
+    appGatewayIdentityId: security.outputs.appGatewayIdentityId // Uses pre-warmed framework identity
+    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress // Loops directly to the internal APIM instance
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+  }
+  dependsOn: [
+    apim
+  ]
+}
 
 // ============================================================================
 // GLOBAL ARCHITECTURAL OUTPUT TRACKING
@@ -138,3 +190,6 @@ output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
 output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
 
+// Entry points for external web browsers
+output apimPrivateIpAddress string = apim.outputs.apimPrivateIpAddress
+output publicWafEdgeIpAddress string = waf.outputs.publicIpAddress

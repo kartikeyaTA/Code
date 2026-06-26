@@ -9,7 +9,7 @@ param storageAccountId string
 
 var aiHubName = 'ai-hub-chat-${envName}'
 var aiProjectName = 'ai-project-chat-${envName}'
-var cognitiveAccountName = 'cog-openai-chat1-${envName}'
+var cognitiveAccountName = 'cog-openai-chat2-${envName}'
 var openAiDnsZoneName = 'privatelink.openai.azure.com'
 var openAiPrivateEndpointName = 'pe-openai-core-${envName}'
 

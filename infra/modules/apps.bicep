@@ -10,10 +10,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing 
   name: 'stachattranscripts${envName}'
 }
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: 'cog-openai-chat1-${envName}'
+  name: 'cog-openai-chat2-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: 'testkaraichat1${envName}'
+  name: 'testkaraichat2${envName}'
 }
 
 // Reference to your core User identity to avoid Entra ID race conditions
