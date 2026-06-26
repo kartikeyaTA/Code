@@ -75,15 +75,19 @@ stages:
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 80 \
-              --ingress external \
-              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --ingress internal \
+              --transport http \
+              --user-assigned "$(DYNAMIC_CLIENT_ID)" \
+              --registry-server "$(acrName).azurecr.io" \
+              --registry-identity "$(DYNAMIC_CLIENT_ID)" \
+              --secrets "vault-secret=keyvault://testkaraichat1dev.vault.azure.net/secrets/my-dummy-secret" \
+              --env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
           else
             echo "App found. Upgrading existing container app seamlessly..."
             az containerapp update \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --secrets "vault-secret=keyvault://testkaraichat1dev.vault.azure.net/secrets/my-dummy-secret" \
+              --set-env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
           fi
