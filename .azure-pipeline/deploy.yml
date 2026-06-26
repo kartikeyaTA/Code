@@ -88,6 +88,6 @@ stages:
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
+              --set-secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
               --set-env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
           fi
