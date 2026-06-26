@@ -69,7 +69,6 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           echo "Checking if Container App $(containerAppName) exists..."
-          
           # Fetch provisioning state to detect configuration status
           APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
           echo "Current Container App State: $APP_STATE"
