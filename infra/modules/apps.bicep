@@ -73,7 +73,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'MY_DUMMY_SECRET'
-              secretRef: 'vault-secret'
+              secretRef: 'vault-secret1'
             }
             {
               name: 'STORAGE_ACCOUNT_NAME'

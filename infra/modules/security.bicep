@@ -11,6 +11,10 @@ resource appGatewayIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@20
   location: location
 }
 
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
+  name: 'stachattranscripts${envName}'
+}
+
 // 2. Central Key Vault with Modern RBAC Azure Authorization Enabled
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
@@ -52,7 +56,7 @@ resource pipelineKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
 
 resource storagevRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, appGatewayIdentity.name, 'BlobUser')
-  scope: keyVault
+  scope: storageAccount
   properties: {
     principalId: appGatewayIdentity.properties.principalId 
     // ◄ FIXED: Corrected the official Azure GUID for Key Vault Secrets User
