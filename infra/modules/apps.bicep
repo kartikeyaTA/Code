@@ -48,8 +48,8 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
       // Uses the pre-assigned identity block to query Key Vault without a replication lag timeout
       secrets: [
         {
-          name: 'vault-secret'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/vault-secret'
+          name: 'vault-secret1'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/vault-secret1'
           identity: appIdentity.id
         }
       ]
