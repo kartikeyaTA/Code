@@ -72,7 +72,7 @@ stages:
           # Fetch provisioning state to detect configuration status
           APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
           echo "Current Container App State: $APP_STATE"
-
+          SECRET_VAL=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "vault-secret1" --query "value" -o tsv)
           # 1. APPLICATION DOES NOT EXIST: Create from scratch
           if [ "$APP_STATE" == "not_found" ]; then
             echo "Performing full creation sequence..."
@@ -88,8 +88,7 @@ stages:
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
-              --secrets "vault-secret1=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret1" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret1" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$(SECRET_VAL)" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
 
           # 2. APPLICATION EXISTS: Update elements correctly sequentially
           else
@@ -110,12 +109,7 @@ stages:
               --server "$(acrName).azurecr.io" \
               --identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
 
-            # Step C: Update secrets references
-            echo "Syncing system secrets configuration..."
-            az containerapp secret set \
-              --name "$(containerAppName)" \
-              --resource-group "$(resourceGroup)" \
-              --secrets "vault-secret1=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret1"
+           
 
             # Step D: Deploy Image, Replica Limits, and Env variables using valid flags
             echo "Upgrading existing container app image and application state seamlessly..."
@@ -125,5 +119,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)" "MY_DUMMY_SECRET=secretref:vault-secret1"
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)" "MY_DUMMY_SECRET=$(SECRET_VAL)"
           fi
