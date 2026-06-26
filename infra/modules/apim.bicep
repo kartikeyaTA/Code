@@ -42,7 +42,7 @@ resource chatBackendProxy 'Microsoft.ApiManagement/service/backends@2023-05-01-p
   parent: apimInstance
   properties: {
     description: 'Internal route to the FastAPI Chat container'
-    url: 'https://${containerenvIP}:443'
+    url: 'http://${containerenvIP}:80'
     protocol: 'http'
     tls: {
       validateCertificateChain: false

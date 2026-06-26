@@ -50,6 +50,17 @@ resource pipelineKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
   }
 }
 
+resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
+  scope: keyVault
+  properties: {
+    principalId: appGatewayIdentity.properties.principalId 
+    // ◄ FIXED: Corrected the official Azure GUID for Key Vault Secrets User
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1') 
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Export security tokens so main.bicep can map them to downstream network/compute blocks
 output keyVaultId string = keyVault.id
 output keyVaultName string = keyVault.name
