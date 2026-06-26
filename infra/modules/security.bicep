@@ -50,7 +50,7 @@ resource pipelineKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
   }
 }
 
-resource gwKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource storagevRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, appGatewayIdentity.name, 'KeyVaultSecretsUser')
   scope: keyVault
   properties: {
