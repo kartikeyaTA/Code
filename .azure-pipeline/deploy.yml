@@ -58,18 +58,7 @@ stages:
           az keyvault secret set \
             --vault-name "$(keyVaultName)" \
             --name "vault-secret" \
-            --value "$(Build.BuildId)"
-            
-          echo "Cleaning up older secret versions..."
-          OLD_VERSIONS=$(az keyvault secret list-versions \
-            --vault-name "$(keyVaultName)" \
-            --name "vault-secret" \
-            --query "[?attributes.enabled].id" -o tsv | tail -n +2)
-
-          for SECRET_ID in $OLD_VERSIONS; do
-            echo "Disabling old version: $SECRET_ID"
-            az keyvault secret set-attributes --id "$SECRET_ID" --enabled false
-          done
+            --value "$(Build.BuildId)"          
 
     # 3. Secure Deployment via Native CLI with Identity Fixed
     - task: AzureCLI@2
