@@ -69,17 +69,42 @@ resource chatApiPolicy 'Microsoft.ApiManagement/service/apis/policies@2023-05-01
   parent: chatApi
   name: 'policy'
   properties: {
-    value: '''
-    <policies>
-      <inbound>
-        <base />
-        <set-backend-service backend-id="chat-backend-target" />
-      </inbound>
-    </policies>
-    '''
+    value: '<policies><inbound><base /><set-header name="Host" exists-action="override"><value>${chatBackendUrl}</value></set-header><set-backend-service backend-id="chat-backend-target" /></inbound></policies>'
     format: 'xml'
   }
 }
+
+// Operation 1: Root status route
+resource statusGetOperation 'Microsoft.ApiManagement/service/apis/operations@2023-05-01-preview' = {
+  name: 'get-backend-status'
+  parent: chatApi
+  properties: {
+    displayName: 'Get Backend Status'
+    method: 'GET'
+    urlTemplate: '/'
+  }
+}
+
+// Operation 2: Fixed duplicate name to clear compiler blockages
+resource listBlobsGetOperation 'Microsoft.ApiManagement/service/apis/operations@2023-05-01-preview' = {
+  name: 'get-backend-status-blob'
+  parent: chatApi
+  properties: {
+    displayName: 'Get Backend Status Blobs'
+    method: 'GET'
+    urlTemplate: '/list-blobs'
+  }
+}
+
+resource statusGetOperationPolicy 'Microsoft.ApiManagement/service/apis/operations/policies@2023-05-01-preview' = {
+  name: 'policy'
+  parent: statusGetOperation // ◄ Targets your GET resource block
+  properties: {
+    value: '<policies><inbound><base /><set-header name="Host" exists-action="override"><value>${chatBackendUrl}</value></set-header><set-backend-service backend-id="chat-backend-target" /></inbound></policies>'
+    format: 'xml'
+  }
+}
+
 
 // ============================================================================
 // 4. DIAGNOSTIC LOGGING CORE COMPLIANCE
