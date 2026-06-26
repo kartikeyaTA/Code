@@ -45,7 +45,8 @@ resource pipelineKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
   scope: keyVault
   properties: {
     principalId: pipelineServicePrincipalObjectId
-    roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/b86a8fe4-44ce-4948-aee5-eccb2c155cd7'    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets Officer
+    principalType: 'ServicePrincipal'
   }
 }
 
