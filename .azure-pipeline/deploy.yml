@@ -15,6 +15,7 @@ variables:
   keyVaultName: 'testkaraichat2dev'
   resourceGroup: 'ai-chatbot-dev2'
   containerAppName: 'ca-chat-backend-dev'
+  containerAppEnv: 'aca-env-chat-dev' # Explicitly setting this fixes the 'undefined' parsing bug
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -56,22 +57,34 @@ stages:
             --name "vault-secret" \
             --value "$(Build.BuildId)"
 
-    # 3. Native Azure Container App Deployment (Handles Create/Update automatically)
-    - task: AzureContainerApps@1
-      displayName: 'Deploy to Azure Container Apps'
+    # 3. Clean CLI Deployment (Bypasses the buggy container app wrapper completely)
+    - task: AzureCLI@2
+      displayName: 'Deploy to Azure Container Apps via Native CLI'
       inputs:
         azureSubscription: '$(azureServiceConnection)'
-        imageToDeploy: '$(acrName).azurecr.io/$(imageRepository):$(tag)'
-        containerAppName: '$(containerAppName)'
-        resourceGroup: '$(resourceGroup)'
-        
-        # Fixed to target your container's port 80 natively
-        targetPort: '80' 
-        
-        # Kept inline on a single line to completely avoid the URL format error
-        secrets: 'vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret'
-        
-        envVariables: |
-          AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)
-          MY_DUMMY_SECRET=secretref:vault-secret
-          STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Checking if Container App $(containerAppName) exists..."
+          APP_EXISTS=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query name -o tsv 2>/dev/null || echo "not_found")
+          
+          if [ "$APP_EXISTS" == "not_found" ]; then
+            echo "App not found. Performing full creation sequence..."
+            az containerapp create \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --environment "$(containerAppEnv)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --target-port 80 \
+              --ingress external \
+              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+          else
+            echo "App found. Upgrading existing container app seamlessly..."
+            az containerapp update \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
+          fi
