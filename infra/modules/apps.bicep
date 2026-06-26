@@ -49,7 +49,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'vault-secret'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/my-dummy-secret'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/vault-secret'
           identity: appIdentity.id
         }
       ]
