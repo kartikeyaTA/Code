@@ -83,11 +83,19 @@ stages:
               --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
               --env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
           else
-            echo "App found. Upgrading existing container app seamlessly..."
+            echo "App found. Running dedicated secret update sequence..."
+            az containerapp secret set \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret"
+
+            echo "Upgrading existing container app image and application state seamlessly..."
             az containerapp update \
               --name "$(containerAppName)" \
               --resource-group "$(resourceGroup)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --set-secrets "vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret" \
-              --set-env-vars "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscriptsdev"
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --registry-server "$(acrName).azurecr.io" \
+              --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=secretref:vault-secret" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)"
           fi
