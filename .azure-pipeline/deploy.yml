@@ -1,0 +1,75 @@
+trigger:
+  - dev
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureServiceConnection: 'azure-service-connection'
+  dockerRegistryConnection: 'acr-docker-service-connection' 
+  subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
+  acrName: 'aichatregistrydev' 
+  imageRepository: 'core-service'
+  tag: '$(Build.BuildId)'
+  keyVaultName: 'testkaraichat2dev'
+  resourceGroup: 'ai-chatbot-dev2'
+  containerAppName: 'ca-chat-backend-dev'
+  envName: 'dev'
+  managedIdentityName: 'id-app-gateway-dev' 
+
+stages:
+- stage: BuildAndDeploy
+  displayName: 'Build, Push, Set Secrets, and Deploy'
+  jobs:
+  - job: PipelineWorkflow
+    steps:
+    
+    # 1. Build and Push Docker Image to ACR
+    - task: Docker@2
+      displayName: 'Build and Push Image to ACR'
+      inputs:
+        containerRegistry: '$(dockerRegistryConnection)'
+        repository: '$(imageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+          latest
+
+    # 2. Dynamically fetch Managed Identity Client ID & Set Key Vault Secret
+    - task: AzureCLI@2
+      displayName: 'Fetch Identity and Update Key Vault'
+      name: FetchAzureData
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Fetching Client ID for identity $(managedIdentityName)..."
+          CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
+          
+          # CRITICAL FIX: Convert the bash variable into a pipeline variable
+          echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
+          
+          az keyvault secret set \
+            --vault-name "$(keyVaultName)" \
+            --name "vault-secret" \
+            --value "$(Build.BuildId)"
+
+    # 3. Deploy to Azure Container Apps
+    - task: AzureContainerApps@1
+      displayName: 'Deploy to Azure Container Apps'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        imageToDeploy: '$(acrName).azurecr.io/$(imageRepository):$(tag)'
+        containerAppName: '$(containerAppName)'
+        resourceGroup: '$(resourceGroup)'
+        
+        secrets: |
+          vault-secret=keyvault://$(keyVaultName).vault.azure.net/secrets/vault-secret
+        
+        # CRITICAL FIX: Use the pipeline syntax $(DYNAMIC_CLIENT_ID) here
+        envVariables: |
+          AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)
+          MY_DUMMY_SECRET=secretref:vault-secret
+          STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)
