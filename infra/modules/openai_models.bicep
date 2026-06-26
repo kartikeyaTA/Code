@@ -19,7 +19,9 @@ resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
     model: {
       format: 'OpenAI'
       name: 'gpt-4o'
-      version: '2024-11-20' // Utilizing a stable enterprise version stamp
+      version: '2024-08-06'
     }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable' // Automatically handles roll-forward
+    raiPolicyName: 'Microsoft.Default'
   }
 }
