@@ -3,7 +3,7 @@ metadata description = 'Provisions the private Azure Container Registry for Dock
 param envName string
 param location string 
 param logAnalyticsWorkspaceId string // Required to stream metric telemetry
-
+param managedIdentityName string
 var acrName = 'aichatregistry${envName}'
 
 // 1. Azure Container Registry Definition
@@ -45,6 +45,19 @@ resource acrDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-previe
   }
 }
 
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: managedIdentityName
+}
+
+resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerRegistry.id, managedIdentity.id, acrPullRoleDefinitionId)
+  scope: containerRegistry
+  properties: {
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleDefinitionId)
+    principalType: 'ServicePrincipal'
+  }
+}
 
 // Export credentials for downstream Azure Container App environment tracking
 output registryId string = containerRegistry.id

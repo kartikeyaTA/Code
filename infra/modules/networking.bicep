@@ -32,21 +32,23 @@ resource apimNsg 'Microsoft.Network/networkSecurityGroups@2023-11-01' = {
       }
       // ◄ FIXED: Allows the upstream Web Application Firewall to cross subnet boundaries over Web Channels
       {
-        name: 'Allow_WAF_to_APIM_Inbound'
-        properties: {
-          description: 'Allows the public-facing App Gateway WAF subnet to pass through incoming traffic to the APIM proxy tier.'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRanges: [
+          name: 'Allow_WAF_to_APIM_Inbound'
+          properties: {
+            description: 'Allows inbound HTTPS traffic from the Internet service tag directly to the Virtual Network.'
+            protocol: 'Tcp'
+            sourcePortRange: '*'
+            // 1. Changes port array to a single string parameter for port 443
+            destinationPortRanges: [
             '80'
             '443'
-          ]
-          sourceAddressPrefix: '10.0.1.0/24'       // Explicit route from your snet-agw layer
-          destinationAddressPrefix: '10.0.2.0/24'  // Targeting your internal snet-apim cluster
-          access: 'Allow'
-          priority: 110
-          direction: 'Inbound'
-        }
+            ]
+            // 2. Swaps local VNet subnet strings to official platform Service Tags
+            sourceAddressPrefix: 'Internet'
+            destinationAddressPrefix: 'VirtualNetwork'
+            access: 'Allow'
+            priority: 110
+            direction: 'Inbound'
+          }
       }
     ]
   }
@@ -105,9 +107,33 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         name: 'snet-apim'
         properties: {
           addressPrefix: '10.0.2.0/24' 
+          defaultOutboundAccess: false
           networkSecurityGroup: {
             id: apimNsg.id
           }
+          natGateway: {
+            id: natGateway.id
+          }
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.Sql'
+            }
+            {
+              service: 'Microsoft.Storage'
+            }
+            {
+              service: 'Microsoft.AzureActiveDirectory'
+            }
+            {
+              service: 'Microsoft.ServiceBus' // ◄ Corrected standard spelling from 'StoageBus'
+            }
+            {
+              service: 'Microsoft.KeyVault'    // ◄ Corrected standard spelling from 'Vault'
+            }
+            {
+              service: 'Microsoft.EventHub'
+            }
+          ]
         }
       }
       {

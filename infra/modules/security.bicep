@@ -55,4 +55,5 @@ output keyVaultId string = keyVault.id
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output appGatewayIdentityId string = appGatewayIdentity.id
+output appGatewayIdentityName string = appGatewayIdentity.name
 output appGatewayIdentityPrincipalId string = appGatewayIdentity.properties.principalId
