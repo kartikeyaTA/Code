@@ -44,26 +44,29 @@ with AIProjectClient(
             current_definition.instructions = new_instructions
 
         print(f"Pushing modified prompt configuration as a new version...")
-        new_version = client.agents.create_version(
+        # ◄ FIXED: Method name corrected to create_agent_version
+        new_version = client.agents.create_agent_version(
             agent_name=AGENT_NAME,
             definition=current_definition
         )
         print(f"🎯 Success! Created new version '{new_version.version}' for '{AGENT_NAME}'.")
+        print(f"🆔 AGENT RESOURCE ID: {existing_agent.id}")
 
     except Exception as e:
         # SCENARIO B: Agent does not exist (First deployment fallback)
-        if "not found" in str(e).lower() or "404" in str(e):
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "404" in error_msg:
             print(f"Agent '{AGENT_NAME}' does not exist yet. Performing initial baseline creation...")
             
-            # Create a brand-new baseline agent definition template 
-            # Note: Adjust tools based on your system requirements
-            new_agent = client.agents.create(
+            # ◄ FIXED: Method name corrected to create_agent
+            new_agent = client.agents.create_agent(
                 agent_name=AGENT_NAME,
                 model=DEFAULT_MODEL,
                 instructions=new_instructions,
-                tools=[]  # Add code_interpreter or other tools if needed
+                tools=[]  
             )
             print(f"🚀 Success! Initial baseline agent '{AGENT_NAME}' created cleanly.")
+            print(f"🆔 AGENT RESOURCE ID: {new_agent.id}")
         else:
             print(f"CRITICAL ERROR during deployment loop: {e}")
             sys.exit(1)
