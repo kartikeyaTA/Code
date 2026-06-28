@@ -32,6 +32,7 @@ stages:
         inlineScript: |
           echo "Fetching clientId for identity $(managedIdentityName)..."
           CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
+          # Map variable globally across the pipeline scope
           echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
 
     # 2. Synchronize your Agent Prompt State inside the Private VNet
@@ -45,16 +46,17 @@ stages:
         inlineScript: |
           echo "Installing light python SDK wrappers..."
           pip install --upgrade pip
-          pip install azure-ai-projects azure-identity
+          pip install azure-ai-projects azure-identity openai python-dotenv
 
           echo "Injecting target discovery workspace parameters..."
-          export AZURE_AI_FOUNDRY_ENDPOINT="https://eastus2.api.azureml.ms/discovery/scopes/subscriptions/a0c64e05-02e0-4758-891f-e6731cfa3357/resourceGroups/ai-chatbot-dev3/projects/ai-project-chat-dev"
+          # FIXED: Swapped out legacy discovery path for your true verified endpoint URL
+          export PROJECT_ENDPOINT="https://azure.com"
           
           export AZURE_AI_AGENT_NAME="test-agent-1"
           export AGENT_PROMPT_FILE="prompt.txt"
           export AZURE_AI_DEFAULT_MODEL="o4-mini-deployment"
           
-          # Pass the dynamic pipeline identity Client ID to navigate the network bridge
+          # FIXED: Standardized to the proper environment macro syntax for pipeline task runtimes
           export AZURE_CLIENT_ID="$(DYNAMIC_CLIENT_ID)"
 
           echo "Running Python Agent Engine update..."

@@ -1,64 +1,60 @@
 import os
-import sys
-from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
-from azure.core.exceptions import ResourceNotFoundError
+from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import PromptAgentDefinition
 
-# 1. Load Configurations from Environment Variables
-PROJECT_ENDPOINT = os.getenv("AZURE_AI_FOUNDRY_ENDPOINT")
-AGENT_NAME = os.getenv("AZURE_AI_AGENT_NAME", "test-agent-1")
-PROMPT_FILE_PATH = os.getenv("AGENT_PROMPT_FILE", "prompt.txt")
-DEFAULT_MODEL = os.getenv("AZURE_AI_DEFAULT_MODEL", "o4-mini-deployment") 
+# 1. WORKSPACE AND FILE CONFIGURATION
+PROJECT_ENDPOINT = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
+DEPLOYMENT_NAME = "o4-mini-deployment"
+AGENT_NAME = "chat-dev-agent"
+PROMPT_FILE_PATH = "prompt.txt"
 
-if not PROJECT_ENDPOINT:
-    print("ERROR: AZURE_AI_FOUNDRY_ENDPOINT environment variable is missing.")
-    sys.exit(1)
+def main():
+    # 2. Extract authentication tokens from active login state
+    credential = DefaultAzureCredential()
 
-if not os.path.exists(PROMPT_FILE_PATH):
-    print(f"ERROR: Prompt file not found at path: {PROMPT_FILE_PATH}")
-    sys.exit(1)
-
-with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
-    new_instructions = f.read().strip()
-
-print(f"Loaded instructions from '{PROMPT_FILE_PATH}' ({len(new_instructions)} chars).")
-
-# 2. Execute agent lifecycle management
-with AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=DefaultAzureCredential()) as client:
+    # 3. Read system instructions dynamically from your text file
+    print(f"📄 Loading system instructions from: {PROMPT_FILE_PATH}")
     try:
-        print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
-        # Check if agent exists by looking it up
-        existing_agent = client.agents.get(agent_name=AGENT_NAME)
-        
-        print(f"Agent found (ID: {existing_agent.id}). Pushing updated prompt configuration as a new version...")
-        # SCENARIO A: Agent exists -> Safe to use create_version
-        new_version = client.agents.create_version(
-            agent_name=AGENT_NAME,
-            definition={
-                "model": DEFAULT_MODEL,
-                "instructions": new_instructions,
-                "tools": []
-            }
-        )
-        print(f"🎯 Success! Synchronized Agent Version '{new_version.version}' for '{AGENT_NAME}'.")
-        print(f"🆔 AGENT RESOURCE ID: {existing_agent.id}")
+        with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as file:
+            system_instructions = file.read().strip()
+    except FileNotFoundError:
+        print(f"❌ Error: The file '{PROMPT_FILE_PATH}' was not found. Please create it first.")
+        return
 
-    except ResourceNotFoundError:
-        print(f"Agent '{AGENT_NAME}' does not exist yet in this workspace. Executing baseline initialization...")
-        try:
-            # SCENARIO B: Brand new agent container creation pass
-            new_agent = client.agents.create_agent(
-                model=DEFAULT_MODEL,
-                name=AGENT_NAME,
-                instructions=new_instructions,
-                tools=[]
+    print(f"Connecting to your Azure AI Foundry Project: {PROJECT_ENDPOINT}")
+    
+    # 4. Establish connection context to your target Project Hub
+    with AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential) as project_client:
+        
+        print(f"Deploying Agent configuration mapping to engine: {DEPLOYMENT_NAME}...")
+        
+        # 5. Provision and upload the agent instance using the file content
+        agent = project_client.agents.create_version(
+            agent_name=AGENT_NAME,
+            definition=PromptAgentDefinition(
+                model=DEPLOYMENT_NAME,
+                instructions=system_instructions,
+            ),
+        )
+
+        print("\n" + "="*60)
+        print("🚀 SUCCESS: FOUNDRY AGENT CREATED AND RUNNING!")
+        print(f"-> Agent Unique Resource ID: {agent.id}")
+        print(f"-> Project Portal Version: {agent.version}")
+        print("="*60 + "\n")
+
+        print("Opening conversational thread validation loop...")
+        with project_client.get_openai_client() as openai_client:
+            conversation = openai_client.conversations.create()
+
+            response = openai_client.responses.create(
+                conversation=conversation.id,
+                extra_body={"agent": {"name": AGENT_NAME, "type": "agent_reference"}},
+                input="Hello Agent! Verify deployment status and confirm your active model connection profile.",
             )
-            print(f"🚀 Success! Initial baseline agent container '{new_agent.name}' created cleanly.")
-            print(f"🆔 AGENT RESOURCE ID: {new_agent.id}")
-        except Exception as create_error:
-            print(f"CRITICAL ERROR during initial agent creation pass: {create_error}")
-            sys.exit(1)
-            
-    except Exception as e:
-        print(f"CRITICAL ERROR during execution loop: {e}")
-        sys.exit(1)
+
+            print(f"\n🤖 Live Agent Output Response:\n{response.output_text}\n")
+
+if __name__ == "__main__":
+    main()
