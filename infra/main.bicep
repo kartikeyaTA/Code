@@ -56,6 +56,9 @@ module security './modules/security.bicep' = {
     envName: envName
     location: location
   }
+  dependsOn: [
+    storage 
+  ]
 }
 
 module telemetry './modules/telemetry.bicep' = {
