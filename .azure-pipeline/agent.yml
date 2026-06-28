@@ -6,9 +6,8 @@ trigger:
     include:
       - Agent/*
 
-# 🌟 FIXED: Points directly to your internal VNet self-hosted agent pool
 pool:
-  name: 'Default' # ◄ Replace with your exact agent pool name if it isn't 'Default'
+  name: 'Default' 
 
 variables:
   azureServiceConnection: 'azure-service-connection'
@@ -41,8 +40,9 @@ stages:
         scriptLocation: 'inlineScript'
         workingDirectory: '$(Build.SourcesDirectory)/Agent'
         inlineScript: |
-          pip install --upgrade pip
-          pip install azure-ai-projects azure-identity openai python-dotenv
+          # 🌟 FIXED: Appended --break-system-packages directly to the installation tasks
+          pip install --upgrade pip --break-system-packages
+          pip install azure-ai-projects azure-identity openai python-dotenv --break-system-packages
 
           # Use the structural connection string layout to pass through firewalls
           export AZURE_AI_CONNECTION_STRING="eastus2.api.azureml.ms;a0c64e05-02e0-4758-891f-e6731cfa3357;ai-chatbot-dev3;ai-project-chat-dev"
