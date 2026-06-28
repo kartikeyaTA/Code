@@ -7,7 +7,7 @@ from azure.ai.projects.models import PromptAgentDefinition
 
 # 1. Structural parameters explicitly mapped to your architecture details
 # 🌟 FIXED: Swapped to the native v2.x Foundry endpoint format matching your private DNS zone
-ENDPOINT_URL = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
+ENDPOINT_URL = "https://ai-hub-chat-dev.privatelink.services.ai.azure.com/api/projects/ai-project-chat-dev"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
