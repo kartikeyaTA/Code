@@ -9,7 +9,7 @@ from azure.ai.projects.models import PromptAgentDefinition
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
 # 🌟 PERMANENT FIX: Target the explicit private link workspace host matching your 10.0.6.6 endpoint certificate
-ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/subscriptions/a0c64e05-02e0-4758-891f-e6731cfa3357/resourceGroups/ai-chatbot-dev3/providers/Microsoft.MachineLearningServices/workspaces/ai-project-chat-dev"
+ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/discovery/workspaces/306800e0-c3d3-4ba7-80f0-895debabe366"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
