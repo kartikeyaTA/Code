@@ -5,7 +5,6 @@ from azure.storage.blob import BlobServiceClient
 
 app = FastAPI(title="Azure Core Service")
 
-# 1. Fetch the dummy secret injected as an Environment Variable by Container Apps
 SECRET_VAL = os.getenv("MY_DUMMY_SECRET", "Secret not injected yet")
 
 # 2. Storage Account Target (Passed as an Env Var)
