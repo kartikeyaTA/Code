@@ -5,14 +5,18 @@ from azure.identity import DefaultAzureCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.ai.projects.models import PromptAgentDefinition
 
-# 1. Structural parameters explicitly mapped to your architecture details
-# We use the semicolon connection string format to let the SDK naturally translate internal routes
-CONNECTION_STRING = "eastus2.api.azureml.ms;a0c64e05-02e0-4758-891f-e6731cfa3357;ai-chatbot-dev3;ai-project-chat-dev"
+# ============================================================================
+# 1. PARAMETERS & CONFIGURATION
+# ============================================================================
+# 🌟 PERMANENT FIX: Target the explicit private link workspace host matching your 10.0.6.6 endpoint certificate
+ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/api/projects/ai-project-chat-dev"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
 
-# 2. Local Safety Check: Ensure the local workspace prompt file exists
+# ============================================================================
+# 2. FILE SYSTEM SAFETY CHECKS
+# ============================================================================
 if not os.path.exists(PROMPT_FILE_PATH):
     print(f"ERROR: Local prompt definition file not found at path: {PROMPT_FILE_PATH}")
     sys.exit(1)
@@ -22,13 +26,13 @@ with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
 
 print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instructions)} chars).")
 
-# 3. Securely initialize client using standard v2.x constructor parameters
-print("Initializing secured connection to project data-plane via connection string...")
+# ============================================================================
+# 3. SECURE CLIENT INITIALIZATION & ORCHESTRATION LOOP
+# ============================================================================
+print("Initializing secured connection to project data-plane via Private AzureML Route...")
 with AIProjectClient(
-    endpoint=None,                  # 🌟 FIX: Overrides the required positional argument cleanly
-    conn_str=CONNECTION_STRING,     # 🌟 FIX: Passes the exact connection string to auto-resolve routes
-    credential=DefaultAzureCredential(),
-    connection_verify=False         # Bypasses the VNet SSL certificate validation loop
+    endpoint=ENDPOINT_URL,  # ◄ 🌟 Valid URL passed directly
+    credential=DefaultAzureCredential()
 ) as client:
     try:
         print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
