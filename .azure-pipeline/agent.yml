@@ -52,7 +52,7 @@ stages:
           
           export AZURE_AI_AGENT_NAME="test-agent-1"
           export AGENT_PROMPT_FILE="prompt.txt"
-          export AZURE_AI_DEFAULT_MODEL="o4-mini"
+          export AZURE_AI_DEFAULT_MODEL="o4-mini-deployment"
           
           # Pass the dynamic pipeline identity Client ID to navigate the network bridge
           export AZURE_CLIENT_ID="$(DYNAMIC_CLIENT_ID)"

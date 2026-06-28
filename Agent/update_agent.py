@@ -9,7 +9,7 @@ from azure.ai.projects.models import PromptAgentDefinition
 PROJECT_ENDPOINT = os.getenv("AZURE_AI_FOUNDRY_ENDPOINT")
 AGENT_NAME = os.getenv("AZURE_AI_AGENT_NAME", "test-agent-1")
 PROMPT_FILE_PATH = os.getenv("AGENT_PROMPT_FILE", "prompt.txt")
-DEFAULT_MODEL = os.getenv("AZURE_AI_DEFAULT_MODEL", "o4-mini")
+DEFAULT_MODEL = os.getenv("AZURE_AI_DEFAULT_MODEL", "o4-mini-deployment")
 
 if not PROJECT_ENDPOINT:
     print("ERROR: AZURE_AI_FOUNDRY_ENDPOINT environment variable is missing.")
