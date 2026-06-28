@@ -28,7 +28,7 @@ print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instruct
 
 # 3. Securely initialize connection within the Private VNet Plane
 print("Initializing secured connection to project data-plane via AzureML route...")
-with AIProjectClient.from_connection_string(
+with AIProjectClient.from_connection(
     conn_str=CONNECTION_STRING,
     credential=DefaultAzureCredential()
 ) as client:
