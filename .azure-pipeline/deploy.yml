@@ -2,6 +2,9 @@ trigger:
   branches:
     include:
       - dev
+  paths:
+    include:
+      - Backend/*
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -13,8 +16,8 @@ variables:
   acrName: 'aichatregistrydev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'testkaraichat2dev'
-  resourceGroup: 'ai-chatbot-dev2'
+  keyVaultName: 'testkaraichat3dev'
+  resourceGroup: 'ai-chatbot-dev3'
   containerAppName: 'ca-chat-backend-dev'
   containerAppEnv: 'aca-env-chat-dev' 
   envName: 'dev'
@@ -34,7 +37,8 @@ stages:
         containerRegistry: '$(dockerRegistryConnection)'
         repository: '$(imageRepository)'
         command: 'buildAndPush'
-        Dockerfile: '**/Dockerfile'
+        Dockerfile: 'Backend/Dockerfile' 
+        buildContext: 'Backend'
         tags: |
           $(tag)
           latest
@@ -57,7 +61,7 @@ stages:
           
           az keyvault secret set \
             --vault-name "$(keyVaultName)" \
-            --name "vault-secret1" \
+            --name "vault-secret2" \
             --value "$(Build.BuildId)"          
 
     # 3. Secure Deployment via Native CLI with Identity Fixed
@@ -75,7 +79,7 @@ stages:
           
           # 1. ◄ FIX A: Ensure secret is fetched fresh inside the active shell scope
           echo "Fetching secret token..."
-          SECRET_VAL=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "vault-secret1" --query "value" -o tsv)
+          SECRET_VAL=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "vault-secret2" --query "value" -o tsv)
           echo "Secret fetched successfully. $SECRET_VAL"
           # 2. APPLICATION DOES NOT EXIST: Create from scratch
           if [ "$APP_STATE" == "not_found" ]; then
