@@ -6,8 +6,9 @@ trigger:
     include:
       - Agent/*
 
+# 🌟 FIXED: Points directly to your internal VNet self-hosted agent pool
 pool:
-  vmImage: 'ubuntu-latest'
+  name: 'Default' # ◄ Replace with your exact agent pool name if it isn't 'Default'
 
 variables:
   azureServiceConnection: 'azure-service-connection'
