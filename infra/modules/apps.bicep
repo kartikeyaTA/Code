@@ -10,10 +10,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing 
   name: 'stachattranscripts${envName}'
 }
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: 'cog-openai-chat2-${envName}'
+  name: 'cog-openai-chat3-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: 'testkaraichat2${envName}'
+  name: 'testkaraichat3${envName}'
 }
 
 // Reference to your core User identity to avoid Entra ID race conditions
@@ -48,8 +48,8 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
       // Uses the pre-assigned identity block to query Key Vault without a replication lag timeout
       secrets: [
         {
-          name: 'vault-secret1'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/vault-secret1'
+          name: 'vault-secret2'
+          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/vault-secret2'
           identity: appIdentity.id
         }
       ]
@@ -73,7 +73,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'MY_DUMMY_SECRET'
-              secretRef: 'vault-secret1'
+              secretRef: 'vault-secret2'
             }
             {
               name: 'STORAGE_ACCOUNT_NAME'

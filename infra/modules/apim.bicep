@@ -12,7 +12,7 @@ param chatBackendUrl string
 param publisherEmail string 
 param publisherName string 
 
-var apimName = 'apim-gateway-chat1-${envName}'
+var apimName = 'apim-gateway-chat2-${envName}'
 
 // ============================================================================
 // 1. PRIVATE VNET-INTEGRATED APIM ENGINE
