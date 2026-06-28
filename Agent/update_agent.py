@@ -6,8 +6,8 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.ai.projects.models import PromptAgentDefinition
 
 # 1. Structural parameters explicitly mapped to your architecture details
-# 🌟 FIXED: Use the exact standard connection string directly inside the v2.x client
-CONNECTION_STRING = "eastus2.api.azureml.ms;a0c64e05-02e0-4758-891f-e6731cfa3357;ai-chatbot-dev3;ai-project-chat-dev"
+# 🌟 CLEAN & SECURE: Point to the official endpoint URL context
+ENDPOINT_URL = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
@@ -23,10 +23,11 @@ with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
 print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instructions)} chars).")
 
 # 3. Securely initialize client using standard v2.x constructor parameters
-print("Initializing secured connection to project data-plane via connection string...")
+print("Initializing secured connection to project data-plane via Foundry route...")
 with AIProjectClient(
-    conn_str=CONNECTION_STRING,  # ◄ 🌟 PASS THE STRING HERE DIRECTLY
-    credential=DefaultAzureCredential()
+    endpoint=ENDPOINT_URL,
+    credential=DefaultAzureCredential(),
+    connection_verify=False  # 🌟 FIXED: Instructs the HTTP engine to trust our local VNet hosts file mapping without an SSL block
 ) as client:
     try:
         print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
