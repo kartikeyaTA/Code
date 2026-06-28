@@ -104,6 +104,15 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         }
       }
       {
+        name: 'snet-devops-runners'
+        properties: {
+          addressPrefix: '10.0.7.0/24' // Dedicated segment for deployment runners
+          natGateway: {
+            id: natGateway.id // Inherits the secure outbound NAT Gateway IP
+          }
+        }
+      }
+      {
         name: 'snet-apim'
         properties: {
           addressPrefix: '10.0.2.0/24' 
@@ -174,3 +183,4 @@ output apimSubnetId string = '${vnet.id}/subnets/snet-apim'
 output acaSubnetId string = '${vnet.id}/subnets/snet-container-apps'
 output endpointsSubnetId string = '${vnet.id}/subnets/snet-private-endpoints'
 output natPublicIpAddress string = publicIP.properties.ipAddress
+output devopsSubnetId string = '${vnet.id}/subnets/snet-devops-runners'

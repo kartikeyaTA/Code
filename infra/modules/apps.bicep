@@ -42,6 +42,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
       activeRevisionsMode: 'Single'
       ingress: { 
         external: false 
+        allowInsecure: true
         targetPort: 80 
         transport: 'http' 
       }

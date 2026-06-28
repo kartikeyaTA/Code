@@ -56,6 +56,9 @@ module security './modules/security.bicep' = {
     envName: envName
     location: location
   }
+  dependsOn: [
+    storage 
+  ]
 }
 
 module telemetry './modules/telemetry.bicep' = {
@@ -76,6 +79,17 @@ module storage './modules/storage.bicep' = {
     vnetId: network.outputs.vnetId
     endpointsSubnetId: network.outputs.endpointsSubnetId
   }
+}
+
+module openAiModels './modules/openai_models.bicep' = {
+  name: 'openai-models-deployment'
+  scope: rg
+  params: {
+    cognitiveAccountName: aifoundry.outputs.openAiAccountName
+  }
+  dependsOn: [
+    aifoundry 
+  ]
 }
 
 module registry './modules/registry.bicep' = {
@@ -102,16 +116,6 @@ module aifoundry './modules/ai_foundry.bicep' = {
   }
 }
 
-module openAiModels './modules/openai_models.bicep' = {
-  name: 'openai-models-deployment'
-  scope: rg
-  params: {
-    cognitiveAccountName: aifoundry.outputs.openAiAccountName
-  }
-  dependsOn: [
-    aifoundry 
-  ]
-}
 
 module containerEnv './modules/container_env.bicep' = {
   name: 'container-env-deployment'
@@ -123,65 +127,11 @@ module containerEnv './modules/container_env.bicep' = {
   }
 }
 
-// ============================================================================
-// 3. CORE SERVICE APPLICATIONS
-// ============================================================================
-module apps './modules/apps.bicep' = {
-  name: 'apps-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    environmentId: containerEnv.outputs.environmentId 
-    registryLoginServer: registry.outputs.registryLoginServer 
-  }
-  dependsOn: [
-    security
-    aifoundry
-    openAiModels
-  ]
-}
 
-// ============================================================================
-// 4. PRIVATE API MANAGEMENT INGRESS GATEWAY
-// ============================================================================
-module apim './modules/apim.bicep' = {
-  name: 'apim-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    apimSubnetId: network.outputs.apimSubnetId // Deploys cleanly inside private subnet block
-    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
-    chatBackendUrl: apps.outputs.chatBackendFqdn // Dynamically maps to our verified python URL output
-    publisherEmail: publisherEmail
-    publisherName: publisherName
-    containerenvIP: containerEnv.outputs.environmentStaticIp
-  }
-  dependsOn: [
-    apps
-  ]
-}
 
-// ============================================================================
-// 5. PUBLIC WEB APPLICATION FIREWALL (WAF) INGRESS EDGE
-// ============================================================================
-module waf './modules/app_gateway.bicep' = {
-  name: 'waf-deployment'
-  scope: rg
-  params: {
-    envName: envName
-    location: location
-    agwSubnetId: network.outputs.agwSubnetId
-    appGatewayIdentityId: security.outputs.appGatewayIdentityId // Uses pre-warmed framework identity
-    apimPrivateIpAddress: apim.outputs.apimPrivateIpAddress // Loops directly to the internal APIM instance
-    apimGatewayUrl: apim.outputs.apimGatewayUrl
-    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
-  }
-  dependsOn: [
-    apim
-  ]
-}
+
+
+
 
 // ============================================================================
 // GLOBAL ARCHITECTURAL OUTPUT TRACKING
@@ -192,5 +142,4 @@ output keyVaultUri string = security.outputs.keyVaultUri
 output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
 output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
-output chatBackendUrl  string = apps.outputs.chatBackendFqdn
-// Entry points for external web browsers
+
