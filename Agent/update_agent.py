@@ -4,7 +4,8 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 
 # 1. WORKSPACE AND FILE CONFIGURATION
-PROJECT_ENDPOINT = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
+#PROJECT_ENDPOINT = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
+PROJECT_ENDPOINT="https://azure.com"
 DEPLOYMENT_NAME = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
