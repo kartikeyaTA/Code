@@ -3,59 +3,38 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import PromptAgentDefinition
 
-# 1. WORKSPACE AND FILE CONFIGURATION
-#PROJECT_ENDPOINT = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
-PROJECT_ENDPOINT="https://azure.com"
-DEPLOYMENT_NAME = "o4-mini-deployment"
-AGENT_NAME = "chat-dev-agent"
-PROMPT_FILE_PATH = "prompt.txt"
-
 def main():
-    # 2. Extract authentication tokens from active login state
+    # 1. Read variables directly from the pipeline runtime export
+    connection_string = os.environ["AZURE_AI_CONNECTION_STRING"]
+    agent_name = os.environ["AZURE_AI_AGENT_NAME"]
+    model_name = os.environ["AZURE_AI_DEFAULT_MODEL"]
+    prompt_file = os.environ["AGENT_PROMPT_FILE"]
+
+    # 2. Read prompt instructions from file artifact
+    print(f"📄 Loading system instructions from: {prompt_file}")
+    with open(prompt_file, "r", encoding="utf-8") as f:
+        system_instructions = f.read().strip()
+
+    # 3. Authenticate using the pipeline Managed Identity
     credential = DefaultAzureCredential()
 
-    # 3. Read system instructions dynamically from your text file
-    print(f"📄 Loading system instructions from: {PROMPT_FILE_PATH}")
-    try:
-        with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as file:
-            system_instructions = file.read().strip()
-    except FileNotFoundError:
-        print(f"❌ Error: The file '{PROMPT_FILE_PATH}' was not found. Please create it first.")
-        return
-
-    print(f"Connecting to your Azure AI Foundry Project: {PROJECT_ENDPOINT}")
+    print(f"Connecting to Azure AI Foundry via connection string context...")
     
-    # 4. Establish connection context to your target Project Hub
-    with AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential) as project_client:
+    # 4. Use the connection string factory to bypass URL blocks
+    with AIProjectClient.from_connection_string(
+        conn_str=connection_string, 
+        credential=credential
+    ) as project_client:
         
-        print(f"Deploying Agent configuration mapping to engine: {DEPLOYMENT_NAME}...")
-        
-        # 5. Provision and upload the agent instance using the file content
+        print(f"Deploying Agent configuration mapping to engine: {model_name}...")
         agent = project_client.agents.create_version(
-            agent_name=AGENT_NAME,
+            agent_name=agent_name,
             definition=PromptAgentDefinition(
-                model=DEPLOYMENT_NAME,
+                model=model_name,
                 instructions=system_instructions,
             ),
         )
-
-        print("\n" + "="*60)
-        print("🚀 SUCCESS: FOUNDRY AGENT CREATED AND RUNNING!")
-        print(f"-> Agent Unique Resource ID: {agent.id}")
-        print(f"-> Project Portal Version: {agent.version}")
-        print("="*60 + "\n")
-
-        print("Opening conversational thread validation loop...")
-        with project_client.get_openai_client() as openai_client:
-            conversation = openai_client.conversations.create()
-
-            response = openai_client.responses.create(
-                conversation=conversation.id,
-                extra_body={"agent": {"name": AGENT_NAME, "type": "agent_reference"}},
-                input="Hello Agent! Verify deployment status and confirm your active model connection profile.",
-            )
-
-            print(f"\n🤖 Live Agent Output Response:\n{response.output_text}\n")
+        print(f"🚀 SUCCESS! Sync complete. Agent ID: {agent.id} (Version: {agent.version})")
 
 if __name__ == "__main__":
     main()

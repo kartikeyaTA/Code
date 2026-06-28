@@ -21,7 +21,6 @@ stages:
   - job: PromptSync
     steps:
     
-    # 1. Fetch the Managed Identity Client ID dynamically for VNet Auth
     - task: AzureCLI@2
       displayName: 'Fetch Managed Identity Context'
       name: FetchIdentity
@@ -30,12 +29,9 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          echo "Fetching clientId for identity $(managedIdentityName)..."
           CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
-          # Map variable globally across the pipeline scope
           echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
 
-    # 2. Synchronize your Agent Prompt State inside the Private VNet
     - task: AzureCLI@2
       displayName: 'Execute Agent Prompt Upgrade'
       inputs:
@@ -44,20 +40,15 @@ stages:
         scriptLocation: 'inlineScript'
         workingDirectory: '$(Build.SourcesDirectory)/Agent'
         inlineScript: |
-          echo "Installing light python SDK wrappers..."
           pip install --upgrade pip
           pip install azure-ai-projects azure-identity openai python-dotenv
 
-          echo "Injecting target discovery workspace parameters..."
-          # FIXED: Swapped out legacy discovery path for your true verified endpoint URL
-          export PROJECT_ENDPOINT="https://azure.com"
+          # Use the structural connection string layout to pass through firewalls
+          export AZURE_AI_CONNECTION_STRING="eastus2.api.azureml.ms;a0c64e05-02e0-4758-891f-e6731cfa3357;ai-chatbot-dev3;ai-project-chat-dev"
           
-          export AZURE_AI_AGENT_NAME="test-agent-1"
+          export AZURE_AI_AGENT_NAME="chat-dev-agent"
           export AGENT_PROMPT_FILE="prompt.txt"
           export AZURE_AI_DEFAULT_MODEL="o4-mini-deployment"
-          
-          # FIXED: Standardized to the proper environment macro syntax for pipeline task runtimes
           export AZURE_CLIENT_ID="$(DYNAMIC_CLIENT_ID)"
 
-          echo "Running Python Agent Engine update..."
           python update_agent.py
