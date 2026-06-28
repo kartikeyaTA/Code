@@ -7,7 +7,7 @@ from azure.ai.projects.models import PromptAgentDefinition
 
 # 1. Structural parameters explicitly mapped to your architecture details
 # 🌟 UPDATED: In v2.x, we target the verified, working private discovery route directly
-ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms"
+ENDPOINT_URL = "306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
