@@ -6,8 +6,8 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.ai.projects.models import PromptAgentDefinition
 
 # 1. Structural parameters explicitly mapped to your architecture details
-# 🌟 UPDATED: In v2.x, we target the verified, working private discovery route directly
-ENDPOINT_URL = "306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms"
+# 🌟 FIXED: Swapped to the native v2.x Foundry endpoint format matching your private DNS zone
+ENDPOINT_URL = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
@@ -23,7 +23,7 @@ with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
 print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instructions)} chars).")
 
 # 3. Securely initialize client using v2.x standard constructor within Private VNet
-print("Initializing secured connection to project data-plane via AzureML route...")
+print("Initializing secured connection to project data-plane via Foundry route...")
 with AIProjectClient(
     endpoint=ENDPOINT_URL,
     credential=DefaultAzureCredential()
@@ -48,7 +48,7 @@ with AIProjectClient(
     except ResourceNotFoundError:
         print(f"Agent '{AGENT_NAME}' does not exist yet. Running first-time baseline container creation pass...")
         try:
-            # Provision container shell using our deployed model model configuration
+            # Provision container shell using our deployed model configuration
             new_agent = client.agents.create_agent(
                 model=DEFAULT_MODEL,
                 name=AGENT_NAME,
