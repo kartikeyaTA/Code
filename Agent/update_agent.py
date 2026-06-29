@@ -13,7 +13,6 @@ agent_name = "Agent"
 prompt_file_path = "prompt.txt"
 model_deployment = "gpt-5.4-mini" 
 
-# --- Local prompt.txt File Sync ---
 if not os.path.exists(prompt_file_path):
     print(f"📁 Local Error: '{prompt_file_path}' not found! Creating template file...")
     with open(prompt_file_path, "w", encoding="utf-8") as f:

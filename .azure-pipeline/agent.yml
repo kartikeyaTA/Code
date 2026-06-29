@@ -52,4 +52,4 @@ stages:
           export AZURE_AI_DEFAULT_MODEL="o4-mini-deployment"
           export AZURE_CLIENT_ID="$(DYNAMIC_CLIENT_ID)"
 
-          python update_agent.py
+          python3 update_agent.py
