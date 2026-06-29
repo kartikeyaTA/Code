@@ -4,19 +4,22 @@ from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 
 # ============================================================================
-# 1. PARAMETERS & CONFIGURATION
+# 1. PARSED CONNECTION STRING PARAMETERS (FROM YOUR NETWORKING DATA)
 # ============================================================================
-# 🎯 NATIVE PRIVATE CONNECTION STRING: 
-# Format: "region;subscription_id;resource_group_name;project_name"
-# This bypasses the URL parsing engine entirely while traveling over your VNet link.
-project_connection_string = "eastus2;a0c64e05-02e0-4758-891f-e6731cfa3357;ai-chatbot-dev3;ai-project-chat-dev"
+project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms"
+subscription_id = "a0c64e05-02e0-4758-891f-e6731cfa3357"
+resource_group = "ai-chatbot-dev3"
+project_name = "ai-project-chat-dev"
 
 new_instructions = "PUSHED VIA CODE! Here goes updated instructions......"
 agent_name = "Agent20"
 
-print("Initializing secure private endpoint connection via connection string...")
-with AIProjectClient.from_connection_string(
-        connection_string=project_connection_string,
+print("Initializing secure execution handshake over private link...")
+with AIProjectClient(
+        endpoint=project_endpoint,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group,
+        project_name=project_name,
         credential=DefaultAzureCredential(),
         allow_preview=True
 ) as client:
