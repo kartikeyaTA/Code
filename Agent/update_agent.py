@@ -9,66 +9,41 @@ from azure.ai.projects.models import PromptAgentDefinition
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
 # 🌟 PERMANENT FIX: Target the explicit private link workspace host matching your 10.0.6.6 endpoint certificate
-ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/discovery/workspaces/306800e0-c3d3-4ba7-80f0-895debabe366"
+project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/discovery/workspaces/306800e0-c3d3-4ba7-80f0-895debabe366"
 DEFAULT_MODEL = "o4-mini-deployment"
-AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
+new_instructions = "PUSHED VIA CODE! Here goes updated instructions......"
 
-
-# ============================================================================
-# 2. FILE SYSTEM SAFETY CHECKS
-# ============================================================================
-if not os.path.exists(PROMPT_FILE_PATH):
-    print(f"ERROR: Local prompt definition file not found at path: {PROMPT_FILE_PATH}")
-    sys.exit(1)
-
-with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
-    new_instructions = f.read().strip()
-
-print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instructions)} chars).")
-
-# ============================================================================
-# 3. SECURE CLIENT INITIALIZATION & ORCHESTRATION LOOP
-# ============================================================================
-print("Initializing secured connection to project data-plane via Private AzureML Route...")
 with AIProjectClient(
-    endpoint=ENDPOINT_URL,
-    credential=DefaultAzureCredential()
+        endpoint=project_endpoint,
+        credential=DefaultAzureCredential()
 ) as client:
-    
+    # Note: Use the Agent Name here, not the ID
+    agent_name = "Agent20"
+
     try:
-        print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
-        # 🌟 FIXED: Target the nested stable operation workspace path
-        existing_agent = client.agents.agents.get_agent(agent_id=AGENT_NAME)
-        print(f"Agent found! Existing Resource ID: {existing_agent.id}")
-        
-        # If the agent exists, we update its prompt definitions 
-        print(f"Updating instructions for agent '{AGENT_NAME}'...")
-        updated_agent = client.agents.agents.modify_agent(
-            agent_id=existing_agent.id,
-            model=DEFAULT_MODEL,
-            instructions=new_instructions
+        # 3. Fetch the existing agent to get its current settings
+        print(f"Fetching current configuration for '{agent_name}'...")
+        existing_agent = client.agents.get(agent_name=agent_name)
+
+        # 4. Extract the definition from the latest version
+        current_definition = existing_agent.versions.latest.definition
+
+        # 5. Swap out ONLY the instructions (dynamically preserving model and tools)
+        if isinstance(current_definition, dict):
+            current_definition["instructions"] = new_instructions
+        else:
+            # If the SDK returns it as an object (e.g., PromptAgentDefinition)
+            current_definition.instructions = new_instructions
+
+        # 6. Push the modified definition as a new version
+        new_version = client.agents.create_version(
+            agent_name=agent_name,
+            definition=current_definition
         )
-        print(f"\n🎯 SUCCESS: Updated Agent configuration.")
-        print(f"🆔 AGENT RESOURCE ID: {updated_agent.id}\n")
-        
-    except ResourceNotFoundError:
-        print(f"Agent '{AGENT_NAME}' does not exist yet. Running first-time creation pass...")
-        try:
-            # 🌟 FIXED: Call create_agent inside the correct nested operations layer
-            new_agent = client.agents.agents.create_agent(
-                model=DEFAULT_MODEL,
-                name=AGENT_NAME,
-                instructions=new_instructions,
-                tools=[]
-            )
-            print(f"\n🚀 SUCCESS: Initial baseline agent container '{new_agent.name}' created cleanly.")
-            print(f"🆔 AGENT RESOURCE ID: {new_agent.id}\n")
-            
-        except Exception as create_error:
-            print(f"CRITICAL ERROR during baseline agent execution loop: {create_error}")
-            sys.exit(1)
-            
+
+        print(f"Success! Created new version '{new_version.version}' for '{agent_name}'.")
+        print("Model and tools remained exactly the same; instructions updated from file.")
+
     except Exception as e:
-        print(f"CRITICAL ERROR during infrastructure execution lifecycle: {e}")
-        sys.exit(1)
+        print(f"An error occurred while updating the agent: {e}")
