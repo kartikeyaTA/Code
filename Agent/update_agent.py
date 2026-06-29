@@ -8,18 +8,20 @@ from azure.ai.projects.models import PromptAgentDefinition
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-# 🌟 PERMANENT FIX: Target the explicit private link workspace host matching your 10.0.6.6 endpoint certificate
-project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/discovery/workspaces/306800e0-c3d3-4ba7-80f0-895debabe366"
-DEFAULT_MODEL = "o4-mini-deployment"
-PROMPT_FILE_PATH = "prompt.txt"
+# 🌟 FIXED: Points directly to your project execution endpoint (not the discovery path)
+project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/api/projects/ai-project-chat-dev"
+DEFAULT_MODEL = "gpt-5"
+agent_name = "Agent20"
 new_instructions = "PUSHED VIA CODE! Here goes updated instructions......"
 
+# ============================================================================
+# 2. SECURE CLIENT INITIALIZATION & ORCHESTRATION LOOP
+# ============================================================================
 with AIProjectClient(
         endpoint=project_endpoint,
-        credential=DefaultAzureCredential()
+        credential=DefaultAzureCredential(),
+        allow_preview=True  # 🌟 FIXED: Allows the SDK to read agents created in the new Foundry portal
 ) as client:
-    # Note: Use the Agent Name here, not the ID
-    agent_name = "Agent20"
 
     try:
         # 3. Fetch the existing agent to get its current settings
@@ -42,8 +44,8 @@ with AIProjectClient(
             definition=current_definition
         )
 
-        print(f"Success! Created new version '{new_version.version}' for '{agent_name}'.")
-        print("Model and tools remained exactly the same; instructions updated from file.")
+        print(f"\n🎯 Success! Created new version '{new_version.version}' for '{agent_name}'.")
+        print("Model and tools remained exactly the same; instructions updated from file.\n")
 
     except Exception as e:
         print(f"An error occurred while updating the agent: {e}")
