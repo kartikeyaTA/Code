@@ -7,7 +7,7 @@ from azure.identity import DefaultAzureCredential
 # ============================================================================
 # UNTOUCHED CONFIGURATION SECTION
 # ============================================================================
-project_endpoint = "https://ai-hub-chat-dev.services.ai.azure.com/api/projects/ai-project-chat-dev"
+project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/subscriptions/a0c64e05-02e0-4758-891f-e6731cfa3357/resourceGroups/ai-chatbot-dev3/providers/Microsoft.MachineLearningServices/workspaces/ai-project-chat-dev"
 new_instructions = "PUSHED VIA CODE! Here goes updated instructions......"
 agent_name = "Agent20"
 
