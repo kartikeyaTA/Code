@@ -7,7 +7,7 @@ trigger:
       - Agent/*
 
 pool:
-  name: 'Default' 
+  vmImage: 'ubuntu-latest' 
 
 variables:
   azureServiceConnection: 'azure-service-connection'
