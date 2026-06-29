@@ -13,9 +13,7 @@ ENDPOINT_URL = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.a
 DEFAULT_MODEL = "o4-mini-deployment"
 AGENT_NAME = "chat-dev-agent"
 PROMPT_FILE_PATH = "prompt.txt"
-DEFAULT_MODEL = "o4-mini-deployment"
-AGENT_NAME = "chat-dev-agent"
-PROMPT_FILE_PATH = "prompt.txt"
+
 
 # ============================================================================
 # 2. FILE SYSTEM SAFETY CHECKS
@@ -34,14 +32,23 @@ print(f"Loaded dynamic instructions from '{PROMPT_FILE_PATH}' ({len(new_instruct
 # ============================================================================
 print("Initializing secured connection to project data-plane via Private AzureML Route...")
 with AIProjectClient(
-    endpoint=ENDPOINT_URL,  # ◄ 🌟 Valid URL passed directly
+    endpoint=ENDPOINT_URL,
     credential=DefaultAzureCredential()
 ) as client:
+    
+    # Check if the baseline framework shell container exists
     try:
         print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
         existing_agent = client.agents.get(agent_name=AGENT_NAME)
+        print(f"Agent found! Existing Resource ID: {existing_agent.id}")
+        print(f"Synchronizing modified prompt instructions as a new version...")
         
-        print(f"Agent found! Synchronizing modified prompt instructions as a new version...")
+    except ResourceNotFoundError:
+        print(f"Agent '{AGENT_NAME}' does not exist yet. Running first-time creation pass...")
+        
+    # Execute the build action using the GA compliant SDK method
+    try:
+        # 🌟 FIXED: create_version handles both creating the agent shell and incrementing prompt models
         new_version = client.agents.create_version(
             agent_name=AGENT_NAME,
             definition=PromptAgentDefinition(
@@ -50,25 +57,9 @@ with AIProjectClient(
                 tools=[]
             )
         )
-        print(f"\n🎯 SUCCESS: Incremented Agent to Version: '{new_version.version}'")
-        print(f"🆔 AGENT RESOURCE ID: {existing_agent.id}\n")
+        print(f"\n🎯 SUCCESS: Published Agent Version: '{new_version.version}'")
+        print(f"🆔 AGENT NAME: {new_version.agent_name}\n")
 
-    except ResourceNotFoundError:
-        print(f"Agent '{AGENT_NAME}' does not exist yet. Running first-time baseline container creation pass...")
-        try:
-            new_agent = client.agents.create_agent(
-                model=DEFAULT_MODEL,
-                name=AGENT_NAME,
-                instructions=new_instructions,
-                tools=[]
-            )
-            print(f"\n🚀 SUCCESS: Initial baseline agent container '{new_agent.name}' created cleanly.")
-            print(f"🆔 AGENT RESOURCE ID: {new_agent.id}\n")
-            
-        except Exception as create_error:
-            print(f"CRITICAL ERROR during baseline agent execution loop: {create_error}")
-            sys.exit(1)
-            
     except Exception as e:
-        print(f"CRITICAL ERROR during infrastructure execution lifecycle: {e}")
+        print(f"CRITICAL ERROR during agent execution loop: {e}")
         sys.exit(1)
