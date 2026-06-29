@@ -8,7 +8,7 @@ from azure.ai.projects.models import PromptAgentDefinition # 🎯 IMPORT FOR CRE
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://testing-2-resource.services.ai.azure.com/api/projects/Testing-2'
+project_endpoint = 'https://testing-private-resource.services.ai.azure.com/api/projects/testing-private'
 agent_name = "Agent"
 prompt_file_path = "prompt.txt"
 model_deployment = "gpt-5.4-mini" 
