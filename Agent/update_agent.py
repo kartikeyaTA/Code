@@ -7,7 +7,7 @@ from azure.identity import DefaultAzureCredential
 # ============================================================================
 # UNTOUCHED CONFIGURATION SECTION
 # ============================================================================
-project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/discovery/workspaces/306800e0-c3d3-4ba7-80f0-895debabe366"
+project_endpoint = "https://306800e0-c3d3-4ba7-80f0-895debabe366.workspace.eastus2.api.azureml.ms/api/projects/ai-project-chat-dev"
 new_instructions = "PUSHED VIA CODE! Here goes updated instructions......"
 agent_name = "Agent20"
 
