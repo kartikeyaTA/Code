@@ -36,30 +36,39 @@ with AIProjectClient(
     credential=DefaultAzureCredential()
 ) as client:
     
-    # Check if the baseline framework shell container exists
     try:
         print(f"Searching for existing agent configuration named '{AGENT_NAME}'...")
-        existing_agent = client.agents.get(agent_name=AGENT_NAME)
+        # 🌟 FIXED: Target the nested stable operation workspace path
+        existing_agent = client.agents.agents.get_agent(agent_id=AGENT_NAME)
         print(f"Agent found! Existing Resource ID: {existing_agent.id}")
-        print(f"Synchronizing modified prompt instructions as a new version...")
+        
+        # If the agent exists, we update its prompt definitions 
+        print(f"Updating instructions for agent '{AGENT_NAME}'...")
+        updated_agent = client.agents.agents.modify_agent(
+            agent_id=existing_agent.id,
+            model=DEFAULT_MODEL,
+            instructions=new_instructions
+        )
+        print(f"\n🎯 SUCCESS: Updated Agent configuration.")
+        print(f"🆔 AGENT RESOURCE ID: {updated_agent.id}\n")
         
     except ResourceNotFoundError:
         print(f"Agent '{AGENT_NAME}' does not exist yet. Running first-time creation pass...")
-        
-    # Execute the build action using the GA compliant SDK method
-    try:
-        # 🌟 FIXED: create_version handles both creating the agent shell and incrementing prompt models
-        new_version = client.agents.create_version(
-            agent_name=AGENT_NAME,
-            definition=PromptAgentDefinition(
+        try:
+            # 🌟 FIXED: Call create_agent inside the correct nested operations layer
+            new_agent = client.agents.agents.create_agent(
                 model=DEFAULT_MODEL,
+                name=AGENT_NAME,
                 instructions=new_instructions,
                 tools=[]
             )
-        )
-        print(f"\n🎯 SUCCESS: Published Agent Version: '{new_version.version}'")
-        print(f"🆔 AGENT NAME: {new_version.agent_name}\n")
-
+            print(f"\n🚀 SUCCESS: Initial baseline agent container '{new_agent.name}' created cleanly.")
+            print(f"🆔 AGENT RESOURCE ID: {new_agent.id}\n")
+            
+        except Exception as create_error:
+            print(f"CRITICAL ERROR during baseline agent execution loop: {create_error}")
+            sys.exit(1)
+            
     except Exception as e:
-        print(f"CRITICAL ERROR during agent execution loop: {e}")
+        print(f"CRITICAL ERROR during infrastructure execution lifecycle: {e}")
         sys.exit(1)
