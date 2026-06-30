@@ -23,7 +23,7 @@ def read_root():
 @app.get("/list-blobs")
 def list_blobs(container: str = Query(None)):
     if not STORAGE_ACCOUNT_NAME:
-        return {"error": "STORAGE_ACCOUNT_NAME environment variable is missing."}
+        return {"error":"STORAGE_ACCOUNT_NAME environment variable is missing."}
     else:
         print(f"Targeting Storage Account: {STORAGE_ACCOUNT_NAME}")
     
