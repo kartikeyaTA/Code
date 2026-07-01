@@ -44,7 +44,7 @@ async def get_clean_agent_response(request: Request):
 
         # 2. Header scrubbing tracing logic
         hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
-        
+        k_low = k.lower()
         headers = {}
         print("[DEBUG] --- SCRUBBING HEADERS FOR INTERNAL COMPLIANCE ---")
         for k, v in request.headers.items():
@@ -53,6 +53,9 @@ async def get_clean_agent_response(request: Request):
                 continue
             if k.startswith(":"):
                 print(f"  [EXCLUDED] Dropping HTTP/2 unique pseudo-header key: '{k}'")
+                continue
+            if k_low.startswith("x-envoy") or k_low.startswith("x-k8se") or k_low.startswith("x-ms") or k_low.startswith("x-arr") or k_low.startswith("x-forwarded"):
+                print(f"  [EXCLUDED] Dropping internal Azure infrastructure token: '{k}'")
                 continue
             headers[k] = v
         
