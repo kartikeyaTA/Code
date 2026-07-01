@@ -40,12 +40,13 @@ def read_root():
 async def chat_with_agent(request: Request):
     """
     Secure proxy endpoint with a hardcoded payload.
-    Automatically authenticates and fires the V2 Agent payload.
+    Extracts clean text answer at the source to prevent upstream transport header corruption.
     """
     try:
         # 🔑 DYNAMIC AUTHENTICATION: Fetch a fresh token for the AI Foundry data-plane audience
         token_struct = credential.get_token("https://ai.azure.com/.default")
         bearer_token = token_struct.token
+        
         # 🔒 HARDCODED PAYLOAD: The precise payload used in your successful Agent Version 2 test
         hardcoded_payload = {
             "input": [
@@ -73,12 +74,40 @@ async def chat_with_agent(request: Request):
                     "Authorization": f"Bearer {bearer_token}"
                 }
             )
-            print(f"Received response from Foundry: {response.content}")
-            # Forward the exact response payload and headers back to the frontend
+            
+            print(f"Received response from Foundry. HTTP Status: {response.status_code}")
+            
+            # 🎯 NEW STRATEGY: Extract and clean the text right here at the source!
+            if response.status_code == 200:
+                try:
+                    response_json = response.json()
+                    clean_text = None
+                    
+                    # Safely loop through output payload blocks to extract the plain markdown response
+                    for block in response_json.get("output", []):
+                        if block.get("type") == "message" and "content" in block:
+                            content_array = block["content"]
+                            if content_array and isinstance(content_array, list):
+                                clean_text = content_array[0].get("text")
+                                break
+                    
+                    if clean_text:
+                        print("🎯 Successfully isolated clean agent markdown text string. Returning to frontend.")
+                        # 🎯 FIX: Return JUST the text content, completely eliminating raw downstream headers!
+                        return Response(
+                            content=clean_text,
+                            status_code=200,
+                            media_type="text/plain; charset=utf-8"
+                        )
+                except Exception as parse_err:
+                    print(f"Backend failed to parse inner text from JSON structure: {parse_err}")
+
+            # Safe Fallback: If AI call failed or parsing missed, return raw content 
+            # but CRUCIALY do not copy response.headers which poisons Envoy.
+            print("Fallback triggered. Returning unparsed content context.")
             return Response(
                 content=response.content,
                 status_code=response.status_code,
-                headers=dict(response.headers),
                 media_type="application/json"
             )
 
