@@ -28,21 +28,20 @@ async def get_clean_agent_response(request: Request):
     target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
     print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
 
-    # 🎯 FIX: Strip out infrastructure and proxy headers to avoid protocol corruption
+    # 🎯 FIX: Remove hop-by-hop and length headers to prevent the 502 retry storm
     hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
     headers = {k: v for k, v in request.headers.items() if k.lower() not in hop_by_hop}
     
-    # Apply clean destination mapping headers
     headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
     headers["content-type"] = "application/json"
 
     async with httpx.AsyncClient() as client:
         try:
-            # Executes the internal post handshake safely
+            # Safely passes an empty JSON body; httpx handles Content-Length automatically
             response = await client.post(
                 url=target_url,
                 headers=headers,
-                json={}, # httpx will now calculate a clean content-length automatically
+                json={}, 
                 timeout=60.0
             )
             
@@ -68,6 +67,7 @@ async def get_clean_agent_response(request: Request):
             return Response(
                 content=response.content,
                 status_code=response.status_code,
+                headers=dict(response.headers),
                 media_type=response.headers.get("content-type")
             )
             
