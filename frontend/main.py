@@ -44,7 +44,6 @@ async def get_clean_agent_response(request: Request):
 
         # 2. Header scrubbing tracing logic
         hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
-        k_low = k.lower()
         headers = {}
         print("[DEBUG] --- SCRUBBING HEADERS FOR INTERNAL COMPLIANCE ---")
         for k, v in request.headers.items():
