@@ -7,11 +7,11 @@ trigger:
       - Agent/*
 
 pool:
-  name: 'Default' 
+  vmImage: 'ubuntu-latest' 
 
 variables:
-  azureServiceConnection: 'azure-service-connection'
-  resourceGroup: 'ai-chatbot-dev3'
+  azureServiceConnection: 'azure-service-connection1'
+  resourceGroup: 'rg-Application-shared'
   managedIdentityName: 'id-app-gateway-dev' 
 
 stages:
