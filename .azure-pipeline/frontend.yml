@@ -23,7 +23,7 @@ variables:
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev'
   # Fixed pointer reference to your verified private backend app endpoint
-  backendInternalUrl: 'https://ca-chat-frontend-dev.politewater-015b7b89.eastus2.azurecontainerapps.io'
+  backendInternalUrl: 'https://ca-chat-backend-dev.internal.politewater-015b7b89.eastus2.azurecontainerapps.io'
 
 stages:
 - stage: BuildAndDeployPublicGateway

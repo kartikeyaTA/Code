@@ -3,16 +3,87 @@ import httpx
 from fastapi import FastAPI, Request, Response
 from urllib.parse import urlparse
 
-app = FastAPI()
+app = FastAPI(title="Public Application Gateway")
 
 # Extract the internal ACA backend target URL from environment variables
 BACKEND_INTERNAL_URL = os.getenv("BACKEND_API_URL")
 
+
 @app.get("/")
-def health_check():
+def gateway_health():
     return {"status": "Public Python Gateway Online"}
 
-# 🎯 FIXED: Restored the catch-all {path:path} placeholder to stop the 422 validation errors
+
+# 🎯 1. DEDICATED CLEAN AGENT ENDPOINT (GET)
+# Intercepts the response from the backend, strips the metadata, and returns clean text
+@app.get("/agent-chat")
+async def get_clean_agent_response(request: Request):
+    if not BACKEND_INTERNAL_URL:
+        return Response(
+            content='{"error": "Backend internal route target is unconfigured."}', 
+            status_code=500, 
+            media_type="application/json"
+        )
+
+    # 🎯 FIX: Targets the backend's real endpoint path directly (/chat instead of /api/chat)
+    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
+    print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
+
+    # Synchronize and clean headers for routing compliance
+    headers = dict(request.headers)
+    headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
+    headers["content-type"] = "application/json"
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Executes the internal post handshake with an empty payload to trigger the hardcoded logic
+            response = await client.post(
+                url=target_url,
+                headers=headers,
+                json={}, 
+                timeout=60.0
+            )
+            
+            # If the backend returns a successful JSON payload, extract the core message text
+            if response.status_code == 200 and "application/json" in response.headers.get("content-type", ""):
+                try:
+                    response_json = response.json()
+                    clean_text = None
+                    
+                    # Scan output array blocks for the core response string
+                    for block in response_json.get("output", []):
+                        if block.get("type") == "message" and "content" in block:
+                            clean_text = block["content"][0].get("text")
+                            break
+                    
+                    if clean_text:
+                        return Response(
+                            content=clean_text,
+                            status_code=200,
+                            media_type="text/plain; charset=utf-8"
+                        )
+                except Exception as parse_err:
+                    print(f"Failed to isolate text from payload structure: {parse_err}")
+
+            # Fallback: Forward backend output as-is if parsing fails
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=response.headers.get("content-type")
+            )
+            
+        except httpx.RequestError as exc:
+            print(f"Gateway connection error: {exc}")
+            return Response(
+                content='{"error": "Bad Gateway. Backend microservice unreachable."}', 
+                status_code=502, 
+                media_type="application/json"
+            )
+
+
+# 🎯 2. ORIGINAL CATCH-ALL GATEWAY (UNTOUCHED PASSTHROUGH)
+# Strips out '/api' from the public URL and passes the remainder cleanly to the backend root
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_gateway(path: str, request: Request):
     if not BACKEND_INTERNAL_URL:
@@ -25,9 +96,8 @@ async def proxy_gateway(path: str, request: Request):
     # Reconstruct the private internal target destination path dynamically
     query_string = f"?{request.url.query}" if request.url.query else ""
     
-    # 🎯 FIXED: Dynamically appends the path if it exists, matching your backend routes cleanly
-    suffix = f"/{path}" if path else ""
-    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/api{suffix}{query_string}"
+    # 🎯 FIX: Strips out the forced '/api' segment so it perfectly aligns with backend's structure
+    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/{path}{query_string}"
     
     print(f"Routing public request internally to: {target_url}")
 
@@ -40,7 +110,6 @@ async def proxy_gateway(path: str, request: Request):
 
     async with httpx.AsyncClient() as client:
         try:
-            # Asynchronously proxy the entire payload to the backend service
             response = await client.request(
                 method=request.method,
                 url=target_url,
@@ -49,7 +118,6 @@ async def proxy_gateway(path: str, request: Request):
                 timeout=60.0
             )
             
-            # Forward the exact response back to the client browser
             return Response(
                 content=response.content,
                 status_code=response.status_code,
