@@ -18,26 +18,30 @@ def gateway_health():
 # Intercepts the response from the backend, strips the metadata, and returns clean text
 @app.get("/agent-chat")
 async def get_clean_agent_response(request: Request):
-    if not BACKEND_INTERNAL_URL:
-        return Response(
-            content='{"error": "Backend internal route target is unconfigured."}', 
-            status_code=500, 
-            media_type="application/json"
-        )
+    # 🎯 GLOBAL SAFETY NET: Ensure the container NEVER drops the connection abruptly
+    try:
+        if not BACKEND_INTERNAL_URL:
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Backend internal route target is unconfigured."}
+            )
 
-    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
-    print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
+        target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
+        print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
 
-    # 🎯 FIX: Remove hop-by-hop and length headers to prevent the 502 retry storm
-    hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in hop_by_hop}
-    
-    headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
-    headers["content-type"] = "application/json"
+        # 🎯 SCRUB PSEUDO-HEADERS: Strip hop-by-hop flags AND any HTTP/2 keys starting with ':'
+        hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
+        
+        headers = {}
+        for k, v in request.headers.items():
+            if k.lower() not in hop_by_hop and not k.startswith(":"):
+                headers[k] = v
+        
+        # Inject standard compliant target headers
+        headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
+        headers["content-type"] = "application/json"
 
-    async with httpx.AsyncClient() as client:
-        try:
-            # Safely passes an empty JSON body; httpx handles Content-Length automatically
+        async with httpx.AsyncClient() as client:
             response = await client.post(
                 url=target_url,
                 headers=headers,
@@ -45,38 +49,29 @@ async def get_clean_agent_response(request: Request):
                 timeout=60.0
             )
             
+            # If the backend returns a clean response, extract the text payload
             if response.status_code == 200 and "application/json" in response.headers.get("content-type", ""):
-                try:
-                    response_json = response.json()
-                    clean_text = None
-                    
-                    for block in response_json.get("output", []):
-                        if block.get("type") == "message" and "content" in block:
-                            clean_text = block["content"][0].get("text")
-                            break
-                    
-                    if clean_text:
-                        return Response(
-                            content=clean_text,
-                            status_code=200,
-                            media_type="text/plain; charset=utf-8"
-                        )
-                except Exception as parse_err:
-                    print(f"Failed to isolate text from payload structure: {parse_err}")
+                response_json = response.json()
+                for block in response_json.get("output", []):
+                    if block.get("type") == "message" and "content" in block:
+                        clean_text = block["content"][0].get("text")
+                        if clean_text:
+                            # 🎯 Native plain text response alignment
+                            return PlainTextResponse(content=clean_text, status_code=200)
 
+            # Safe Fallback: Pass backend content out without copying corrupt headers
             return Response(
                 content=response.content,
                 status_code=response.status_code,
-                media_type=response.headers.get("content-type","application/json")
+                media_type=response.headers.get("content-type", "application/json")
             )
             
-        except httpx.RequestError as exc:
-            print(f"Gateway connection error: {exc}")
-            return Response(
-                content='{"error": "Bad Gateway. Backend microservice unreachable."}', 
-                status_code=502, 
-                media_type="application/json"
-            )
+    except httpx.RequestError as net_err:
+        print(f"Gateway network connection error: {net_err}")
+        return JSONResponse(status_code=502, content={"error": "Bad Gateway. Backend unreachable."})
+    except Exception as general_err:
+        print(f"Critical Gateway Runtime Exception: {general_err}")
+        return JSONResponse(status_code=500, content={"error": f"Internal Server Error: {str(general_err)}"})
 
 
 # 🎯 2. ORIGINAL CATCH-ALL GATEWAY (UNTOUCHED PASSTHROUGH)
