@@ -11,13 +11,13 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  dockerRegistryConnection: 'acr-docker-service-connection2' 
-  subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
+  dockerRegistryConnection: 'acr-docker-service-connection3' 
+  subscriptionId: 'b0366117-1664-4ef1-aa8b-d68e8ae762f9'
   acrName: 'aichatregistrydev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'testkaraichat9dev'
-  resourceGroup: 'ai-chatbot-dev9'
+  keyVaultName: 'AIsecretschatbot'
+  resourceGroup: 'rg-Application-shared'
   containerAppName: 'ca-chat-backend-dev'
   containerAppEnv: 'aca-env-chat-dev' 
   envName: 'dev'
