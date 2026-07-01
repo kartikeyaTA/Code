@@ -3,16 +3,16 @@ import httpx
 from fastapi import FastAPI, Request, Response
 from urllib.parse import urlparse
 
-app = FastAPI()
+app = FastAPI(title="Public Application Gateway")
 
 # Extract the internal ACA backend target URL from environment variables
 BACKEND_INTERNAL_URL = os.getenv("BACKEND_API_URL")
 
 @app.get("/")
-def health_check():
+def gateway_health():
     return {"status": "Public Python Gateway Online"}
 
-# 🎯 FIXED: Restored the catch-all {path:path} placeholder to stop the 422 validation errors
+# 🎯 CATCH-ALL GATEWAY: Strips the "/api" prefix and handles all microservice paths
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_gateway(path: str, request: Request):
     if not BACKEND_INTERNAL_URL:
@@ -22,25 +22,24 @@ async def proxy_gateway(path: str, request: Request):
             media_type="application/json"
         )
 
-    # Reconstruct the private internal target destination path dynamically
+    # Reconstruct query strings if any exist
     query_string = f"?{request.url.query}" if request.url.query else ""
     
-    # 🎯 FIXED: Dynamically appends the path if it exists, matching your backend routes cleanly
-    suffix = f"/{path}" if path else ""
-    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/api{suffix}{query_string}"
+    # 🎯 FIX: Strips out '/api' and routes directly to the backend's root structure
+    base_url = BACKEND_INTERNAL_URL.rstrip("/")
+    target_url = f"{base_url}/{path}{query_string}"
     
-    print(f"Routing public request internally to: {target_url}")
+    print(f"Proxying request: {request.method} {request.url.path} -> {target_url}")
 
-    # Extract incoming headers and override the Host header for internal ACA validation compliance
+    # Synchronize and clean headers for internal container environment routing compliance
     headers = dict(request.headers)
     headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
 
-    # Capture incoming request payload body
+    # Read incoming request body payload
     body = await request.body()
 
     async with httpx.AsyncClient() as client:
         try:
-            # Asynchronously proxy the entire payload to the backend service
             response = await client.request(
                 method=request.method,
                 url=target_url,
@@ -49,7 +48,6 @@ async def proxy_gateway(path: str, request: Request):
                 timeout=60.0
             )
             
-            # Forward the exact response back to the client browser
             return Response(
                 content=response.content,
                 status_code=response.status_code,
@@ -57,9 +55,9 @@ async def proxy_gateway(path: str, request: Request):
                 media_type=response.headers.get("content-type")
             )
         except httpx.RequestError as exc:
-            print(f"Internal Routing Fault: {exc}")
+            print(f"Gateway connection error: {exc}")
             return Response(
-                content='{"error": "Bad Gateway. Unable to communicate with internal microservices."}', 
+                content='{"error": "Bad Gateway. Backend microservice unreachable."}', 
                 status_code=502, 
                 media_type="application/json"
             )
