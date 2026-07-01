@@ -19,7 +19,7 @@ variables:
   keyVaultName: 'AIsecretschatbot'
   resourceGroup: 'rg-Application-shared'
   containerAppName: 'ca-chat-backend-dev'
-  containerAppEnv: 'aca-env-chat-dev' 
+  containerAppEnv: 'aca-env-chat1-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -98,8 +98,7 @@ stages:
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$SECRET_VAL" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
-
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$SECRET_VAL" 
           # 3. APPLICATION EXISTS: Update elements correctly sequentially
           else
             echo "App found. Running dedicated configuration updates..."
@@ -127,5 +126,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "STORAGE_ACCOUNT_NAME=stachattranscripts$(envName)" "MY_DUMMY_SECRET=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
           fi
