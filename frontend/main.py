@@ -8,7 +8,6 @@ app = FastAPI(title="Public Application Gateway")
 # Extract the internal ACA backend target URL from environment variables
 BACKEND_INTERNAL_URL = os.getenv("BACKEND_API_URL")
 
-
 @app.get("/")
 def gateway_health():
     return {"status": "Public Python Gateway Online"}
