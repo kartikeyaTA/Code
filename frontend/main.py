@@ -18,27 +18,35 @@ def gateway_health():
 
 # 🎯 1. DEDICATED CLEAN AGENT ENDPOINT (GET)
 # Intercepts the response from the backend, strips the metadata, and returns clean text
-@app.post("/agent-chat")
+@app.post("/api/agent-chat")  # Under /api to completely bypass the 301 infrastructure redirect loop
 async def get_clean_agent_response(request: Request):
     if not BACKEND_INTERNAL_URL:
         return Response(content="Backend target URL unconfigured.", status_code=500)
+    print(f"Gateway received request for clean agent response. Forwarding to backend: {BACKEND_INTERNAL_URL}")
+    # 🎯 NO HTTP TRIM: Uses your environment variable exactly as-is
+    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
+    print(f"Gateway proxying to backend using unmodified URL: {target_url}")
 
-    # Force http:// for internal container communication to avoid TLS certificate resets
-    clean_backend_base = BACKEND_INTERNAL_URL.replace("https://", "http://").rstrip('/')
-    target_url = f"{clean_backend_base}/chat"
-
-    # Pristine headers: Zero infrastructure tracking leaks from the public internet
+    # Set up pristine headers using the same host calculation that worked in your proxy
     headers = {
-        "host": urlparse(clean_backend_base).netloc,
+        "host": urlparse(BACKEND_INTERNAL_URL).netloc,
         "content-type": "application/json"
     }
 
+    # Capture the client body payload symmetrically
+    body = await request.body()
+
     async with httpx.AsyncClient() as client:
         try:
-            # Symmetrical POST forward
-            response = await client.post(url=target_url, headers=headers, json={}, timeout=60.0)
+            # Symmetrical POST forward to the backend
+            response = await client.post(
+                url=target_url, 
+                headers=headers, 
+                content=body, 
+                timeout=60.0
+            )
             
-            # Directly hand the backend's clean plain text response back to the user
+            # Directly deliver the clean plain-text answer from the backend to the user
             return Response(
                 content=response.content,
                 status_code=response.status_code,
@@ -46,6 +54,7 @@ async def get_clean_agent_response(request: Request):
             )
             
         except httpx.RequestError as exc:
+            print(f"Gateway proxy failure: {exc}")
             return Response(content="Bad Gateway. Backend unreachable.", status_code=502)
 
 
