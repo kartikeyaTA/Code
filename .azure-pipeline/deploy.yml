@@ -13,7 +13,7 @@ variables:
   azureServiceConnection: 'azure-service-connection'
   dockerRegistryConnection: 'acr-docker-service-connection4' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
-  acrName: 'aichatregistrydev' 
+  acrName: 'aichatregistry1dev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
   keyVaultName: 'AIsecretschatbot1'

@@ -15,7 +15,6 @@ AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 # APIM_SUBSCRIPTION_KEY = os.getenv("APIM_SUBSCRIPTION_KEY", "28ef3a364e3d4e239b900473b0857653")
 # APIM_HOST_HEADER = os.getenv("APIM_HOST_HEADER", "apim-gateway-chat3-dev.azure-api.net")
 
-
 @app.get("/")
 def read_root():
     return {
