@@ -1,11 +1,9 @@
-# Step 1: Lightweight Node environment base build
 FROM node:20-alpine AS base
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev  # ◄ FIXED: Changed from --only=production
+RUN npm ci --omit=dev
 COPY server.js ./
 
-# Step 2: Clean runtime environment execution
 FROM node:20-alpine AS runner
 WORKDIR /app
 COPY --from=base /app ./
