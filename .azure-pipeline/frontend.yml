@@ -11,7 +11,7 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection1'
-  dockerRegistryConnection: 'acr-docker-service-connection4' 
+  dockerRegistryConnection: 'acr-docker-service-connection5' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
   acrName: 'aichatregistrydev' 
   imageRepository: 'frontend-service'

@@ -12,7 +12,6 @@ BACKEND_INTERNAL_URL = os.getenv("BACKEND_API_URL")
 def gateway_health():
     return {"status": "Public Python Gateway Online"}
 
-
 # 🎯 CATCH-ALL GATEWAY: Strips the "/api" prefix and handles all microservice paths
 @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_gateway(path: str, request: Request):
