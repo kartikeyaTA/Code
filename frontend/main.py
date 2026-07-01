@@ -12,8 +12,8 @@ BACKEND_INTERNAL_URL = os.getenv("BACKEND_API_URL")
 def health_check():
     return {"status": "Public Python Gateway Online"}
 
-# Catch-all proxy route to capture all HTTP verbs and sub-paths securely
-@app.api_route("/api/", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+# 🎯 FIXED: Restored the catch-all {path:path} placeholder to stop the 422 validation errors
+@app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_gateway(path: str, request: Request):
     if not BACKEND_INTERNAL_URL:
         return Response(
@@ -22,9 +22,12 @@ async def proxy_gateway(path: str, request: Request):
             media_type="application/json"
         )
 
-    # Reconstruct the private internal target destination path
+    # Reconstruct the private internal target destination path dynamically
     query_string = f"?{request.url.query}" if request.url.query else ""
-    target_url = f"{BACKEND_INTERNAL_URL}"
+    
+    # 🎯 FIXED: Dynamically appends the path if it exists, matching your backend routes cleanly
+    suffix = f"/{path}" if path else ""
+    target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/api{suffix}{query_string}"
     
     print(f"Routing public request internally to: {target_url}")
 
