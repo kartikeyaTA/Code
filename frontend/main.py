@@ -1,6 +1,8 @@
 import os
 import httpx
+import traceback  # 🔍 CRITICAL: Captures full stack traces for underlying crashes
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse, PlainTextResponse
 from urllib.parse import urlparse
 
 app = FastAPI(title="Public Application Gateway")
@@ -18,29 +20,53 @@ def gateway_health():
 # Intercepts the response from the backend, strips the metadata, and returns clean text
 @app.get("/agent-chat")
 async def get_clean_agent_response(request: Request):
-    # 🎯 GLOBAL SAFETY NET: Ensure the container NEVER drops the connection abruptly
+    print("\n" + "="*50)
+    print("🚀 [DEBUG] INCOMING PUBLIC REQUEST RECEIVED ON /api/agent-chat")
+    print("="*50)
+    
     try:
+        # 1. Inspect Every Single Incoming Header From the Client/Envoy
+        print(f"[DEBUG] Request Method: {request.method} | Source URL: {request.url}")
+        print("[DEBUG] --- RAW INCOMING HEADERS FROM CLIENT ---")
+        for key, value in request.headers.items():
+            print(f"  -> {key}: {value}")
+        print("[DEBUG] -----------------------------------------")
+
         if not BACKEND_INTERNAL_URL:
+            print("[DEBUG] ❌ ERROR: BACKEND_API_URL environment variable is UNCONFIGURED!")
             return JSONResponse(
                 status_code=500,
                 content={"error": "Backend internal route target is unconfigured."}
             )
 
         target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
-        print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
+        print(f"[DEBUG] Target Backend Destination Path: {target_url}")
 
-        # 🎯 SCRUB PSEUDO-HEADERS: Strip hop-by-hop flags AND any HTTP/2 keys starting with ':'
+        # 2. Header scrubbing tracing logic
         hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
         
         headers = {}
+        print("[DEBUG] --- SCRUBBING HEADERS FOR INTERNAL COMPLIANCE ---")
         for k, v in request.headers.items():
-            if k.lower() not in hop_by_hop and not k.startswith(":"):
-                headers[k] = v
+            if k.lower() in hop_by_hop:
+                print(f"  [EXCLUDED] Dropping hop-by-hop tracking key: '{k}'")
+                continue
+            if k.startswith(":"):
+                print(f"  [EXCLUDED] Dropping HTTP/2 unique pseudo-header key: '{k}'")
+                continue
+            headers[k] = v
         
-        # Inject standard compliant target headers
+        # Explicitly map required downstream proxy anchors
         headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
         headers["content-type"] = "application/json"
 
+        print("[DEBUG] --- FINAL SCRUBBED HEADERS SENT TO BACKEND ---")
+        for k, v in headers.items():
+            print(f"  -> {k}: {v}")
+        print("[DEBUG] ----------------------------------------------")
+
+        # 3. Execute the internal cross-container payload delivery
+        print("[DEBUG] Dispatching HTTP POST transaction request to backend microservice...")
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url=target_url,
@@ -48,30 +74,61 @@ async def get_clean_agent_response(request: Request):
                 json={}, 
                 timeout=60.0
             )
-            
-            # If the backend returns a clean response, extract the text payload
-            if response.status_code == 200 and "application/json" in response.headers.get("content-type", ""):
+        
+        # 4. Trace the results coming back inside the private vnet
+        print(f"[DEBUG] ✅ BACKEND SERVICE HAS RESPONDED! HTTP Status: {response.status_code}")
+        print("[DEBUG] --- RAW BACKEND RESPONSE HEADERS ---")
+        for k, v in response.headers.items():
+            print(f"  -> {k}: {v}")
+        print("[DEBUG] -------------------------------------")
+
+        content_type = response.headers.get("content-type", "")
+        
+        if response.status_code == 200 and "application/json" in content_type:
+            print("[DEBUG] Target matched: Status 200 + JSON payload found. Starting token block processing parsing extraction...")
+            try:
                 response_json = response.json()
+                clean_text = None
+                
                 for block in response_json.get("output", []):
                     if block.get("type") == "message" and "content" in block:
                         clean_text = block["content"][0].get("text")
-                        if clean_text:
-                            # 🎯 Native plain text response alignment
-                            return PlainTextResponse(content=clean_text, status_code=200)
+                        print("[DEBUG] 🎯 Core Assistant plain-text answer block cleanly located.")
+                        break
+                
+                if clean_text:
+                    print("[DEBUG] Success! Delivering extracted plaintext content back to user client.")
+                    return PlainTextResponse(content=clean_text, status_code=200)
+                else:
+                    print("[DEBUG] ⚠️ WARNING: Azure returned a valid structural JSON mapping, but no text block matched criteria.")
+            except Exception as parse_err:
+                print(f"[DEBUG] ❌ Exception during inner JSON content-matrix loop decomposition: {parse_err}")
 
-            # Safe Fallback: Pass backend content out without copying corrupt headers
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                media_type=response.headers.get("content-type", "application/json")
-            )
+        print("[DEBUG] Standard parsing skipped or target criteria unmet. Falling back to unparsed downstream data forwarding.")
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            media_type=content_type if content_type else "application/json"
+        )
             
     except httpx.RequestError as net_err:
-        print(f"Gateway network connection error: {net_err}")
+        print(f"[DEBUG] ❌ Network Connection Failure to backend resource cluster link: {net_err}")
         return JSONResponse(status_code=502, content={"error": "Bad Gateway. Backend unreachable."})
+        
     except Exception as general_err:
-        print(f"Critical Gateway Runtime Exception: {general_err}")
-        return JSONResponse(status_code=500, content={"error": f"Internal Server Error: {str(general_err)}"})
+        # 🎯 THE CATCH-ALL SAFETY GATE: This records the explicit breakdown profile 
+        print("\n" + "🚨 "*10)
+        print("[DEBUG] CRITICAL PROCESS EXCEPTION BLOWUP DETECTED IN GATEWAY CORE PIPELINE!")
+        print(f"[DEBUG] Exception Class Profile: {type(general_err).__name__}")
+        print(f"[DEBUG] Primary Exception Context: {str(general_err)}")
+        print("[DEBUG] --- DETAILED DUMP EXTENSION STACK TRACE ---")
+        traceback.print_exc()  # Prints the exact file line number that cracked directly into stdout logs
+        print("🚨 "*10 + "\n")
+        
+        return JSONResponse(
+            status_code=500, 
+            content={"error": f"Internal Gateway Structural Error: {str(general_err)}"}
+        )
 
 
 # 🎯 2. ORIGINAL CATCH-ALL GATEWAY (UNTOUCHED PASSTHROUGH)
