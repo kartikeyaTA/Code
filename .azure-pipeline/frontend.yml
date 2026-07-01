@@ -4,7 +4,7 @@ trigger:
       - dev
   paths:
     include:
-      - Frontend/*
+      - frontend/*
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -39,8 +39,8 @@ stages:
         containerRegistry: '$(dockerRegistryConnection)'
         repository: '$(imageRepository)'
         command: 'buildAndPush'
-        Dockerfile: 'Frontend/Dockerfile' 
-        buildContext: 'Frontend'
+        Dockerfile: 'frontend/Dockerfile' 
+        buildContext: 'frontend'
         tags: |
           $(tag)
           latest
