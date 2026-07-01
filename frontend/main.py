@@ -48,7 +48,8 @@ async def get_clean_agent_response(request: Request):
         headers = {}
         print("[DEBUG] --- SCRUBBING HEADERS FOR INTERNAL COMPLIANCE ---")
         for k, v in request.headers.items():
-            if k.lower() in hop_by_hop:
+            k_low = k.lower()
+            if k_low in hop_by_hop:
                 print(f"  [EXCLUDED] Dropping hop-by-hop tracking key: '{k}'")
                 continue
             if k.startswith(":"):
