@@ -67,8 +67,7 @@ async def get_clean_agent_response(request: Request):
             return Response(
                 content=response.content,
                 status_code=response.status_code,
-                headers=dict(response.headers),
-                media_type=response.headers.get("content-type")
+                media_type=response.headers.get("content-type","application/json")
             )
             
         except httpx.RequestError as exc:
