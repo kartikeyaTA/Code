@@ -8,7 +8,7 @@ from azure.ai.projects.models import PromptAgentDefinition # 🎯 IMPORT FOR CRE
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://foundry-services-applications1-dev.services.ai.azure.com/api/projects/foundry-project-applications1-dev'
+project_endpoint = 'https://foundry-services-applications3-dev.services.ai.azure.com/api/projects/foundry-project-applications3-dev'
 agent_name = "Agent"
 prompt_file_path = "prompt.txt"
 model_deployment = "gpt-5.4-mini" 
