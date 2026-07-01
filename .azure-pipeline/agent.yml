@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest' 
 
 variables:
-  azureServiceConnection: 'azure-service-connection1'
+  azureServiceConnection: 'azure-service-connection'
   resourceGroup: 'rg-Application-shared'
   managedIdentityName: 'id-app-gateway-dev' 
 

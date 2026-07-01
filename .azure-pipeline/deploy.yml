@@ -10,16 +10,16 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  azureServiceConnection: 'azure-service-connection1'
-  dockerRegistryConnection: 'acr-docker-service-connection3' 
+  azureServiceConnection: 'azure-service-connection'
+  dockerRegistryConnection: 'acr-docker-service-connection4' 
   subscriptionId: 'b0366117-1664-4ef1-aa8b-d68e8ae762f9'
   acrName: 'aichatregistrydev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'AIsecretschatbot'
+  keyVaultName: 'AIsecretschatbot1'
   resourceGroup: 'rg-Application-shared'
   containerAppName: 'ca-chat-backend-dev'
-  containerAppEnv: 'aca-env-chat1-dev' 
+  containerAppEnv: 'aca-env-chat-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 

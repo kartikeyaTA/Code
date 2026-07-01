@@ -54,6 +54,7 @@ async def proxy_gateway(path: str, request: Request):
                 headers=dict(response.headers),
                 media_type=response.headers.get("content-type")
             )
+            
         except httpx.RequestError as exc:
             print(f"Gateway connection error: {exc}")
             return Response(
