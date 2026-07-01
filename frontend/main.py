@@ -72,6 +72,7 @@ async def get_clean_agent_response(request: Request):
             status_code=500, 
             media_type="application/json"
         )
+        
 
     # Directly targets your backend's /chat endpoint
     target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
