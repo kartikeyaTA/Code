@@ -52,6 +52,7 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          az account set --subscription "$(subscriptionId)"
           echo "Fetching Identity Details for $(managedIdentityName)..."
           CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
           IDENTITY_RESOURCE_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query id -o tsv)

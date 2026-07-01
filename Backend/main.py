@@ -9,7 +9,7 @@ app = FastAPI(title="Azure Core Service")
 SECRET_VAL = os.getenv("MY_DUMMY_SECRET", "Secret not injected yet")
 AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 
-# 🤖 APIM Internal Target Configurations
+# APIM Internal Target Configurations
 # APIM_INTERNAL_IP = os.getenv("APIM_INTERNAL_IP", "10.0.2.4")
 # APIM_SUBSCRIPTION_KEY = os.getenv("APIM_SUBSCRIPTION_KEY", "28ef3a364e3d4e239b900473b0857653")
 # APIM_HOST_HEADER = os.getenv("APIM_HOST_HEADER", "apim-gateway-chat3-dev.azure-api.net")
