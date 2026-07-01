@@ -45,9 +45,7 @@ async def chat_with_agent(request: Request):
     try:
         # 🔑 DYNAMIC AUTHENTICATION: Fetch a fresh token for the AI Foundry data-plane audience
         token_struct = credential.get_token("https://ai.azure.com/.default")
-        print(f"Successfully acquired token for Foundry: {token_struct}")
         bearer_token = token_struct.token
-        print(f"Successfully acquired Bearer Token for Foundry: {bearer_token}")
         # 🔒 HARDCODED PAYLOAD: The precise payload used in your successful Agent Version 2 test
         hardcoded_payload = {
             "input": [
@@ -75,7 +73,7 @@ async def chat_with_agent(request: Request):
                     "Authorization": f"Bearer {bearer_token}"
                 }
             )
-            
+            print(f"Received response from Foundry: {response.content}")
             # Forward the exact response payload and headers back to the frontend
             return Response(
                 content=response.content,
