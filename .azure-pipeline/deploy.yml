@@ -73,6 +73,7 @@ stages:
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          az account set --subscription "$(subscriptionId)"
           echo "Checking if Container App $(containerAppName) exists..."
           # Fetch provisioning state to detect configuration status
           APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
