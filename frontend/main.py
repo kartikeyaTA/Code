@@ -25,32 +25,32 @@ async def get_clean_agent_response(request: Request):
             media_type="application/json"
         )
 
-    # 🎯 FIX: Targets the backend's real endpoint path directly (/chat instead of /api/chat)
     target_url = f"{BACKEND_INTERNAL_URL.rstrip('/')}/chat"
     print(f"Gateway converting GET request to internal Backend POST -> {target_url}")
 
-    # Synchronize and clean headers for routing compliance
-    headers = dict(request.headers)
+    # 🎯 FIX: Strip out infrastructure and proxy headers to avoid protocol corruption
+    hop_by_hop = ["content-length", "host", "connection", "keep-alive", "transfer-encoding", "upgrade", "x-request-id"]
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in hop_by_hop}
+    
+    # Apply clean destination mapping headers
     headers["host"] = urlparse(BACKEND_INTERNAL_URL).netloc
     headers["content-type"] = "application/json"
 
     async with httpx.AsyncClient() as client:
         try:
-            # Executes the internal post handshake with an empty payload to trigger the hardcoded logic
+            # Executes the internal post handshake safely
             response = await client.post(
                 url=target_url,
                 headers=headers,
-                json={}, 
+                json={}, # httpx will now calculate a clean content-length automatically
                 timeout=60.0
             )
             
-            # If the backend returns a successful JSON payload, extract the core message text
             if response.status_code == 200 and "application/json" in response.headers.get("content-type", ""):
                 try:
                     response_json = response.json()
                     clean_text = None
                     
-                    # Scan output array blocks for the core response string
                     for block in response_json.get("output", []):
                         if block.get("type") == "message" and "content" in block:
                             clean_text = block["content"][0].get("text")
@@ -65,11 +65,9 @@ async def get_clean_agent_response(request: Request):
                 except Exception as parse_err:
                     print(f"Failed to isolate text from payload structure: {parse_err}")
 
-            # Fallback: Forward backend output as-is if parsing fails
             return Response(
                 content=response.content,
                 status_code=response.status_code,
-                headers=dict(response.headers),
                 media_type=response.headers.get("content-type")
             )
             
