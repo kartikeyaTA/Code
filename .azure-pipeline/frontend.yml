@@ -1,0 +1,123 @@
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - Frontend/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureServiceConnection: 'azure-service-connection1'
+  dockerRegistryConnection: 'acr-docker-service-connection3' 
+  subscriptionId: 'b0366117-1664-4ef1-aa8b-d68e8ae762f9'
+  acrName: 'aichatregistrydev' 
+  imageRepository: 'frontend-service'
+  tag: '$(Build.BuildId)'
+  keyVaultName: 'AIsecretschatbot'
+  resourceGroup: 'rg-Application-shared'
+  containerAppName: 'ca-chat-frontend-dev'
+  containerAppEnv: 'aca-env-chat1-dev' 
+  envName: 'dev'
+  managedIdentityName: 'id-app-gateway-dev'
+  # Fixed pointer reference to your verified private backend app endpoint
+  backendInternalUrl: 'https://ca-chat-backend-dev.internal.salmoncoast-65d43417.eastus2.azurecontainerapps.io'
+
+stages:
+- stage: BuildAndDeployPublicGateway
+  displayName: 'Build and Deploy Public Facing Frontend Gateway'
+  jobs:
+  - job: PipelineWorkflow
+    steps:
+    
+    # 1. Build and Push Frontend Docker Image to Azure Container Registry
+    - task: Docker@2
+      displayName: 'Build and Push Frontend Image to ACR'
+      inputs:
+        containerRegistry: '$(dockerRegistryConnection)'
+        repository: '$(imageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: 'Frontend/Dockerfile' 
+        buildContext: 'Frontend'
+        tags: |
+          $(tag)
+          latest
+
+    # 2. Dynamically fetch Managed Identity Configuration Meta
+    - task: AzureCLI@2
+      displayName: 'Fetch Managed Identity Configuration'
+      name: FetchAzureData
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account set --subscription "$(subscriptionId)"
+          
+          echo "Fetching Identity Details for $(managedIdentityName)..."
+          CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
+          IDENTITY_RESOURCE_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query id -o tsv)
+          
+          echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
+          echo "##vso[task.setvariable variable=DYNAMIC_IDENTITY_RESOURCE_ID]$IDENTITY_RESOURCE_ID"
+                    
+    # 3. Deploy Frontend Gateway to the Public App Load Balancer Edge
+    - task: AzureCLI@2
+      displayName: 'Deploy Frontend to Azure Container Apps via Native CLI'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account set --subscription "$(subscriptionId)"
+          
+          echo "Checking if Public Container App $(containerAppName) exists..."
+          APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
+          echo "Current Container App State: $APP_STATE"
+          
+
+          # APPLICATION DOES NOT EXIST: Create completely from scratch
+          if [ "$APP_STATE" == "not_found" ]; then
+            echo "Performing full creation sequence on Public Edge..."
+            az containerapp create \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --environment "$(containerAppEnv)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 2 \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --registry-server "$(acrName).azurecr.io" \
+              --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "BACKEND_API_URL=$(backendInternalUrl)"
+
+          # APPLICATION EXISTS: Perform sliding rollout configuration upgrades
+          else
+            echo "App found. Running dedicated configuration updates..."
+            
+            echo "Ensuring identity assignment..."
+            az containerapp identity assign \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            echo "Updating container registry configuration..."
+            az containerapp registry set \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --server "$(acrName).azurecr.io" \
+              --identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            echo "Upgrading container application image and parameters..."
+            az containerapp update \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --min-replicas 1 \
+              --max-replicas 2 \
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "BACKEND_API_URL=$(backendInternalUrl)"
+          fi
