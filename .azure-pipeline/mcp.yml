@@ -1,0 +1,122 @@
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - mcp/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureServiceConnection: 'azure-service-connection'
+  dockerRegistryConnection: 'acr-docker-service-connection6' 
+  subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
+  acrName: 'aichatregistry1dev' 
+  imageRepository: 'mcp-service'
+  tag: '$(Build.BuildId)'
+  keyVaultName: 'AIsecretschatbot2'
+  resourceGroup: 'rg-Application-shared1'
+  containerAppName: 'mcp-backend-dev'
+  containerAppEnv: 'aca-env-chat-pub-dev' 
+  envName: 'dev'
+  managedIdentityName: 'id-app-gateway-dev' 
+
+stages:
+- stage: BuildAndDeploy
+  displayName: 'Build, Push, Set Secrets, and Deploy'
+  jobs:
+  - job: PipelineWorkflow
+    steps:
+    
+    # 1. Build and Push Docker Image to ACR
+    - task: Docker@2
+      displayName: 'Build and Push Image to ACR'
+      inputs:
+        containerRegistry: '$(dockerRegistryConnection)'
+        repository: '$(imageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: 'mcp/Dockerfile' 
+        buildContext: 'mcp'
+        tags: |
+          $(tag)
+          latest
+
+    # 2. Dynamically fetch Managed Identity Client ID AND Resource ID
+    - task: AzureCLI@2
+      displayName: 'Fetch Identity and Update Key Vault'
+      name: FetchAzureData
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account set --subscription "$(subscriptionId)"
+          echo "Fetching Identity Details for $(managedIdentityName)..."
+          CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
+          IDENTITY_RESOURCE_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query id -o tsv)
+          
+          echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
+          echo "##vso[task.setvariable variable=DYNAMIC_IDENTITY_RESOURCE_ID]$IDENTITY_RESOURCE_ID"
+                   
+
+    # 3. Secure Deployment via Native CLI with Identity Fixed
+    - task: AzureCLI@2
+      displayName: 'Deploy to Azure Container Apps via Native CLI'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az account set --subscription "$(subscriptionId)"
+          echo "Checking if Container App $(containerAppName) exists..."
+          # Fetch provisioning state to detect configuration status
+          APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
+          echo "Current Container App State: $APP_STATE"
+                    
+          # 2. APPLICATION DOES NOT EXIST: Create from scratch
+          if [ "$APP_STATE" == "not_found" ]; then
+            echo "Performing full creation sequence..."
+            az containerapp create \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --environment "$(containerAppEnv)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --target-port 80 \
+              --ingress internal \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --registry-server "$(acrName).azurecr.io" \
+              --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)"
+          # 3. APPLICATION EXISTS: Update elements correctly sequentially
+          else
+            echo "App found. Running dedicated configuration updates..."
+            
+            # Step A: Update Identity bindings if needed
+            echo "Ensuring identity assignment..."
+            az containerapp identity assign \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            # Step B: Secure Registry Configuration with dedicated command
+            echo "Updating container registry configuration..."
+            az containerapp registry set \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --server "$(acrName).azurecr.io" \
+              --identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
+
+            # Step D: Deploy Image, Replica Limits, and Env variables using valid flags
+            echo "Upgrading existing container app image and application state seamlessly..."
+            az containerapp update \
+              --name "$(containerAppName)" \
+              --resource-group "$(resourceGroup)" \
+              --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" 
+          fi
