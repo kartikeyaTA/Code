@@ -13,6 +13,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 COPY main.py .
 
+
 EXPOSE 3000
 ENV PORT=3000
 ENV PYTHONUNBUFFERED=1
