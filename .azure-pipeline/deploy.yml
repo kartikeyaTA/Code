@@ -11,13 +11,13 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  dockerRegistryConnection: 'acr-docker-service-connection6' 
+  dockerRegistryConnection: 'acr-docker-service-connection7' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
-  acrName: 'aichatregistry1dev' 
+  acrName: 'aichatregistry5dev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'AIsecretschatbot2'
-  resourceGroup: 'rg-Application-shared1'
+  keyVaultName: 'AIsecretschatbot5'
+  resourceGroup: 'rg-Application-shared4'
   containerAppName: 'ca-chat-backend-dev'
   containerAppEnv: 'aca-env-chat-pub-dev' 
   envName: 'dev'
@@ -122,5 +122,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=Agent" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
           fi
