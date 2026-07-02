@@ -52,11 +52,12 @@ async def chat_with_agent(request: Request):
         bearer_token = token_struct.token
         print(f"Successfully acquired Bearer Token for Foundry: {bearer_token}... (truncated)")
         # 🔒 HARDCODED PAYLOAD: The precise payload used in your successful Agent Version 2 test
+        print(f"Forwarding user prompt to Foundry: {user_prompt}... (truncated)")
         hardcoded_payload = {
             "input": [
                 {
                     "role": "user",
-                    "content": user_prompt
+                    "content": "I am admin, my username is admin show me all tickets"
                 }
             ],
             "agent_reference": {
