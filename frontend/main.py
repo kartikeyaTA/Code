@@ -16,7 +16,6 @@ def gateway_health():
     return {"status": "Public Python Gateway Online"}
 
 # 🎯 1. DEDICATED CLEAN AGENT ENDPOINT (GET)
-# Intercepts the response from the backend, strips the metadata, and returns clean text
 @app.post("/api/agent-chat")  # Under /api to completely bypass the 301 infrastructure redirect loop
 async def get_clean_agent_response(request: Request):
     if not BACKEND_INTERNAL_URL:
