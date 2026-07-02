@@ -24,6 +24,7 @@ if AZURE_CLIENT_ID:
     print(f"Production Mode: Initializing Managed Identity with Client ID: {AZURE_CLIENT_ID}")
     # Explicitly binds to your User-Assigned Identity inside the ACA container
     credential = DefaultAzureCredential(managed_identity_client_id=AZURE_CLIENT_ID)
+    print(f"Managed Identity successfully initialized for production environment: {credential}")
 else:
     print("Development Mode: Falling back to local developer Azure CLI credentials...")
     # Automatically scans your local machine for an active 'az login' session
@@ -47,13 +48,13 @@ async def chat_with_agent(request: Request):
         # 🔑 DYNAMIC AUTHENTICATION: Fetch a fresh token for the AI Foundry data-plane audience
         token_struct = credential.get_token("https://ai.azure.com/.default")
         bearer_token = token_struct.token
-        
+        print(f"Successfully acquired Bearer Token for Foundry: {bearer_token}... (truncated)")
         # 🔒 HARDCODED PAYLOAD: The precise payload used in your successful Agent Version 2 test
         hardcoded_payload = {
             "input": [
                 {
                     "role": "user",
-                    "content": "Tell me what you can help with, and confirm your active runtime context."
+                    "content": ""
                 }
             ],
             "agent_reference": {
