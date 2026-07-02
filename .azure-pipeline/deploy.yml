@@ -122,5 +122,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=Agent" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
           fi

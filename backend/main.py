@@ -46,6 +46,8 @@ async def chat_with_agent(request: Request):
     """
     try:
         # 🔑 DYNAMIC AUTHENTICATION: Fetch a fresh token for the AI Foundry data-plane audience
+        incoming_data = await request.json()
+        user_prompt = incoming_data.get("prompt", "")
         token_struct = credential.get_token("https://ai.azure.com/.default")
         bearer_token = token_struct.token
         print(f"Successfully acquired Bearer Token for Foundry: {bearer_token}... (truncated)")
@@ -54,7 +56,7 @@ async def chat_with_agent(request: Request):
             "input": [
                 {
                     "role": "user",
-                    "content": ""
+                    "content": user_prompt
                 }
             ],
             "agent_reference": {
