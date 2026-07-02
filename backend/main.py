@@ -33,7 +33,15 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="Foundry Chat Backend")
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ca-chat-frontend-dev.politeocean-d2b5e0d5.eastus.azurecontainerapps.io"
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # One shared client for the process lifetime.
 credential = DefaultAzureCredential()

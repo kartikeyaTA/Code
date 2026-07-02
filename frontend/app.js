@@ -1,6 +1,5 @@
 // Point this at wherever the backend (uvicorn) is running.
 const API_BASE = "https://ca-chat-backend-dev.salmonpebble-18e924cc.eastus.azurecontainerapps.io";
-
 const sessionListEl = document.getElementById("session-list");
 const messagesEl = document.getElementById("messages");
 const emptyStateEl = document.getElementById("empty-state");
