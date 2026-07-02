@@ -8,7 +8,7 @@ from azure.ai.projects.models import PromptAgentDefinition # 🎯 IMPORT FOR CRE
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://foundry-services-applications3-dev.services.ai.azure.com/api/projects/foundry-project-applications3-dev'
+project_endpoint = 'https://foundry-services-applications4-dev.services.ai.azure.com/api/projects/foundry-project-applications4-dev'
 agent_name = "Agent"
 prompt_file_path = "prompt.txt"
 model_deployment = "gpt-5.4-mini" 
@@ -50,7 +50,13 @@ with AIProjectClient(
             definition=current_definition
         )
         print(f"\n🎯 UPDATE SUCCESS: Pushed version '{new_version.version}' to '{agent_name}'.")
-
+        if new_version.version:
+    # 🎯 This special print command creates an Azure DevOps variable named $(AgentVersion) dynamically
+            print(f"##vso[task.setvariable variable=AgentVersion;]{new_version.version}")
+            print(f"🚀 Successfully exposed version '{new_version.version}' to the pipeline agent context.")
+        else:
+            print("❌ Failed to resolve a valid agent version string.")
+            sys.exit(1)
     except ResourceNotFoundError:
         # Check Option B: Fallback and trigger creation engine safely via Agent Definition wrapper
         print(f"\n⚠️ Asset Context Not Found: '{agent_name}' does not exist.")

@@ -6,11 +6,11 @@ from azure.storage.blob import BlobServiceClient
 
 app = FastAPI(title="Azure Core Service")
 
-SECRET_VAL = os.getenv("MY_DUMMY_SECRET", "Secret not injected yet")
+SECRET_VAL = os.getenv("AgentVersion", "Secret not injected yet")
 AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 FOUNDRY_ENDPOINT = os.getenv(
     "FOUNDRY_ENDPOINT",
-    "https://foundry-services-applications3-dev.services.ai.azure.com/api/projects/foundry-project-applications3-dev/openai/v1/responses"
+    "https://foundry-services-applications4-dev.services.ai.azure.com/api/projects/foundry-project-applications4-dev/openai/v1/responses"
 )
 
 # APIM Configuration
@@ -57,7 +57,7 @@ async def chat_with_agent(request: Request):
             ],
             "agent_reference": {
                 "name": "Agent",
-                "version": "2",
+                "version": SECRET_VAL,
                 "type": "agent_reference"
             }
         }

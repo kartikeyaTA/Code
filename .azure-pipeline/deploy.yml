@@ -11,15 +11,15 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  dockerRegistryConnection: 'acr-docker-service-connection5' 
+  dockerRegistryConnection: 'acr-docker-service-connection6' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
   acrName: 'aichatregistry1dev' 
   imageRepository: 'core-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'AIsecretschatbot1'
-  resourceGroup: 'rg-Application-shared'
+  keyVaultName: 'AIsecretschatbot2'
+  resourceGroup: 'rg-Application-shared1'
   containerAppName: 'ca-chat-backend-dev'
-  containerAppEnv: 'aca-env-chat-dev' 
+  containerAppEnv: 'aca-env-chat-pub-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -59,11 +59,7 @@ stages:
           
           echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
           echo "##vso[task.setvariable variable=DYNAMIC_IDENTITY_RESOURCE_ID]$IDENTITY_RESOURCE_ID"
-          
-          az keyvault secret set \
-            --vault-name "$(keyVaultName)" \
-            --name "vault-secret2" \
-            --value "$(Build.BuildId)"          
+                   
 
     # 3. Secure Deployment via Native CLI with Identity Fixed
     - task: AzureCLI@2
@@ -81,7 +77,7 @@ stages:
           
           # 1. ◄ FIX A: Ensure secret is fetched fresh inside the active shell scope
           echo "Fetching secret token..."
-          SECRET_VAL=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "vault-secret2" --query "value" -o tsv)
+          SECRET_VAL=$(az keyvault secret show --vault-name "$(keyVaultName)" --name "AgentVersion" --query "value" -o tsv)
           echo "Secret fetched successfully. $SECRET_VAL"
           # 2. APPLICATION DOES NOT EXIST: Create from scratch
           if [ "$APP_STATE" == "not_found" ]; then
@@ -98,7 +94,7 @@ stages:
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
               --registry-server "$(acrName).azurecr.io" \
               --registry-identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
-              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$SECRET_VAL" 
+              --env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=$SECRET_VAL" 
           # 3. APPLICATION EXISTS: Update elements correctly sequentially
           else
             echo "App found. Running dedicated configuration updates..."
@@ -126,5 +122,5 @@ stages:
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --min-replicas 1 \
               --max-replicas 3 \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "MY_DUMMY_SECRET=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
+              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=$SECRET_VAL" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
           fi
