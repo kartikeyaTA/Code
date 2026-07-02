@@ -53,6 +53,8 @@ with AIProjectClient(
         if new_version.version:
     # 🎯 This special print command creates an Azure DevOps variable named $(AgentVersion) dynamically
             print(f"##vso[task.setvariable variable=AgentVersion;]{new_version.version}")
+            with open("version.txt", "w", encoding="utf-8") as f:
+                f.write(str(new_version.version))
             print(f"🚀 Successfully exposed version '{new_version.version}' to the pipeline agent context.")
         else:
             print("❌ Failed to resolve a valid agent version string.")
@@ -72,6 +74,15 @@ with AIProjectClient(
         )
         print(f"\n🎯 CREATION SUCCESS: Brand new agent created directly via code context.")
         print(f" -> Assigned Initial Tracking Version: {new_agent_version.version}")
+        if new_agent_version.version:
+    # 🎯 This special print command creates an Azure DevOps variable named $(AgentVersion) dynamically
+            print(f"##vso[task.setvariable variable=AgentVersion;]{new_agent_version.version}")
+            with open("version.txt", "w", encoding="utf-8") as f:
+                f.write(str(new_agent_version.version))
+            print(f"🚀 Successfully exposed version '{new_agent_version.version}' to the pipeline agent context.")
+        else:
+            print("❌ Failed to resolve a valid agent version string.")
+            sys.exit(1)
 
     except Exception as e:
         print(f"\n❌ Execution Exception encountered: {e}")
