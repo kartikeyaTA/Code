@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY . .
 
 # Expose the port the static server runs on
-EXPOSE 5500
+EXPOSE 3000
 
 # Mimic your local command to serve the static files
-CMD ["python", "-m", "http.server", "5500"]
+CMD ["python", "-m", "http.server", "3000"]

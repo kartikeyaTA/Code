@@ -1,5 +1,5 @@
 // Point this at wherever the backend (uvicorn) is running.
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://ca-chat-backend-dev.politeglacier-2e13f3f5.eastus2.azurecontainerapps.io";
 
 const sessionListEl = document.getElementById("session-list");
 const messagesEl = document.getElementById("messages");
