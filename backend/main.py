@@ -26,7 +26,7 @@ from azure.ai.agents.models import ListSortOrder
 # --------------------------------------------------------------------------
 PROJECT_ENDPOINT = os.getenv(
     "FOUNDRY_ENDPOINT",
-    "https://foundry-services-applications4-dev.services.ai.azure.com/api/projects/foundry-project-applications4-dev/openai/v1/responses"
+    "https://foundry-services-applications4-dev.services.ai.azure.com/api/projects/foundry-project-applications4-dev"
 )
 AGENT_ID = os.getenv("AgentVersion", "Secret not injected yet")
 
