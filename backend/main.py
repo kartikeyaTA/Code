@@ -33,15 +33,6 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="Foundry Chat Backend")
 
-# Allow the static frontend (served from a different port/origin) to call this API.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://ca-chat-frontend-dev.politeocean-d2b5e0d5.eastus.azurecontainerapps.io"],  # tighten to your actual frontend origin in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 
 # One shared client for the process lifetime.
