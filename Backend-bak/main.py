@@ -124,31 +124,3 @@ async def chat_with_agent(request: Request):
             status_code=500,
             media_type="application/json"
         )
-        
-@app.post("/admin/register-mcp")
-async def bootstrap_mcp_connection():
-    if not FOUNDRY_ENDPOINT:
-        raise HTTPException(status_code=400, detail="FOUNDRY_ENDPOINT environment variable is missing.")
-        
-    try:
-        print("Connecting to Azure AI Foundry via backend infrastructure identity...")
-        project_client = AIProjectClient.from_connection_string(
-            conn_str=FOUNDRY_ENDPOINT,
-            credential=credential
-        )
-        
-        print("Registering the internal VNet-isolated MCP container application...")
-        # This will securely register your private backend container tool mapping
-        connection = project_client.connections.create_or_update(
-            connection_name="Private-MCP-Backend-Connection",
-            connection_type="Custom",
-            endpoint="https://mcp-backend-dev.politeglacier-2e13f3f5.eastus2.azurecontainerapps.io/sse",
-            credentials={"key": "My-Foundry-Secure-Key-2026"},  # Your key-based token string
-            metadata={"apiType": "MCP"}
-        )
-        
-        return {"status": "Success", "message": "Private MCP tool registered seamlessly inside the VNet!"}
-        
-    except Exception as e:
-        print(f"Failed to bootstrap MCP connection: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
