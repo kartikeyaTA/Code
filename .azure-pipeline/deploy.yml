@@ -4,7 +4,7 @@ trigger:
       - dev
   paths:
     include:
-      - Backend/*
+      - backend/*
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -37,8 +37,8 @@ stages:
         containerRegistry: '$(dockerRegistryConnection)'
         repository: '$(imageRepository)'
         command: 'buildAndPush'
-        Dockerfile: 'Backend/Dockerfile' 
-        buildContext: 'Backend'
+        Dockerfile: 'backend/Dockerfile' 
+        buildContext: 'backend'
         tags: |
           $(tag)
           latest
