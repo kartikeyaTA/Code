@@ -1,4 +1,0 @@
-fastapi==0.111.0
-uvicorn==0.29.0
-azure-identity==1.16.0
-azure-storage-blob==12.20.0
