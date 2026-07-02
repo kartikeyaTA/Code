@@ -29,8 +29,8 @@ else:
     print("Development Mode: Falling back to local developer Azure CLI credentials...")
     # Automatically scans your local machine for an active 'az login' session
     credential = DefaultAzureCredential()
-    
-    
+
+
 @app.get("/")
 def read_root():
     return {
@@ -76,15 +76,15 @@ async def chat_with_agent(request: Request):
                     "Authorization": f"Bearer {bearer_token}"
                 }
             )
-            
+
             print(f"Received response from Foundry. HTTP Status: {response.status_code}")
-            
+
             # 🎯 NEW STRATEGY: Extract and clean the text right here at the source!
             if response.status_code == 200:
                 try:
                     response_json = response.json()
                     clean_text = None
-                    
+
                     # Safely loop through output payload blocks to extract the plain markdown response
                     for block in response_json.get("output", []):
                         if block.get("type") == "message" and "content" in block:
@@ -92,7 +92,7 @@ async def chat_with_agent(request: Request):
                             if content_array and isinstance(content_array, list):
                                 clean_text = content_array[0].get("text")
                                 break
-                    
+
                     if clean_text:
                         print("🎯 Successfully isolated clean agent markdown text string. Returning to frontend.")
                         # 🎯 FIX: Return JUST the text content, completely eliminating raw downstream headers!
@@ -104,7 +104,7 @@ async def chat_with_agent(request: Request):
                 except Exception as parse_err:
                     print(f"Backend failed to parse inner text from JSON structure: {parse_err}")
 
-            # Safe Fallback: If AI call failed or parsing missed, return raw content 
+            # Safe Fallback: If AI call failed or parsing missed, return raw content
             # but CRUCIALY do not copy response.headers which poisons Envoy.
             print("Fallback triggered. Returning unparsed content context.")
             return Response(
