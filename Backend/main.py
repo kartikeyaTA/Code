@@ -29,6 +29,7 @@ else:
     # Automatically scans your local machine for an active 'az login' session
     credential = DefaultAzureCredential()
     
+    
 @app.get("/")
 def read_root():
     return {
