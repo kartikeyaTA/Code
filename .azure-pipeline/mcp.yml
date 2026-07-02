@@ -18,8 +18,8 @@ variables:
   tag: '$(Build.BuildId)'
   keyVaultName: 'AIsecretschatbot2'
   resourceGroup: 'rg-Application-shared1'
-  containerAppName: 'mcp-backend-dev'
-  containerAppEnv: 'aca-env-chat-pub-dev' 
+  containerAppName: 'mcp-backend-pub-dev'
+  containerAppEnv: 'aca-env-chat-pri-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -84,7 +84,7 @@ stages:
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 8000 \
-              --ingress internal \
+              --ingress external \
               --min-replicas 1 \
               --max-replicas 3 \
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
