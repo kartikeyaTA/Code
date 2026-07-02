@@ -254,6 +254,167 @@ async def get_incident_by_number_and_user(ticket_number: str, target_username: s
         # Returns the full JSON object of the single matching ticket
         return results[0]
 
+@mcp.tool()
+async def update_incident(
+    sys_id: str,
+    short_description: str = "",
+    description: str = "",
+    state: str = "",
+    impact: str = "",
+    urgency: str = "",
+    priority: str = "",
+    assignment_group: str = "",
+    assigned_to: str = "",
+    work_notes: str = "",
+    comments: str = "",
+) -> dict:
+    """Update an existing incident in ServiceNow using its sys_id.
+
+    Args:
+        sys_id: The unique 32-character identifier (sys_id) of the incident record.
+        short_description: Updated brief summary of the incident.
+        description: Updated detailed description.
+        state: Update state — 1=New, 2=In Progress, 3=On Hold, 4=Resolved, 5=Closed, 6=Canceled.
+        impact: Update impact level — 1=High, 2=Medium, 3=Low.
+        urgency: Update urgency level — 1=High, 2=Medium, 3=Low.
+        priority: Update priority — 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning.
+        assignment_group: Name or sys_id of the group to assign the incident to.
+        assigned_to: Username or sys_id of the person assigned.
+        work_notes: Internal notes to append (not visible to caller).
+        comments: Customer-facing comments to append (visible to caller).
+    """
+    url = f"{SERVICENOW_BASE_URL}/table/incident/{sys_id}"
+
+    # Map out the parameters that can be updated
+    fields = {
+        "short_description": short_description,
+        "description": description,
+        "state": state,
+        "impact": impact,
+        "urgency": urgency,
+        "priority": priority,
+        "assignment_group": assignment_group,
+        "assigned_to": assigned_to,
+        "work_notes": work_notes,
+        "comments": comments,
+    }
+
+    # Only send fields that contain values to avoid overwriting data with blanks
+    payload = {k: v for k, v in fields.items() if v}
+
+    if not payload:
+        return {"message": "No update fields were provided. Record remains unchanged."}
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.patch(
+            url,
+            json=payload,
+            headers={
+                "Authorization": _basic_auth_header(),
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+        )
+
+    if response.status_code != 200:
+        return {
+            "error": f"ServiceNow returned status code {response.status_code}",
+            "detail": response.text,
+        }
+
+    body = response.json()
+    data = body.get("result", {})
+
+    if not isinstance(data, dict):
+        return {"error": "Unexpected response from ServiceNow", "detail": str(body)}
+
+    def display(field):
+        val = data.get(field, {})
+        return val.get("display_value", "") if isinstance(val, dict) else str(val)
+
+    return {
+        "sys_id": data.get("sys_id", ""),
+        "number": data.get("number", ""),
+        "short_description": data.get("short_description", ""),
+        "state": display("state"),
+        "priority": display("priority"),
+        "updated_on": data.get("sys_updated_on", ""),
+    }
+
+@mcp.tool()
+async def close_incident_by_number(
+    ticket_number: str,
+    close_code: str = "Solved (Permanently)",
+    close_notes: str = "Ticket closed automatically by Customer Support Agent.",
+) -> dict:
+    """Closes an existing incident in ServiceNow using its ticket number.
+
+    Args:
+        ticket_number: The display number of the incident (e.g., 'INC0010001').
+        close_code: The reason the ticket is being closed. Standard OOTB options include:
+                    'Solved (Permanently)', 'Solved (Workaround)', 'Solved by Change',
+                    'Not Solved (Not Reproducible)', 'Not Solved (Too Costly)'.
+        close_notes: Summary details explaining the final resolution.
+    """
+    headers = {
+        "Authorization": _basic_auth_header(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        # --- STEP 1: Find the sys_id using the ticket number ---
+        search_url = f"{SERVICENOW_BASE_URL}/table/incident"
+        search_params = {
+            "sysparm_query": f"number={ticket_number}",
+            "sysparm_fields": "sys_id",
+            "sysparm_limit": 1
+        }
+
+        search_response = await client.get(search_url, params=search_params, headers=headers)
+
+        if search_response.status_code != 200:
+            return {
+                "error": f"Failed to look up ticket number. ServiceNow returned status {search_response.status_code}",
+                "detail": search_response.text
+            }
+
+        search_results = search_response.json().get("result", [])
+        if not search_results:
+            return {"error": f"No ticket found with ticket number '{ticket_number}'."}
+
+        # Extract the hidden sys_id
+        sys_id = search_results[0].get("sys_id")
+
+        # --- STEP 2: Update the ticket state to Closed ---
+        update_url = f"{SERVICENOW_BASE_URL}/table/incident/{sys_id}"
+
+        # State '5' maps to Closed based on your previous state configuration
+        payload = {
+            "state": "5",
+            "close_code": close_code,
+            "close_notes": close_notes
+        }
+
+        response = await client.patch(update_url, json=payload, headers=headers)
+
+    # --- STEP 3: Process the final response ---
+    if response.status_code != 200:
+        return {
+            "error": f"ServiceNow rejected closure with status code {response.status_code}",
+            "detail": response.text,
+        }
+
+    body = response.json()
+    data = body.get("result", {})
+
+    return {
+        "ticket_number": data.get("number", ticket_number),
+        "sys_id": data.get("sys_id", ""),
+        "status": "Closed",
+        "message": f"Ticket {ticket_number} has been successfully closed."
+    }
+
 # --- STARLETTE APPS / ROUTES ---
 async def health(request: Request):
     return JSONResponse({"status": "ok"})

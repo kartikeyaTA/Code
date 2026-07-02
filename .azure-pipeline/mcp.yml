@@ -83,7 +83,7 @@ stages:
               --resource-group "$(resourceGroup)" \
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
-              --target-port 80 \
+              --target-port 8000 \
               --ingress internal \
               --min-replicas 1 \
               --max-replicas 3 \
