@@ -11,15 +11,15 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  dockerRegistryConnection: 'acr-docker-service-connection7' 
+  dockerRegistryConnection: 'acr-docker-service-connection8' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
   acrName: 'aichatregistry5dev' 
   imageRepository: 'frontend-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'AIsecretschatbot5'
-  resourceGroup: 'rg-Application-shared4'
+  keyVaultName: 'AIsecretschatbot6'
+  resourceGroup: 'rg-Application-shared5'
   containerAppName: 'ca-chat-frontend-dev'
-  containerAppEnv: 'aca-env-chat-pri-dev' 
+  containerAppEnv: 'aca-env-chat-pub-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev'
   # Fixed pointer reference to your verified private backend app endpoint
