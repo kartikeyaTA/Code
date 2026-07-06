@@ -9,7 +9,6 @@ from starlette.routing import Route
 from starlette.datastructures import Headers
 
 
-
 # --- CONFIGURATION ---
 SERVICENOW_BASE_URL = "https://dev408306.service-now.com/api/now"
 SERVICENOW_USERNAME = "admin"

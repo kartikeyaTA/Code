@@ -18,7 +18,7 @@ variables:
   tag: '$(Build.BuildId)'
   keyVaultName: 'AIsecretschatbot12'
   resourceGroup: 'rg-Application-shared12'
-  containerAppName: 'mcp-backend-dev'
+  containerAppName: 'mcp-backend-dev-pub'
   containerAppEnv: 'aca-env-chat-pub-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
