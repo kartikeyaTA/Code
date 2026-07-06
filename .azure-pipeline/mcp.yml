@@ -84,7 +84,7 @@ stages:
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 8000 \
-              --ingress external \
+              --ingress internal \
               --min-replicas 1 \
               --max-replicas 3 \
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \
