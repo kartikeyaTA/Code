@@ -8,8 +8,6 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.datastructures import Headers
 
-
-
 # --- CONFIGURATION ---
 SERVICENOW_BASE_URL = "https://dev408306.service-now.com/api/now"
 SERVICENOW_USERNAME = "admin"
@@ -18,8 +16,6 @@ MCP_API_KEY = "mcp_key"
 MCP_API_KEY_HEADER = "x-api-key"
 
 mcp = FastMCP("servicenow-mcp")
-
-
 
 
 # --- MIDDLEWARE ---
@@ -185,7 +181,7 @@ async def get_incidents_by_user(target_username: str) -> list:
 
 
 @mcp.tool()
-async def search_kb_via_table_api(user_query: str, max_results: int = 5) -> list:
+async def search_kb_via_table_api(user_query: str, max_results: int = 2) -> list:
     """Queries the ServiceNow kb_knowledge table using a raw string text search.
     Returns a list of matching published active articles. Good for RAG contexts.
 
