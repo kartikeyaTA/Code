@@ -47,8 +47,6 @@ stages:
           # 🌟 FIXED: Appended --break-system-packages directly to the installation tasks
           pip install --upgrade pip --break-system-packages
           pip install azure-ai-projects azure-identity openai python-dotenv --break-system-packages
-          az account get-access-token --resource https://management.azure.com --force-refresh > /dev/null
-          az account get-access-token --resource https://cognitiveservices.azure.com --force-refresh > /dev/null
           # Use the structural connection string layout to pass through firewalls
           
           export AGENT_PROMPT_FILE="prompt.txt"

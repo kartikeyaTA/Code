@@ -10,7 +10,7 @@ SECRET_VAL = os.getenv("AgentVersion", "Secret not injected yet")
 AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 FOUNDRY_ENDPOINT = os.getenv(
     "FOUNDRY_ENDPOINT",
-    "https://private-test.services.ai.azure.com/api/projects/private-test-project/openai/v1/responses"
+    "https://foundry-services-applications11-dev.services.ai.azure.com/api/projects/foundry-project-applications11-dev/openai/v1/responses"
 )
 
 # APIM Configuration
