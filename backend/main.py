@@ -43,7 +43,7 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 # This single call is also what makes your logging.* calls (if you add any)
 # show up in the `traces` table — no extra code needed for that part.
 configure_azure_monitor(
-    connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"],
+    connection_string="InstrumentationKey=eeff68dd-23bc-4122-9ed7-1e49baf06a93;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=e6df3523-66f4-4726-aa06-1459d6dd4ad2",
 )
 
 # --- OBSERVABILITY: basic logging setup ------------------------------------
