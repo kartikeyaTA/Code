@@ -5,3 +5,5 @@ azure-ai-projects>=2.0.0b1
 azure-ai-agents>=1.0.0
 azure-identity>=1.17.1
 python-dotenv==1.0.1
+opentelemetry-api
+azure-monitor-opentelemetry
