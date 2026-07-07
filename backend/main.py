@@ -36,7 +36,7 @@ app = FastAPI(title="Foundry Chat Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ca-chat-frontend-dev.politeocean-d2b5e0d5.eastus.azurecontainerapps.io"
+        "https://ca-chat-frontend-dev.delightfulground-33da19a5.eastus.azurecontainerapps.io"
     ],
     allow_credentials=False,
     allow_methods=["*"],
