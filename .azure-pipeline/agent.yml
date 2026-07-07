@@ -70,7 +70,7 @@ stages:
           # 2. APPLICATION DOES NOT EXIST: Create from scratch
           if [ "$APP_STATE" == "not_found" ]; then
             echo "Performing full creation sequence..."
-            exit 1
+            exit 0
           else
             echo "App found. Running dedicated configuration updates..."
             CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
