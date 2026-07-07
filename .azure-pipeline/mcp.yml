@@ -11,15 +11,15 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  dockerRegistryConnection: 'acr-docker-service-connection13' 
+  dockerRegistryConnection: 'acr-docker-service-connection14' 
   subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357'
-  acrName: 'aichatregistrydev7' 
+  acrName: 'aichatregistrydev8' 
   imageRepository: 'mcp-service'
   tag: '$(Build.BuildId)'
-  keyVaultName: 'AIsecretschatbot17'
-  resourceGroup: 'rg-Application-shared17'
+  keyVaultName: 'AIsecretschatbot19'
+  resourceGroup: 'rg-Application-shared19'
   containerAppName: 'mcp-backend-dev'
-  containerAppEnv: 'aca-env-chat-pri-dev' 
+  containerAppEnv: 'aca-env-chat-pub-dev' 
   envName: 'dev'
   managedIdentityName: 'id-app-gateway-dev' 
 
@@ -84,7 +84,7 @@ stages:
               --environment "$(containerAppEnv)" \
               --image "$(acrName).azurecr.io/$(imageRepository):$(tag)" \
               --target-port 8000 \
-              --ingress internal \
+              --ingress external \
               --min-replicas 1 \
               --max-replicas 3 \
               --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)" \

@@ -11,11 +11,11 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection'
-  resourceGroup: 'rg-Application-shared1'
+  resourceGroup: 'rg-Application-shared19'
   managedIdentityName: 'id-app-gateway-dev'
   containerAppName: 'ca-chat-backend-dev'
-  keyVaultName: 'AIsecretschatbot2'
-  containerAppEnv: 'aca-env-chat-pri-dev' 
+  keyVaultName: 'AIsecretschatbot19'
+  containerAppEnv: 'aca-env-chat-pub-dev' 
  
 
 stages:
