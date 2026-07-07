@@ -43,15 +43,21 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 # This single call is also what makes your logging.* calls (if you add any)
 # show up in the `traces` table — no extra code needed for that part.
 configure_azure_monitor(
-    connection_string="InstrumentationKey=eeff68dd-23bc-4122-9ed7-1e49baf06a93;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=e6df3523-66f4-4726-aa06-1459d6dd4ad2",
+    connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"],
 )
 
 # --- OBSERVABILITY: basic logging setup ------------------------------------
 # Anything logged via `logger` below now flows into the `traces` table in
 # Application Insights automatically -- this is the piece that lets you see
 # user_message / agent_reply text, not just counts/latency.
-logging.basicConfig(level=logging.INFO)
+#
+# NOTE: configure_azure_monitor() already attaches a handler to the root
+# logger, so a plain logging.basicConfig(level=...) call is a no-op (Python
+# skips it whenever the root logger already has handlers). We set the level
+# explicitly instead, or INFO logs get silently dropped at WARNING default.
+logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger("foundry-chat-backend")
+logger.setLevel(logging.INFO)
 # ----------------------------------------------------------------------------
 
 meter = metrics.get_meter("foundry-chat-backend")
@@ -179,7 +185,7 @@ def create_session():
     _save_session(data)
 
     # --- OBSERVABILITY: count + log session creation -----------------------
-    session_created_counter.add(1)
+    session_created_counter.add(1, attributes={"session_id": session_id})
     logger.info("session_created", extra={"session_id": session_id})
     # ------------------------------------------------------------------------
 
@@ -211,7 +217,7 @@ def chat(req: ChatRequest):
     conversation_id = data["thread_id"]
 
     # --- OBSERVABILITY: count + time this request ---------------------------
-    metric_attrs = {"agent_name": agent.name}
+    metric_attrs = {"agent_name": agent.name, "session_id": req.session_id}
     chat_requests_counter.add(1, attributes=metric_attrs)
     start_time = time.time()
     # --------------------------------------------------------------------------
