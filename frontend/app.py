@@ -6,7 +6,6 @@ import streamlit as st
 # ============================================================================
 # 1. CONFIGURATION & STATE INITIALIZATION
 # ============================================================================
-# Matches your exact, verified internal backend endpoint anchor
 API_BASE = os.getenv(
     "BACKEND_INTERNAL_URL",
     "https://ca-chat-backend-dev.internal.delightfulground-33da19a5.eastus.azurecontainerapps.io"
@@ -17,7 +16,7 @@ st.set_page_config(page_title="Foundry Chat", layout="wide")
 # Sync local memory states matching app.js globals
 if "current_session_id" not in st.session_state:
     st.session_state.current_session_id = None
-if "chat_messages" not in st.session_state:
+if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Style elements to replicate your sidebar items and delete buttons cleanly
@@ -29,40 +28,47 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# 2. CORE BACKEND API OPERATIONS
+# 2. CORE BACKEND API OPERATIONS (FIXED CLIENT SCOPING)
 # ============================================================================
 def get_client():
+    # Safely anchors all relative routes to your private backend endpoint
     return httpx.Client(base_url=API_BASE.rstrip("/"), timeout=60.0)
 
 def fetch_sessions():
-    with httpx.Client() as client:
+    with get_client() as client:
         res = client.get("/sessions")
-        if res.status_code != 200: raise Exception("Failed to load sessions")
-        return response_data if isinstance((data := res.json()), list) else data.get("sessions", [])
+        if res.status_code != 200: 
+            raise Exception("Failed to load sessions")
+        data = res.json()
+        return data if isinstance(data, list) else data.get("sessions", [])
 
 def fetch_session(session_id):
-    with httpx.AsyncClient() as client: # Using async context block safely inside sync envelope
-        res = httpx.get(f"{API_BASE}/sessions/{session_id}", timeout=60.0)
-        if res.status_code != 200: raise Exception("Failed to load session details")
+    with get_client() as client:
+        res = client.get(f"/sessions/{session_id}")
+        if res.status_code != 200: 
+            raise Exception("Failed to load session details")
         return res.json()
 
 def create_session():
-    with httpx.Client() as client:
+    with get_client() as client:
         res = client.post("/sessions")
-        if res.status_code != 200: raise Exception("Failed to initiate secure session context")
+        if res.status_code != 200: 
+            raise Exception("Failed to initiate secure session context")
         return res.json()
 
 def delete_session_api(session_id):
-    with httpx.Client() as client:
+    with get_client() as client:
         client.delete(f"/sessions/{session_id}")
 
 def send_chat_message(session_id, user_query):
-    with httpx.Client() as client:
+    with get_client() as client:
         payload = {"session_id": session_id, "user_query": user_query}
         res = client.post("/chat", json=payload)
         if res.status_code != 200:
-            try: detail = res.json().get("detail", "Chat engine failure")
-            except: detail = "Chat request failed"
+            try: 
+                detail = res.json().get("detail", "Chat engine failure")
+            except: 
+                detail = "Chat request failed"
             raise Exception(detail)
         return res.json()
 
@@ -71,36 +77,42 @@ def send_chat_message(session_id, user_query):
 # ============================================================================
 def open_session(session_id):
     st.session_state.current_session_id = session_id
-    data = fetch_session(session_id)
-    st.session_state.messages = data.get("messages", [])
+    try:
+        data = fetch_session(session_id)
+        st.session_state.messages = data.get("messages", [])
+    except Exception as e:
+        st.error(f"Failed to open session: {e}")
 
 def handle_delete(session_id):
-    delete_session_api(session_id)
-    if st.session_state.current_session_id == session_id:
-        st.session_state.current_session_id = None
-        st.session_state.messages = []
+    try:
+        delete_session_api(session_id)
+        if st.session_state.current_session_id == session_id:
+            st.session_state.current_session_id = None
+            st.session_state.messages = []
+    except Exception as e:
+        st.error(f"Failed to delete session: {e}")
     st.rerun()
 
 # --- SIDEBAR COMPONENT PANEL ---
 with st.sidebar:
     st.subheader("Foundry Channels")
     
-    # Replicates: const newSessionBtn = document.getElementById("new-session-btn");
     if st.button("+ New chat", type="primary", use_container_width=True):
-        session_node = create_session()
-        open_session(session_node["session_id"])
-        st.rerun()
+        try:
+            session_node = create_session()
+            open_session(session_node["session_id"])
+            st.rerun()
+        except Exception as e:
+            st.sidebar.error(f"Error creating session: {e}")
         
     st.write("")
     
-    # Replicates: function renderSessionList(sessions)
     try:
         all_active_sessions = fetch_sessions()
         for session in all_active_sessions:
             sid = session["session_id"]
             title = session.get("title") or "New chat"
             
-            # Form clean horizontal rows with an inline delete button next to each channel
             col_lbl, col_del = st.columns([0.85, 0.15])
             
             with col_lbl:
@@ -111,7 +123,6 @@ with st.sidebar:
                     st.rerun()
             
             with col_del:
-                # Replicates the '✕' event handler mapping context
                 if st.button("✕", key=f"del_{sid}", help="Delete this session", use_container_width=True):
                     handle_delete(sid)
     except Exception as network_err:
@@ -120,7 +131,6 @@ with st.sidebar:
 # ============================================================================
 # 4. CHAT INTERFACE COMPONENT PANEL
 # ============================================================================
-# Resolve dynamic heading layout matching chatTitleEl.textContent
 active_title = "New chat"
 if st.session_state.current_session_id and 'all_active_sessions' in locals():
     for s in all_active_sessions:
@@ -130,30 +140,29 @@ if st.session_state.current_session_id and 'all_active_sessions' in locals():
 
 st.header(active_title)
 
-# Render empty context warning matching emptyStateEl layout
 if not st.session_state.current_session_id:
     st.info("Start the conversation by typing a message below or selecting a history line.")
 else:
-    # Render all historical entries matching renderMessage(role, content)
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-# Replicates: chatForm.addEventListener("submit", handleSendMessage);
-if user_prompt := st.chat_input("Type your message...", disabled=(False if st.session_state.current_session_id else False)):
+if user_prompt := st.chat_input("Type your message..."):
     
-    # 🎯 Lazily create a session if none is selected yet (Matches app.js logic exactly!)
+    # Lazily create a session if none is selected yet.
     if not st.session_state.current_session_id:
-        lazy_session = create_session()
-        st.session_state.current_session_id = lazy_session["session_id"]
-        st.session_state.messages = []
+        try:
+            lazy_session = create_session()
+            st.session_state.current_session_id = lazy_session["session_id"]
+            st.session_state.messages = []
+        except Exception as e:
+            st.error(f"Failed to lazily create session: {e}")
+            st.stop()
 
-    # Display user input immediately
     with st.chat_message("user"):
         st.write(user_prompt)
     st.session_state.messages.append({"role": "user", "content": user_prompt})
 
-    # Display agent response container block with a streaming processing wheel
     with st.chat_message("assistant"):
         with st.spinner("…"):
             try:
@@ -163,5 +172,4 @@ if user_prompt := st.chat_input("Type your message...", disabled=(False if st.se
             except Exception as chat_err:
                 st.error(f"Error: {chat_err}")
                 
-    # Refresh view layout to enforce state updates instantly
     st.rerun()
