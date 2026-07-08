@@ -43,9 +43,8 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 # This single call is also what makes your logging.* calls (if you add any)
 # show up in the `traces` table — no extra code needed for that part.
 configure_azure_monitor(
-    connection_string="InstrumentationKey=9fdc649f-c334-4596-b19b-e5e61fd3a532;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=d4bf2c67-ef62-4298-81dd-8e01fb825349",
+    connection_string="InstrumentationKey=7742c96f-37e3-4497-a8a8-48036960e811;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=ade9b35b-e488-432f-8ec9-2579383ad4d9",
 )
-
 # --- OBSERVABILITY: basic logging setup ------------------------------------
 # Anything logged via `logger` below now flows into the `traces` table in
 # Application Insights automatically -- this is the piece that lets you see
