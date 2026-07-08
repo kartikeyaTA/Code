@@ -33,7 +33,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 # Configuration
 # --------------------------------------------------------------------------
 
-PROJECT_ENDPOINT = "https://foundry-services-applications11-dev.services.ai.azure.com/api/projects/foundry-project-applications11-dev"
+PROJECT_ENDPOINT = "https://private-test.services.ai.azure.com/api/projects/private-test"
 AGENT_ID = "Agent"
 SESSIONS_DIR = Path(__file__).parent / "sessions"
 SESSIONS_DIR.mkdir(exist_ok=True)
