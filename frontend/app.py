@@ -8,7 +8,7 @@ import streamlit as st
 # ============================================================================
 API_BASE = os.getenv(
     "BACKEND_INTERNAL_URL",
-    "https://ca-chat-backend-dev.internal.delightfulground-33da19a5.eastus.azurecontainerapps.io"
+    "https://ca-chat-backend-dev.internal.bluecliff-27996fa8.eastus.azurecontainerapps.io"
 )
 
 st.set_page_config(page_title="Foundry Chat", layout="wide")
