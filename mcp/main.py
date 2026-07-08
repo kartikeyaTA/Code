@@ -17,7 +17,6 @@ MCP_API_KEY_HEADER = "x-api-key"
 
 mcp = FastMCP("servicenow-mcp")
 
-
 # --- MIDDLEWARE ---
 class APIKeyMiddleware:
     def __init__(self, app):
