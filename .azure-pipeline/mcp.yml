@@ -11,7 +11,7 @@ pool:
 
 variables:
   azureServiceConnection: 'azure-service-connection2'
-  dockerRegistryConnection: 'acr-docker-service-connection15' 
+  dockerRegistryConnection: 'acr-docker-service-connection16' 
   subscriptionId: 'b0366117-1664-4ef1-aa8b-d68e8ae762f9'
   acrName: 'aichatregistrydev11' 
   imageRepository: 'mcp-service'
