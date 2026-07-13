@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  azureServiceConnection: 'azure-service-connection2'
+  azureServiceConnection: 'azure-service-connection3'
   dockerRegistryConnection: 'acr-docker-service-connection16' 
   subscriptionId: 'b0366117-1664-4ef1-aa8b-d68e8ae762f9'
   acrName: 'aichatregistrydev11' 

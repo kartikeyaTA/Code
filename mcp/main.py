@@ -15,6 +15,7 @@ SERVICENOW_PASSWORD = "c5wfjC5C@!ZX"
 MCP_API_KEY = "mcp_key"
 MCP_API_KEY_HEADER = "x-api-key"
 
+
 mcp = FastMCP("servicenow-mcp")
 
 # --- MIDDLEWARE ---
