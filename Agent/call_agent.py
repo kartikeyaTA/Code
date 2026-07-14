@@ -50,6 +50,7 @@ with AIProjectClient(
             agent_name=agent_name,
             definition=current_definition
         )
+        
         print(f"\n🎯 UPDATE SUCCESS: Pushed version '{new_version.version}' to '{agent_name}'.")
         if new_version.version:
     # 🎯 This special print command creates an Azure DevOps variable named $(AgentVersion) dynamically

@@ -10,11 +10,11 @@ pool:
   vmImage: 'ubuntu-latest' 
 
 variables:
-  azureServiceConnection: 'azure-service-connection'
-  resourceGroup: 'rg-Application-shared19'
+  azureServiceConnection: 'azure-service-connection3'
+  resourceGroup: 'rg-Application-shared22'
   managedIdentityName: 'id-app-gateway-dev'
   containerAppName: 'ca-chat-backend-dev'
-  keyVaultName: 'AIsecretschatbot19'
+  keyVaultName: 'AIsecretschatbot23'
   containerAppEnv: 'aca-env-chat-pub-dev' 
  
 
@@ -52,47 +52,6 @@ stages:
           export AGENT_PROMPT_FILE="prompt.txt"
           export AZURE_CLIENT_ID="$(DYNAMIC_CLIENT_ID)"
 
-          python3 update_agent.py
+          python3 call_agent.py
 
           AgentVersion=$(cat version.txt 2>/dev/null || echo "1")
-
-          az keyvault secret set \
-          --vault-name "$(keyVaultName)" \
-          --name "AgentVersion" \
-          --value "$AgentVersion"
-
-          APP_STATE=$(az containerapp show --name "$(containerAppName)" --resource-group "$(resourceGroup)" --query properties.provisioningState -o tsv 2>/dev/null || echo "not_found")
-          echo "Current Container App State: $APP_STATE"
-          # 2. APPLICATION DOES NOT EXIST: Create from scratch
-          if [ "$APP_STATE" == "not_found" ]; then
-            echo "Performing full creation sequence..."
-            exit 0
-          else
-            echo "App found. Running dedicated configuration updates..."
-            CLIENT_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query clientId -o tsv)
-            IDENTITY_RESOURCE_ID=$(az identity show --name "$(managedIdentityName)" --resource-group "$(resourceGroup)" --query id -o tsv)
-          
-            echo "##vso[task.setvariable variable=DYNAMIC_CLIENT_ID]$CLIENT_ID"
-            echo "##vso[task.setvariable variable=DYNAMIC_IDENTITY_RESOURCE_ID]$IDENTITY_RESOURCE_ID"
-            # Step A: Update Identity bindings if needed
-            echo "Ensuring identity assignment..."
-            az containerapp identity assign \
-              --name "$(containerAppName)" \
-              --resource-group "$(resourceGroup)" \
-              --user-assigned "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
-
-            # Step B: Secure Registry Configuration with dedicated command
-            echo "Updating container registry configuration..."
-            az containerapp registry set \
-              --name "$(containerAppName)" \
-              --resource-group "$(resourceGroup)" \
-              --server "$(acrName).azurecr.io" \
-              --identity "$(DYNAMIC_IDENTITY_RESOURCE_ID)"
-
-            # Step D: Deploy Image, Replica Limits, and Env variables using valid flags
-            echo "Upgrading existing container app image and application state seamlessly..."
-            az containerapp update \
-              --name "$(containerAppName)" \
-              --resource-group "$(resourceGroup)" \
-              --set-env-vars "AZURE_CLIENT_ID=$(DYNAMIC_CLIENT_ID)" "AgentVersion=$AgentVersion" # ◄ FIX B: Changed from $(SECRET_VAL) to $SECRET_VAL
-          fi
