@@ -189,6 +189,7 @@ async def search_kb_via_table_api(user_query: str, max_results: int = 2) -> list
         user_query: The keywords or query string to search for within the knowledge base.
         max_results: Maximum number of articles to return (defaults to 5).
     """
+    print(f"🔍 Searching ServiceNow KB for query: '{user_query}' (max {max_results} results)...")
     url = f"{SERVICENOW_BASE_URL}/table/kb_knowledge"
     encoded_query = f"IR_AND_OR_QUERY={user_query}^workflow_state=published^active=true"
 
@@ -203,10 +204,10 @@ async def search_kb_via_table_api(user_query: str, max_results: int = 2) -> list
         "Content-Type": "application/json",
         "Authorization": _basic_auth_header()
     }
-
+    print(f"🔗 GET {url}?{params} with headers {headers}")
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(url, params=params, headers=headers)
-
+        print(f"📦 ServiceNow KB search response status: {response.status_code}")
         if response.status_code == 200:
             return response.json().get('result', [])
         else:

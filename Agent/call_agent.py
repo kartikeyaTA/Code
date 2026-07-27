@@ -9,10 +9,10 @@ from azure.ai.projects.models import PromptAgentDefinition # 🎯 IMPORT FOR CRE
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://foundry-services-applications15-dev.services.ai.azure.com/api/projects/foundry-project-applications15-dev'
+project_endpoint = 'https://foundry-services-applications16-dev.services.ai.azure.com/api/projects/foundry-project-applications16-dev'
 agent_name = "Agent"
 prompt_file_path = "prompt.txt"
-model_deployment = "apim-model-gateway1/gpt-5" 
+model_deployment = "apim-model-gateway/gpt-5" 
 
 if not os.path.exists(prompt_file_path):
     print(f"📁 Local Error: '{prompt_file_path}' not found! Creating template file...")

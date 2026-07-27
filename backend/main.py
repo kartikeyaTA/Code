@@ -32,9 +32,8 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 # --------------------------------------------------------------------------
 # Configuration
 # --------------------------------------------------------------------------
-
-PROJECT_ENDPOINT = "https://private-test.services.ai.azure.com/api/projects/private-test"
-AGENT_ID = "Agent"
+PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
+AGENT_ID = "txrh-demoagent-1"
 SESSIONS_DIR = Path(__file__).parent / "sessions"
 SESSIONS_DIR.mkdir(exist_ok=True)
 
@@ -169,13 +168,13 @@ def list_sessions():
 @app.post("/sessions", response_model=SessionSummary)
 def create_session():
     """Create a brand new, empty session (and a matching Foundry conversation)."""
-    session_id = str(uuid.uuid4())
+    #session_id = str(uuid.uuid4())
 
     # New SDK pattern uses conversations instead of threads
     conversation = openai_client.conversations.create()
 
     data = {
-        "session_id": session_id,
+        "session_id": conversation.id,
         "thread_id": conversation.id,  # map conversation ID here
         "title": "New chat",
         "created_at": _now(),
@@ -184,11 +183,11 @@ def create_session():
     _save_session(data)
 
     # --- OBSERVABILITY: count + log session creation -----------------------
-    session_created_counter.add(1, attributes={"session_id": session_id})
-    logger.info("session_created", extra={"session_id": session_id})
+    session_created_counter.add(1, attributes={"session_id": conversation.id})
+    logger.info("session_created", extra={"session_id": conversation.id})
     # ------------------------------------------------------------------------
 
-    return SessionSummary(session_id=session_id, title=data["title"], created_at=data["created_at"])
+    return SessionSummary(session_id=conversation.id, title=data["title"], created_at=data["created_at"])
 
 
 @app.get("/sessions/{session_id}")

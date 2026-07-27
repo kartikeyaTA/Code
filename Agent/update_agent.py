@@ -9,15 +9,15 @@ from azure.ai.projects.models import PromptAgentDefinition, MCPTool  # 🎯 IMPO
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://foundry-services-applications14-dev.services.ai.azure.com/api/projects/foundry-project-applications14-dev'
-agent_name = "Agent"
+project_endpoint = 'https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project'
+agent_name = "txrh-demoagent-1-copy"
 prompt_file_path = "prompt.txt"
-model_deployment = "gpt-5.6-sol"
+model_deployment = "gpt-5.4"
 
 # 🎯 MCP TOOL CONFIG -- points at your MCP server hosted on Azure Container Apps
 mcp_server_label = os.environ.get("MCP_SERVER_LABEL", "mcptool")
-mcp_server_url = 'https://mcp-backend-dev.victoriouswave-a39d700c.eastus.azurecontainerapps.io/'  # confirm this is your real MCP endpoint path (often /mcp, not root "/")
-mcp_project_connection_id = os.environ.get("MCP_PROJECT_CONNECTION_ID", "mcp-backend-dev-key")  # name of a pre-created Custom Keys connection holding x-api-key
+mcp_server_url = 'https://servicenow-mcp-app.greenmeadow-610a0edf.eastus.azurecontainerapps.io/sse'  # confirm this is your real MCP endpoint path (often /mcp, not root "/")
+mcp_project_connection_id = os.environ.get("MCP_PROJECT_CONNECTION_ID", "mcp-servicenow-copy")  # name of a pre-created Custom Keys connection holding x-api-key
 mcp_require_approval = os.environ.get("MCP_REQUIRE_APPROVAL", "never")  # "never" | "always"
 
 if not mcp_project_connection_id:
