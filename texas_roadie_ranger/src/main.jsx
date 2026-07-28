@@ -5,8 +5,9 @@ import App from './App.jsx'
 
 import { PublicClientApplication } from '@azure/msal-browser'
 import { MsalProvider } from '@azure/msal-react'
+import { msalConfig } from './auth/authConfig'
 
-const msalInstance = new PublicClientApplication();
+const msalInstance = new PublicClientApplication(msalConfig);
 msalInstance.initialize().then(() => {
   msalInstance.handleRedirectPromise().then((response) => {
     if (response) {
