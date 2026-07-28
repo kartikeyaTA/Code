@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create account — VoiceLive Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f0;
+      --surface:  #ffffff;
+      --border:   #e2dfd8;
+      --border2:  #ccc9c0;
+      --accent:   #2563eb;
+      --accent-dk:#1d4ed8;
+      --accent-lt:#eff4ff;
+      --red:      #dc2626;
+      --green:    #16a34a;
+      --text:     #1a1916;
+      --muted:    #7a776e;
+      --r:        14px;
+      --shadow-md:0 8px 24px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .logo span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      padding: 28px 28px 24px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    input.invalid { border-color: var(--red); }
+    input::placeholder { color: var(--muted); }
+
+    .btn-submit {
+      width: 100%;
+      padding: 11px;
+      margin-top: 6px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .18s;
+      box-shadow: 0 2px 8px rgba(37,99,235,.25);
+    }
+    .btn-submit:hover:not(:disabled) {
+      background: var(--accent-dk);
+      box-shadow: 0 4px 14px rgba(37,99,235,.35);
+    }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .msg {
+      margin-top: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    .msg.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: var(--red);
+    }
+    .msg.success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: var(--green);
+    }
+
+    .footer-link {
+      margin-top: 20px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .footer-link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .footer-link a:hover { text-decoration: underline; }
+
+    .field-error {
+      font-size: 0.67rem;
+      color: var(--red);
+      margin-top: 4px;
+      display: none;
+    }
+    .field-error.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <p class="logo">TA-<span>EchoAssist</span></p>
+    <p class="subtitle">Create your account</p>
+
+    <div class="card">
+      <form id="signup-form" novalidate>
+        <div class="row-2">
+          <div class="form-group">
+            <label class="form-label" for="first_name">First name</label>
+            <input type="text" id="first_name" name="first_name" placeholder="Jane" autocomplete="given-name" required />
+            <p class="field-error" id="err-first_name">Required</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="last_name">Last name</label>
+            <input type="text" id="last_name" name="last_name" placeholder="Smith" autocomplete="family-name" required />
+            <p class="field-error" id="err-last_name">Required</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="jane@example.com" autocomplete="email" required />
+          <p class="field-error" id="err-email">Enter a valid email address</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="organisation">Organisation</label>
+          <input type="text" id="organisation" name="organisation" placeholder="Acme Corp" autocomplete="organization" required />
+          <p class="field-error" id="err-organisation">Required</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+          <p class="field-error" id="err-password">Must be at least 8 characters</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirm_password">Confirm password</label>
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="Repeat password" autocomplete="new-password" required />
+          <p class="field-error" id="err-confirm_password">Passwords do not match</p>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">Create account</button>
+        <div class="msg" id="msg" style="display:none;"></div>
+      </form>
+    </div>
+
+    <p class="footer-link">Already have an account? <a href="/login">Sign in</a></p>
+  </div>
+
+  <script>
+    const form = document.getElementById('signup-form');
+    const msgEl = document.getElementById('msg');
+    const btn = document.getElementById('btn-submit');
+
+    const fields = ['first_name', 'last_name', 'email', 'organisation', 'password', 'confirm_password'];
+
+    function showFieldError(id, msg) {
+      const input = document.getElementById(id);
+      const err   = document.getElementById('err-' + id);
+      input.classList.add('invalid');
+      if (msg) err.textContent = msg;
+      err.classList.add('visible');
+    }
+
+    function clearFieldError(id) {
+      document.getElementById(id)?.classList.remove('invalid');
+      document.getElementById('err-' + id)?.classList.remove('visible');
+    }
+
+    function validateForm(data) {
+      let valid = true;
+      fields.forEach(id => clearFieldError(id));
+
+      if (!data.first_name) { showFieldError('first_name'); valid = false; }
+      if (!data.last_name)  { showFieldError('last_name');  valid = false; }
+
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!data.email || !emailRe.test(data.email)) {
+        showFieldError('email');
+        valid = false;
+      }
+
+      if (!data.organisation) { showFieldError('organisation'); valid = false; }
+
+      if (!data.password || data.password.length < 8) {
+        showFieldError('password');
+        valid = false;
+      }
+
+      if (data.password !== data.confirm_password) {
+        showFieldError('confirm_password', 'Passwords do not match');
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgEl.style.display = 'none';
+
+      const data = {
+        first_name:       document.getElementById('first_name').value.trim(),
+        last_name:        document.getElementById('last_name').value.trim(),
+        email:            document.getElementById('email').value.trim(),
+        organisation:     document.getElementById('organisation').value.trim(),
+        password:         document.getElementById('password').value,
+        confirm_password: document.getElementById('confirm_password').value,
+      };
+
+      if (!validateForm(data)) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+
+      try {
+        const res = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const body = await res.json();
+
+        if (!res.ok) {
+          throw new Error(body.detail || 'Registration failed');
+        }
+
+        msgEl.className = 'msg success';
+        msgEl.textContent = 'Account created! Redirecting…';
+        msgEl.style.display = 'block';
+        setTimeout(() => { window.location.href = '/'; }, 1200);
+
+      } catch (err) {
+        msgEl.className = 'msg error';
+        msgEl.textContent = err.message;
+        msgEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Create account';
+      }
+    });
+
+    // Real-time validation: clear error on input
+    fields.forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => clearFieldError(id));
+    });
+  </script>
+</body>
+</html>

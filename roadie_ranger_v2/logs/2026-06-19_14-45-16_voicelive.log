@@ -1,0 +1,2 @@
+2026-06-19 14:45:16,429:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:45:16,431:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled

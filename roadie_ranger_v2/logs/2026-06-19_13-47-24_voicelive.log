@@ -1,0 +1,76 @@
+2026-06-19 13:47:24,948:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 13:47:24,950:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-06-19 13:47:36,810:main:INFO:WS /ws/voice: user_id=dev-user auth_method=dev is_authenticated=False nonce_used=False
+2026-06-19 13:47:36,824:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 13:47:37,795:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 13:47:40,398:main:INFO:Session ready: sess_4laAn6vkYwMPMzV14q7SFe
+2026-06-19 13:47:40,401:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] Proactive greeting sent
+2026-06-19 13:47:40,962:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=True)
+2026-06-19 13:47:45,071:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=True)
+2026-06-19 13:47:45,072:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] Greeting complete — barge-in re-enabled
+2026-06-19 13:47:45,074:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Hello! How can I assist you today?
+2026-06-19 13:47:45,104:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — greeting complete
+2026-06-19 13:47:45,106:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] Interim responses enabled
+2026-06-19 13:47:45,382:main:INFO:Session ready: sess_4laAn6vkYwMPMzV14q7SFe
+2026-06-19 13:47:54,169:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:47:56,161:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:47:56,623:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:47:58,303:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:47:58,305:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: One moment, I'm pulling up that information.
+2026-06-19 13:48:01,139:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:01,142:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: The onboarding process includes recruitment, background checks, and a 3 to 6-month probation period to assess new hires'
+2026-06-19 13:48:01,170:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:48:05,528:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:48:06,167:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:48:06,498:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:48:08,695:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:48:09,121:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:48:10,227:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:10,229:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: One moment, I'm pulling up that information.
+2026-06-19 13:48:13,152:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:13,155:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: The leave policy includes annual leave accrued monthly for rest, sick leave for illness or medical appointments, parenta
+2026-06-19 13:48:13,184:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:48:20,423:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:48:23,519:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:48:24,892:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:48:26,236:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:26,239:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Let me check on that for you.
+2026-06-19 13:48:29,898:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:29,900:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: You can apply for leaves based on the type of leave like annual or sick leave, but the policy states annual leave is acc
+2026-06-19 13:48:29,918:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:48:39,217:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:48:41,912:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:48:42,365:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:48:43,863:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:43,866:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Could you please tell me more about the issue you need a ticket for?
+2026-06-19 13:48:43,890:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:48:48,017:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:48:53,270:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:48:53,770:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:48:55,546:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:48:55,548:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: I couldn't find a resolution for that. Would you like me to create a support ticket?
+2026-06-19 13:48:55,565:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:49:00,237:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:49:01,124:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:49:01,454:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:49:03,614:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:49:03,615:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Hold on a second while I look that up.
+2026-06-19 13:49:26,376:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=True
+2026-06-19 13:49:26,379:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] barge-in: response cancelled
+2026-06-19 13:49:27,240:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:49:30,540:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:49:30,542:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:49:32,950:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:49:32,951:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: One moment, I'm pulling up that information.
+2026-06-19 13:49:35,331:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:49:35,341:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Your ticket has been created. The ticket number is INC0010055. Someone will get back to you shortly.
+2026-06-19 13:49:35,360:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:49:59,307:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_started — active_response=False
+2026-06-19 13:50:00,575:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] speech_stopped
+2026-06-19 13:50:00,960:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_created (was_awaiting_tool=False greeting=False)
+2026-06-19 13:50:03,090:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_audio_done (awaiting_tool=False greeting_in_progress=False)
+2026-06-19 13:50:03,093:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] agent transcript done: Great. Let me know if you need anything else.
+2026-06-19 13:50:03,130:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] response_done — real answer complete
+2026-06-19 13:50:07,591:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 13:50:08,902:main:INFO:[b70d2ea8-3e23-4afc-a363-acd0e36995de] _finalize: storage not enabled — skipping blob upload
+2026-06-19 13:50:08,906:main:INFO:WebSocket session b70d2ea8-3e23-4afc-a363-acd0e36995de closed (user=dev-user)

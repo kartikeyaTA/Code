@@ -1,0 +1,14 @@
+{
+  "session_id": "a8b38fd2-db04-4ebc-9125-451560afe9e2",
+  "started_at": "2026-06-19T09:02:01.368973+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-sanjay",
+  "user_name": "sanjay",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-06-19T09:02:05.366006+00:00"
+    }
+  ]
+}

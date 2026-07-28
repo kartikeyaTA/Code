@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoadieRanger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f5f4f0;
+      --sidebar-bg: #faf9f7;
+      --surface:    #ffffff;
+      --border:     #e2dfd8;
+      --border2:    #ccc9c0;
+      --accent:     #2563eb;
+      --accent-lt:  #eff4ff;
+      --accent-dk:  #1d4ed8;
+      --green:      #16a34a;
+      --amber:      #d97706;
+      --red:        #dc2626;
+      --text:       #1a1916;
+      --muted:      #7a776e;
+      --user-bg:    #2563eb;
+      --user-text:  #ffffff;
+      --agent-bg:   #ffffff;
+      --agent-text: #1a1916;
+      --r:          16px;
+      --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md:  0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+      --sidebar-w:  272px;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overflow: hidden; }
+
+    /* subtle texture */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    }
+
+    /* ══════════════════════════════════════════════
+       ROOT TWO-COLUMN SHELL
+    ══════════════════════════════════════════════ */
+    .shell {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      height: 100vh;
+    }
+
+    /* ══════════════════════════════════════════════
+       LEFT SIDEBAR
+    ══════════════════════════════════════════════ */
+    #sidebar {
+      display: flex; flex-direction: column;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .sidebar-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .sidebar-logo span { color: var(--accent); }
+
+    #btn-new-session {
+      cursor: pointer;
+      width: 100%;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 14px;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      box-shadow: 0 2px 6px rgba(37,99,235,.22);
+      transition: all .18s;
+    }
+    #btn-new-session:hover { background: var(--accent-dk); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.3); }
+    #btn-new-session svg { flex-shrink: 0; }
+
+    .sidebar-section-label {
+      padding: 10px 16px 6px;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    #session-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px 16px;
+    }
+    #session-list::-webkit-scrollbar { width: 3px; }
+    #session-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .sidebar-empty {
+      padding: 20px 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .session-card {
+      display: block; width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 9px 11px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      transition: all .15s;
+    }
+    .session-card:hover {
+      background: var(--surface);
+      border-color: var(--border);
+      box-shadow: var(--shadow);
+    }
+    .session-card.active {
+      background: var(--accent-lt);
+      border-color: rgba(37,99,235,.25);
+      cursor: default;
+    }
+
+    .sc-meta {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 3px;
+    }
+    .sc-date  { font-size: 0.65rem; color: var(--muted); }
+    .sc-turns {
+      font-size: 0.6rem; color: var(--accent);
+      background: var(--accent-lt); border-radius: 100px;
+      padding: 1px 7px;
+    }
+    .session-card.active .sc-turns { background: rgba(37,99,235,.15); }
+
+    .sc-preview {
+      font-size: 0.72rem;
+      color: var(--text);
+      line-height: 1.45;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .session-card.active .sc-preview { color: var(--accent-dk); }
+
+    /* ══════════════════════════════════════════════
+       RIGHT MAIN PANE
+    ══════════════════════════════════════════════ */
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── header ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .header-title {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 5px 13px; border-radius: 100px;
+      box-shadow: var(--shadow);
+      transition: all .3s;
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border2);
+      transition: background .3s, box-shadow .3s;
+    }
+    .status-pill.connected  .status-dot { background: var(--green); box-shadow: 0 0 6px rgba(22,163,74,.5); }
+    .status-pill.listening  .status-dot { background: var(--accent); box-shadow: 0 0 8px rgba(37,99,235,.5); animation: pulse 1s infinite; }
+    .status-pill.processing .status-dot { background: var(--amber); box-shadow: 0 0 6px rgba(217,119,6,.5); }
+    .status-pill.ready      .status-dot { background: var(--green); box-shadow: 0 0 6px rgba(22,163,74,.5); }
+    .status-pill.error      .status-dot { background: var(--red);   box-shadow: 0 0 6px rgba(220,38,38,.5); }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+
+    /* ── transcript ── */
+    .transcript {
+      overflow-y: auto;
+      padding: 20px 28px;
+      display: flex; flex-direction: column; gap: 12px;
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+    .transcript::-webkit-scrollbar { width: 4px; }
+    .transcript::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .msg {
+      display: flex; flex-direction: column; gap: 3px;
+      max-width: 74%;
+      animation: fadeUp .22s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .msg.user  { align-self: flex-end;   align-items: flex-end; }
+    .msg.agent { align-self: flex-start; align-items: flex-start; }
+
+    .msg-label { font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); padding: 0 5px; }
+
+    .msg-bubble {
+      padding: 10px 15px; border-radius: var(--r);
+      line-height: 1.6; font-size: 0.875rem; box-shadow: var(--shadow);
+      word-wrap: break-word;
+    }
+    .msg.user  .msg-bubble { background: var(--user-bg); color: var(--user-text); border-bottom-right-radius: 4px; }
+    .msg.agent .msg-bubble { background: var(--agent-bg); color: var(--agent-text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .msg.error .msg-bubble { background: #fef2f2; border: 1px solid #fecaca; color: var(--red); }
+
+    /* streaming cursor */
+    .stream-cursor {
+      display: inline-block; width: 2px; height: 1em;
+      margin-left: 2px; vertical-align: text-bottom; border-radius: 1px;
+      animation: blink-cursor .6s steps(1) infinite; opacity: .7;
+    }
+    .msg.user  .stream-cursor { background: rgba(255,255,255,.8); }
+    .msg.agent .stream-cursor { background: var(--accent); }
+    @keyframes blink-cursor { 0%,100% { opacity:.7; } 50% { opacity:0; } }
+
+    /* empty state */
+    .empty-state {
+      flex:1; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:10px; color:var(--border2);
+    }
+    .empty-state svg { width:44px; }
+    .empty-state p { font-size:.75rem; letter-spacing:.07em; text-transform:uppercase; }
+
+    /* ── footer / controls ── */
+    footer {
+      padding: 14px 28px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+
+    #waveform {
+      width: 100%; height: 44px;
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+    }
+    .bar {
+      width: 3px; border-radius: 3px; background: var(--accent);
+      height: 4px; transition: height .08s ease; opacity: .35;
+    }
+
+    .btn-row { display: flex; gap: 10px; align-items: center; }
+
+    .btn {
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase;
+      border: none; border-radius: 100px; padding: 10px 22px; transition: all .18s;
+    }
+
+    #btn-connect {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,.25);
+    }
+    #btn-connect:hover:not(:disabled) { background: var(--accent-dk); box-shadow: 0 4px 14px rgba(37,99,235,.35); transform: translateY(-1px); }
+    #btn-connect:disabled { opacity:.45; cursor:not-allowed; }
+
+    #btn-mic {
+      width: 54px; height: 54px; padding: 0; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border2);
+      color: var(--muted); font-size: 1.35rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; box-shadow: var(--shadow);
+    }
+    #btn-mic:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+    #btn-mic.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+      box-shadow: 0 0 0 4px rgba(37,99,235,.18), var(--shadow-md);
+      animation: micPulse 1.5s ease-in-out infinite;
+    }
+    #btn-mic:disabled { opacity:.35; cursor:not-allowed; }
+    @keyframes micPulse {
+      0%,100% { box-shadow: 0 0 0 4px rgba(37,99,235,.18), var(--shadow-md); }
+      50%      { box-shadow: 0 0 0 8px rgba(37,99,235,.10), var(--shadow-md); }
+    }
+
+    #btn-disconnect {
+      background: transparent; border: 1.5px solid var(--border2); color: var(--muted);
+    }
+    #btn-disconnect:hover:not(:disabled) { border-color: var(--red); color: var(--red); background: #fef2f2; }
+    #btn-disconnect:disabled { opacity:.3; cursor:not-allowed; }
+
+    .hint { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
+
+    /* ── user info / logout in header ── */
+    .header-user {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header-username {
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #btn-logout {
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border2);
+      border-radius: 100px;
+      padding: 4px 12px;
+      transition: all .18s;
+    }
+    #btn-logout:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: #fef2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">Roadie<span>Ranger</span></span>
+        <button id="btn-new-session">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          New Session
+        </button>
+      </div>
+      <p class="sidebar-section-label">Previous Sessions</p>
+      <div id="session-list"></div>
+    </aside>
+
+    <div class="main">
+      <header>
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <span class="header-title">Conversation</span>
+
+          <div class="tabs" style="display:flex; background:var(--bg); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+            <button id="tab-voice" class="tab active" style="border:none; background:var(--accent); color:#fff; padding:6px 14px; font-family:'DM Mono', monospace; font-size:0.7rem; cursor:pointer;">Voice</button>
+            <button id="tab-text" class="tab" style="border:none; background:transparent; color:var(--muted); padding:6px 14px; font-family:'DM Mono', monospace; font-size:0.7rem; cursor:pointer; transition: all 0.2s;">Text</button>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="header-user" id="header-user" style="display:none;">
+            <span class="header-username" id="header-username"></span>
+            <button id="btn-logout">Sign out</button>
+          </div>
+          <div class="status-pill" id="status-pill">
+            <div class="status-dot"></div>
+            <span id="status-text">Disconnected</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="transcript" id="transcript">
+        <div class="empty-state" id="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+          </svg>
+          <p>Connect and start speaking</p>
+        </div>
+      </div>
+
+      <footer>
+        <div id="voice-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+          <div id="waveform"></div>
+          <div class="btn-row">
+            <button class="btn" id="btn-connect">Connect</button>
+            <button class="btn" id="btn-mic" disabled title="Toggle microphone">🎤</button>
+            <button class="btn" id="btn-disconnect" disabled>Disconnect</button>
+          </div>
+        </div>
+
+        <div id="text-controls" style="width: 100%; display: none; flex-direction: column; align-items: center; gap: 12px;">
+          <div style="display: flex; gap: 10px; width: 100%; max-width: 650px;">
+            <input type="text" id="chat-input" placeholder="Type a message..." style="flex:1; padding:12px 18px; border-radius:100px; border:1.5px solid var(--border2); font-family:'DM Mono', monospace; outline:none;" disabled />
+            <button id="btn-text-send" class="btn" style="background:var(--accent); color:#fff; box-shadow: var(--shadow);" disabled>Send</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-connect-text" style="background:var(--accent); color:#fff; box-shadow: 0 2px 8px rgba(37,99,235,.25);">Connect Text</button>
+            <button class="btn" id="btn-disconnect-text" disabled style="background: transparent; border: 1.5px solid var(--border2); color: var(--muted);">Disconnect</button>
+          </div>
+        </div>
+
+        <span class="hint" id="hint">Click Connect or New Session to start</span>
+      </footer>
+    </div>
+
+  </div>
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

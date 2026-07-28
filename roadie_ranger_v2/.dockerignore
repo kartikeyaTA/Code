@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual environment – never copy into the image
+txrh-venv/
+.venv/
+venv/
+env/
+
+# Dev / IDE
+.vscode/
+.env
+*.log
+
+# Runtime data – mount as volumes or use persistent storage in Container Apps
+logs/
+sessions/
+
+# Git
+.git/
+.gitignore
+
+# Docker itself
+Dockerfile
+.dockerignore

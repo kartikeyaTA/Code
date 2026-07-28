@@ -1,0 +1,111 @@
+2026-04-22 16:09:37,101:azure.identity.aio._internal.decorators:INFO:AzureCliCredential.get_token succeeded
+2026-04-22 16:09:40,250:main:INFO:Session ready: sess_KUST7QY4Zk0py9ZuI5B6i
+2026-04-22 16:09:40,253:main:INFO:Proactive greeting sent
+2026-04-22 16:09:40,817:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_created (was_awaiting_tool=False)
+2026-04-22 16:09:43,433:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:09:43,435:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Hello! How can I assist you with your IT issues today?
+2026-04-22 16:09:43,496:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_done — real answer complete
+2026-04-22 16:10:06,353:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_started — active_response=False
+2026-04-22 16:10:11,004:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_stopped
+2026-04-22 16:10:11,524:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_created (was_awaiting_tool=False)
+2026-04-22 16:10:13,438:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:10:13,439:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Just a moment please...
+2026-04-22 16:10:16,377:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:10:16,378:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Your standard working hours are 40 hours per week, with flexible arrangements possible depending on your role and manage
+2026-04-22 16:10:16,450:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_done — real answer complete
+2026-04-22 16:10:41,588:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_started — active_response=False
+2026-04-22 16:10:43,393:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_stopped
+2026-04-22 16:10:43,825:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_started — active_response=False
+2026-04-22 16:10:47,144:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_stopped
+2026-04-22 16:10:47,734:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_created (was_awaiting_tool=False)
+2026-04-22 16:10:49,350:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:10:49,352:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Hold on a second while I look that up...
+2026-04-22 16:10:53,045:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:10:53,047:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: The onboarding process includes a probation period of 3 to 6 months, background and reference checks, and alignment with
+2026-04-22 16:10:53,101:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_done — real answer complete
+2026-04-22 16:11:03,246:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_started — active_response=False
+2026-04-22 16:11:07,306:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_stopped
+2026-04-22 16:11:07,772:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_created (was_awaiting_tool=False)
+2026-04-22 16:11:09,472:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:11:09,473:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Hold on a second while I look that up...
+2026-04-22 16:11:12,352:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:11:12,353:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: The leave policies include annual leave accrued monthly for rest, sick leave for illness or medical appointments, parent
+2026-04-22 16:11:12,439:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_done — real answer complete
+2026-04-22 16:11:24,716:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_started — active_response=False
+2026-04-22 16:11:30,754:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] speech_stopped
+2026-04-22 16:11:31,412:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_created (was_awaiting_tool=False)
+2026-04-22 16:11:33,153:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:11:33,156:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: Sorry to hear that, let me create a ticket for you.
+2026-04-22 16:11:35,465:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_audio_done (awaiting_tool=False)
+2026-04-22 16:11:35,467:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] agent transcript done: I've raised ticket INC0010053 for you regarding the password reset issue. Someone from the team will get back to you sho
+2026-04-22 16:11:35,550:main:INFO:[674fced5-0e50-46ef-a682-394bc15d5ae6] response_done — real answer complete
+2026-04-22 16:47:07,269:main:INFO:WebSocket session 674fced5-0e50-46ef-a682-394bc15d5ae6 closed
+2026-04-22 16:51:16,912:azure.identity.aio._internal.decorators:INFO:AzureCliCredential.get_token succeeded
+2026-04-22 16:51:20,026:main:INFO:Session ready: sess_6cXjwm3EnFrcrczO8eNC8R
+2026-04-22 16:51:20,030:main:INFO:Proactive greeting sent
+2026-04-22 16:51:20,567:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_created (was_awaiting_tool=False)
+2026-04-22 16:51:23,342:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:51:23,344:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: Hello! How can I assist you with your IT needs today?
+2026-04-22 16:51:23,392:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_done — real answer complete
+2026-04-22 16:51:28,849:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_started — active_response=False
+2026-04-22 16:51:33,280:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_stopped
+2026-04-22 16:51:33,836:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_created (was_awaiting_tool=False)
+2026-04-22 16:51:35,896:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:51:35,897:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: Just a moment please...
+2026-04-22 16:51:38,713:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:51:38,715:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: Your standard working hours are 40 hours per week, with possible flexible arrangements based on your role and manager's 
+2026-04-22 16:51:38,762:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_done — real answer complete
+2026-04-22 16:51:57,421:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_started — active_response=False
+2026-04-22 16:52:02,122:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_stopped
+2026-04-22 16:52:02,693:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_created (was_awaiting_tool=False)
+2026-04-22 16:52:04,473:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:52:04,475:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: Hold on a second while I look that up...
+2026-04-22 16:52:07,432:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:52:07,434:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: The onboarding process includes recruitment, background verification, and a probationary period of three to six months t
+2026-04-22 16:52:07,501:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_done — real answer complete
+2026-04-22 16:52:25,577:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_started — active_response=False
+2026-04-22 16:52:29,428:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] speech_stopped
+2026-04-22 16:52:29,895:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_created (was_awaiting_tool=False)
+2026-04-22 16:52:31,555:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] response_audio_done (awaiting_tool=False)
+2026-04-22 16:52:31,557:main:INFO:[47b9b016-6e06-475a-8131-11e1fa039343] agent transcript done: Hold on a second while I look that up...
+2026-04-22 16:52:33,123:main:INFO:WebSocket session 47b9b016-6e06-475a-8131-11e1fa039343 closed
+2026-04-22 16:54:03,152:azure.identity.aio._internal.decorators:INFO:AzureCliCredential.get_token succeeded
+2026-04-22 16:54:04,990:main:INFO:Session ready: sess_5TZQEsKogfjWFGJm2bfivI
+2026-04-22 16:54:04,992:main:INFO:Proactive greeting sent
+2026-04-22 16:54:05,397:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_created (was_awaiting_tool=False)
+2026-04-22 16:54:07,713:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:07,714:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: Hello! How can I assist you with IT support today?
+2026-04-22 16:54:07,772:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_done — real answer complete
+2026-04-22 16:54:11,437:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_started — active_response=False
+2026-04-22 16:54:15,729:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_stopped
+2026-04-22 16:54:16,257:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_created (was_awaiting_tool=False)
+2026-04-22 16:54:17,849:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:17,850:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: Just a moment please...
+2026-04-22 16:54:20,172:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:20,173:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: Your standard working hours are 40 hours per week, with flexible arrangements possible based on role and manager approva
+2026-04-22 16:54:20,239:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_done — real answer complete
+2026-04-22 16:54:32,481:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_started — active_response=False
+2026-04-22 16:54:36,487:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_stopped
+2026-04-22 16:54:36,974:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_created (was_awaiting_tool=False)
+2026-04-22 16:54:40,385:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:40,386:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: Hold on a second while I look that up...
+2026-04-22 16:54:43,118:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:43,120:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: The onboarding process includes a recruitment phase with background checks, followed by a probation period of 3 to 6 mon
+2026-04-22 16:54:43,178:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_done — real answer complete
+2026-04-22 16:54:52,428:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_started — active_response=False
+2026-04-22 16:54:56,628:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_stopped
+2026-04-22 16:54:57,114:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_created (was_awaiting_tool=False)
+2026-04-22 16:54:58,732:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:54:58,733:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: One moment, I'm pulling up that information...
+2026-04-22 16:55:01,952:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:55:01,954:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: The leave policy includes annual leave accrued monthly for rest, sick leave for illness or appointments, parental leave 
+2026-04-22 16:55:02,012:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_done — real answer complete
+2026-04-22 16:55:11,978:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_started — active_response=False
+2026-04-22 16:55:17,578:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] speech_stopped
+2026-04-22 16:55:18,111:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_created (was_awaiting_tool=False)
+2026-04-22 16:55:20,163:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:55:20,166:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: Sorry to hear that, let me create a ticket for you to get help with resetting your password.
+2026-04-22 16:55:22,509:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_audio_done (awaiting_tool=False)
+2026-04-22 16:55:22,510:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] agent transcript done: I've raised ticket INC0010054 for you to help with resetting your password. Someone from the team will get back to you s
+2026-04-22 16:55:22,576:main:INFO:[f0bf709e-d152-47a2-ba9e-236472b58857] response_done — real answer complete
+2026-04-22 18:24:57,279:main:INFO:WebSocket session f0bf709e-d152-47a2-ba9e-236472b58857 closed

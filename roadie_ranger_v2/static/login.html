@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — VoiceLive Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f0;
+      --surface:  #ffffff;
+      --border:   #e2dfd8;
+      --border2:  #ccc9c0;
+      --accent:   #2563eb;
+      --accent-dk:#1d4ed8;
+      --accent-lt:#eff4ff;
+      --red:      #dc2626;
+      --text:     #1a1916;
+      --muted:    #7a776e;
+      --r:        14px;
+      --shadow:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md:0 8px 24px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .logo span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      padding: 28px 28px 24px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    /* Microsoft button */
+    .btn-microsoft {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 11px 18px;
+      border: 1.5px solid var(--border2);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .btn-microsoft:hover {
+      border-color: var(--accent);
+      background: var(--accent-lt);
+      color: var(--accent);
+    }
+    .ms-logo {
+      width: 18px; height: 18px; flex-shrink: 0;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .btn-submit {
+      width: 100%;
+      padding: 11px;
+      margin-top: 4px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .18s;
+      box-shadow: 0 2px 8px rgba(37,99,235,.25);
+    }
+    .btn-submit:hover:not(:disabled) {
+      background: var(--accent-dk);
+      box-shadow: 0 4px 14px rgba(37,99,235,.35);
+    }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .error-msg {
+      margin-top: 10px;
+      padding: 9px 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: var(--red);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+
+    .footer-link {
+      margin-top: 20px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .footer-link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .footer-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <p class="logo">TA-<span>EchoAssist</span></p>
+    <p class="subtitle">Sign in to continue</p>
+
+    <div class="card">
+      <!-- Microsoft login -->
+      <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-microsoft">
+        <svg class="ms-logo" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+          <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+          <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+          <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+        </svg>
+        Sign in with Microsoft
+      </a>
+
+      <div class="divider">or</div>
+
+      <!-- Email / password form -->
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <input type="email" id="email" name="email" placeholder="Email address" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" name="password" placeholder="Password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-submit" id="btn-submit">Sign in</button>
+        <div class="error-msg" id="error-msg" style="display:none;"></div>
+      </form>
+    </div>
+
+    <p class="footer-link">Don't have an account? <a href="/signup">Create one</a></p>
+  </div>
+
+  <script>
+    const form    = document.getElementById('login-form');
+    const errorEl = document.getElementById('error-msg');
+    const btn     = document.getElementById('btn-submit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Sign in failed');
+        }
+        window.location.href = '/';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    });
+  </script>
+</body>
+</html>
