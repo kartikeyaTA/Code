@@ -1,0 +1,126 @@
+trigger:
+  branches:
+    include:
+      - dev
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+# pool:
+#   name: $(agentPoolName)
+
+variables:
+  - group: backend-dev-vars
+  - name: dockerfilePath
+    value: '$(Build.SourcesDirectory)/backend/Dockerfile'
+  - name: buildContext
+    value: '$(Build.SourcesDirectory)/backend'
+
+stages:
+- stage: Build_Test_Scan_And_Publish
+  displayName: 'CI: Test, Build, Scan & Package'
+  jobs:
+  - job: BuildJob
+    displayName: 'Python CI Workflow Execution'
+    steps:
+
+    - script: |
+        echo "Creating Python Virtual Environment..."
+        if [ ! -d ".venv" ]; then
+          echo "Creating Python Virtual Environment..."
+          python3 -m venv .venv
+        else
+          echo "Virtual environment .venv already exists. Skipping creation..."
+        fi
+        source .venv/bin/activate
+
+        echo "Upgrading pip and installing test dependencies..."
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+
+        echo "Installing application dependencies..."
+        if [ -f backend/requirements.txt ]; then
+          pip install -r backend/requirements.txt
+        else
+          echo "No requirements.txt found in backend directory, skipping pip install."
+        fi
+
+        echo "Executing Pytest..."
+        # Runs pytest on backend directory, generates JUnit XML report for Azure DevOps
+        pytest backend/ \
+          --cov=backend \
+          --cov-report=xml:coverage.xml \
+          --cov-fail-under=80 \
+          --junitxml=test-results.xml
+      displayName: 'Execute Python Unit Tests'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Pytest Results'
+      condition: succeededOrFailed() 
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/test-results.xml'
+        testRunTitle: 'Backend Python Unit Tests'
+
+
+    - task: AzureCLI@2
+      displayName: 'Build and Push Docker Image'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          SHORT_SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+          TAG="sha-${SHORT_SHA}"
+          FULL_IMAGE="$(acrName).azurecr.io/$(imageRepository):${TAG}"
+
+          echo "Logging into ACR: $(acrName)..."
+          az acr login --name $(acrName)
+
+          echo "Building Docker Image: ${FULL_IMAGE}"
+          docker build -t $FULL_IMAGE -f $(dockerfilePath) $(buildContext)
+
+          echo "Pushing Image to ACR..."
+          docker push $FULL_IMAGE
+
+          # Save tag to a metadata file for CD handoff
+          mkdir -p $(Build.ArtifactStagingDirectory)/metadata
+          echo "$TAG" > $(Build.ArtifactStagingDirectory)/metadata/image_tag.txt
+
+
+    - task: AzureCLI@2
+      displayName: 'Verify Native ACR Vulnerability Assessment'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          SHORT_SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+          TAG="sha-${SHORT_SHA}"
+
+          echo "Fetching Image Digest for $(imageRepository):${TAG}..."
+          DIGEST=$(az acr repository show --name $(acrName) --image $(imageRepository):${TAG} --query "digest" -o tsv)
+          echo "Image Digest: $DIGEST"
+
+          echo "Waiting 90 seconds for Defender for Containers assessment..."
+          sleep 90
+
+          echo "Querying vulnerability findings via Azure Resource Graph..."
+          QUERY="securityresources | where type == 'microsoft.security/assessments/subassessments' | where properties.additionalData.artifactDetails.digest == '$DIGEST' | extend severity = tostring(properties.status.severity) | summarize High=countif(severity == 'High'), Critical=countif(severity == 'Critical')"
+          
+          RESULT=$(az graph query -q "$QUERY" -o json)
+          HIGH_COUNT=$(echo $RESULT | jq '.[0].High // 0')
+          CRITICAL_COUNT=$(echo $RESULT | jq '.[0].Critical // 0')
+
+          echo "Scan Findings -> Critical: $CRITICAL_COUNT | High: $HIGH_COUNT"
+
+          if [ "$CRITICAL_COUNT" -gt 0 ] || [ "$HIGH_COUNT" -gt 0 ]; then
+            echo "Security Gate Failed: Image contains $CRITICAL_COUNT Critical and $HIGH_COUNT High vulnerabilities."
+            exit 1
+          else
+            echo "Security Gate Passed: No Critical or High vulnerabilities found."
+          fi
+
+    - publish: $(Build.ArtifactStagingDirectory)/metadata
+      artifact: image-metadata
+      displayName: 'Publish Image Tag Artifact for CD'
