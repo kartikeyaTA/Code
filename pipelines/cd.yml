@@ -1,0 +1,104 @@
+#!/bin/bash
+set -e # Exit immediately on unhandled script errors
+
+# ==============================================================================
+# 1. PIPELINE VARIABLES (Passed from CI/CD runner)
+# ==============================================================================
+RESOURCE_GROUP="txrh_tiger_rg"
+APP_NAME="app-servicenow-mcp"
+ACR_NAME="txrhacr"
+IMAGE_NAME="servicenow_mcp"
+IMAGE_TAG="v202607301505" # Passed from CI build artifact
+STAGING_SLOT="staging"
+
+STAGING_URL="https://${APP_NAME}-${STAGING_SLOT}.azurewebsites.net"
+PROD_URL="https://${APP_NAME}.azurewebsites.net"
+
+echo "=== STARTING PRODUCTION CD PIPELINE FOR TAG: $IMAGE_TAG ==="
+
+# ==============================================================================
+# 2. ENSURE STAGING SLOT EXISTS & CONFIGURE SLOT-STICKY SETTINGS
+# ==============================================================================
+echo "--> Checking/Creating Staging Slot..."
+az webapp deployment slot create \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --slot $STAGING_SLOT || true
+
+echo "--> Injecting Secrets and App Settings into Staging Slot..."
+az webapp config appsettings set \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --slot $STAGING_SLOT \
+  --settings \
+    WEBSITES_PORT=8000 \
+    SERVICENOW_INSTANCE_URL="https://your-instance.service-now.com" \
+    SERVICENOW_API_KEY="your-secret-key-here" \
+    DATABASE_URL="your-db-connection-string"
+
+# Mark Environment-Specific settings as "Slot Sticky" (won't swap with Prod)
+az webapp config appsettings set \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --slot-settings DATABASE_URL SERVICENOW_INSTANCE_URL
+
+# ==============================================================================
+# 3. DEPLOY CONTAINER TO STAGING SLOT
+# ==============================================================================
+echo "--> Deploying Image to Staging Slot..."
+az webapp config container set \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --slot $STAGING_SLOT \
+  --docker-custom-image-name "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+# ==============================================================================
+# 4. SMOKE TEST / HEALTH CHECK ON STAGING
+# ==============================================================================
+echo "--> Waiting 30s for Staging Container Warmup..."
+sleep 30
+
+echo "--> Executing Health Check against Staging Slot..."
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}/health" || true)
+
+if [ "$HTTP_STATUS" -ne 200 ]; then
+  echo "❌ ERROR: Staging Health Check failed with HTTP status: $HTTP_STATUS"
+  echo "Aborting deployment. Production was NOT modified."
+  exit 1
+fi
+
+echo "✅ Staging Health Check Passed (HTTP 200)!"
+
+# ==============================================================================
+# 5. ZERO-DOWNTIME SLOT SWAP (STAGING ➔ PRODUCTION)
+# ==============================================================================
+echo "--> Swapping Staging Slot into Production..."
+az webapp deployment slot swap \
+  --resource-group $RESOURCE_GROUP \
+  --name $APP_NAME \
+  --slot $STAGING_SLOT \
+  --target-slot production
+
+echo "✅ Slot Swap Completed Successfully!"
+
+# ==============================================================================
+# 6. POST-SWAP PRODUCTION VERIFICATION & AUTOMATED ROLLBACK
+# ==============================================================================
+echo "--> Running Final Sanity Check on Production URL..."
+PROD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${PROD_URL}/health" || true)
+
+if [ "$PROD_STATUS" -ne 200 ]; then
+  echo "🚨 CRITICAL: Production URL failed post-swap check (HTTP $PROD_STATUS)!"
+  echo "--> Triggering AUTOMATED INSTANT ROLLBACK (Swapping back)..."
+  
+  az webapp deployment slot swap \
+    --resource-group $RESOURCE_GROUP \
+    --name $APP_NAME \
+    --slot $STAGING_SLOT \
+    --target-slot production
+    
+  echo "⚠️ Rollback Complete. Production returned to previous working version."
+  exit 1
+fi
+
+echo "🚀 SUCCESS: Deployment Live and Healthy on Production!"
