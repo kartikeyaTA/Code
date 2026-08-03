@@ -10,6 +10,8 @@ pool:
 #   name: $(agentPoolName)
 
 variables:
+  - name: azureServiceConnection
+    value: 'sc-azure-dev-backend'
   - name: dockerfilePath
     value: '$(Build.SourcesDirectory)/backend/Dockerfile'
   - name: buildContext
@@ -76,13 +78,7 @@ stages:
         echo "Initialized Global Variables:"
         echo "TAG = ${tag}"
         echo "FULL_IMAGE = ${fullImage}"
-        mkdir -p $(Build.ArtifactStagingDirectory)/metadata
-        echo "$tag" > $(Build.ArtifactStagingDirectory)/metadata/image_tag.txt
       displayName: 'Set Global Image Variables'
-
-    - publish: $(Build.ArtifactStagingDirectory)/metadata
-      artifact: image-metadata
-      displayName: 'Publish Image Tag Artifact for CD'
 
     - task: AzureCLI@2
       displayName: 'Build and Push Docker Image'
@@ -150,3 +146,10 @@ stages:
 
           echo "Pushing Image to ACR: ${fullImage}"
           docker push $fullImage
+
+          mkdir -p $(Build.ArtifactStagingDirectory)/metadata
+          echo "$(tag)" > $(Build.ArtifactStagingDirectory)/metadata/image_tag.txt
+
+    - publish: $(Build.ArtifactStagingDirectory)/metadata
+      artifact: image-metadata
+      displayName: '8. Publish Image Tag Artifact for CD'
