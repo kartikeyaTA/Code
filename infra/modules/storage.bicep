@@ -4,10 +4,7 @@ param envName string
 param location string 
 param vnetId string
 param endpointsSubnetId string
-
-var storageAccountName = 'stachattranscripts${envName}'
-var privateEndpointName = 'pe-storage-blob-${envName}'
-var blobDnsZoneName = 'privatelink.blob.${environment().suffixes.storage}'
+param storageAccountName string
 
 // 1. Storage Account Definition with Full Internet Disablement
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
@@ -41,62 +38,6 @@ resource transcriptContainer 'Microsoft.Storage/storageAccounts/blobServices/con
   name: 'transcripts'
 }
 
-// 2. Private Endpoint Creation (Injects the service into snet-private-endpoints)
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
-  name: privateEndpointName
-  location: location
-  properties: {
-    subnet: {
-      id: endpointsSubnetId // Plugs cleanly into our Step 2 subnet
-    }
-    privateLinkServiceConnections: [
-      {
-        name: 'storage-blob-connection'
-        properties: {
-          privateLinkServiceId: storageAccount.id
-          groupIds: [
-            'blob' // Specifying the isolated blob data plane subgroup
-          ]
-        }
-      }
-    ]
-  }
-}
-
-// 3. Private DNS Zone for Local Subnet Resolution
-resource blobDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: blobDnsZoneName
-  location: 'global'
-}
-
-// Explicitly link this local DNS Zone to the primary architecture VNet
-resource dnsZoneVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  parent: blobDnsZone
-  name: 'link-${storageAccountName}-vnet'
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnetId
-    }
-  }
-}
-
-// Automatic DNS Configuration mapping Private Endpoint IP to the DNS Zone
-resource dnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
-  parent: privateEndpoint
-  name: 'blobPrivateDnsZoneGroup'
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'storage-blob-config'
-        properties: {
-          privateDnsZoneId: blobDnsZone.id
-        }
-      }
-    ]
-  }
-}
 
 // Export output values for downstream app permissions mapping
 output storageAccountId string = storageAccount.id

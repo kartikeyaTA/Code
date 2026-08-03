@@ -1,0 +1,41 @@
+metadata description = 'Deploys an internally-isolated Azure Container Apps Managed Environment attached to a delegated private subnet.'
+
+param envName string
+param location string 
+param acaSubnetId string
+param apimSubnetId string
+param vnetId string
+param privateEndpointSubnetId string
+
+// Reference the existing telemetry workspace to dynamically fetch operational ingestion keys
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: 'log-analytics-ai-chat-${envName}'
+}
+
+var environmentNamepub = 'aca-env-chat-pub-${envName}'
+
+// 5. Public Azure Container Apps Managed Environment (External)
+resource managedEnvironmentpri 'Microsoft.App/managedEnvironments@2024-03-01' = {
+  name: environmentNamepub
+  location: location
+  properties: {
+    appLogsConfiguration: {
+      destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logAnalyticsWorkspace.properties.customerId
+        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+      }
+    }
+    vnetConfiguration: {
+      internal: false // ◄ Exposed externally via public load balancer
+      infrastructureSubnetId: acaSubnetId 
+    }
+    zoneRedundant: false 
+  }
+}
+
+
+
+output environmentIdpri string = managedEnvironmentpri.id
+output environmentDefaultDomainpri string = managedEnvironmentpri.properties.defaultDomain
+output environmentStaticIppri string = managedEnvironmentpri.properties.staticIp

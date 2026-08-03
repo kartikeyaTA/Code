@@ -1,0 +1,146 @@
+targetScope = 'subscription' 
+
+param resourceGroupName string
+param envName string
+param location string
+param keyVaultName string
+param aiServicesName string 
+param projectName string 
+param vnetName string
+param acrName string
+param storageAccountName string
+
+resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
+  name: resourceGroupName
+  location: location
+  tags: {
+    Environment: envName
+  }
+}
+
+module network './modules/networking.bicep' = {
+  name: 'networking-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    location: location
+    vnetName: vnetName
+  }
+}
+
+module security './modules/security.bicep' = {
+  name: 'security-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    location: location
+    keyVaultName: keyVaultName
+  }
+}
+
+module telemetry './modules/telemetry.bicep' = {
+  name: 'telemetry-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    location: location
+  }
+}
+
+module registry './modules/registry.bicep' = {
+  name: 'registry-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    location: location
+    acrName: acrName
+    logAnalyticsWorkspaceId: telemetry.outputs.workspaceId
+    managedIdentityName: security.outputs.appGatewayIdentityName
+  }
+}
+
+module devopsRunner './modules/vm-runner.bicep' = {
+  name: 'devops-runner-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    devopsSubnetId: network.outputs.devopsSubnetId // Maps reference from network module outputs
+    adminPassword: 'RashiJacky@5301' // Recommend extracting from Key Vault references
+  }
+}
+
+module storage './modules/storage.bicep' = {
+  name: 'storage-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    storageAccountName: storageAccountName
+    location: location
+    vnetId: network.outputs.vnetId
+    endpointsSubnetId: network.outputs.endpointsSubnetId
+  }
+}
+
+module cosmosDb './modules/cosmos.bicep' = {
+  scope: rg
+  name: 'cosmosDeployment'
+  params: {
+    location: location
+  }
+}
+
+module aiSearch './modules/search.bicep' = {
+  scope: rg
+  name: 'searchDeployment'
+  params: {
+    location: location
+    sku: 'basic'
+  }
+}
+
+module containerEnv './modules/container_env.bicep' = {
+  name: 'container-env-deployment'
+  scope: rg
+  params: {
+    envName: envName
+    location: location
+    acaSubnetId: network.outputs.acaSubnetId
+    apimSubnetId: network.outputs.apimSubnetId 
+    vnetId: network.outputs.vnetId
+    privateEndpointSubnetId: network.outputs.endpointsSubnetId
+  }
+}
+
+var dynamicSubnetIds = [
+  network.outputs.endpointsSubnetId
+  network.outputs.agwSubnetId
+  network.outputs.apimSubnetId
+  network.outputs.acaSubnetId
+  network.outputs.devopsSubnetId
+  network.outputs.agentSubnetId
+]
+
+module aifoundry './modules/foundry.bicep' = {
+  name: 'aifoundry-deployment'
+  scope: rg 
+  params: {
+    aiServicesName: aiServicesName
+    projectName: projectName
+    location: location
+    subnetIds: dynamicSubnetIds
+    agentSubnetId: network.outputs.agentSubnetId
+    appGatewayIdentityPrincipalId: security.outputs.appGatewayIdentityPrincipalId
+    keyVaultName: keyVaultName
+    storageAccountName: storageAccountName
+    searchServiceName: aiSearch.outputs.searchServiceName
+    cosmosAccountName: cosmosDb.outputs.cosmosAccountName
+    logAnalyticsWorkspaceName: telemetry.outputs.workspaceName
+    vnetId: network.outputs.vnetId
+    privateEndpointSubnetId: network.outputs.endpointsSubnetId
+  }
+  dependsOn: [
+    storage
+    security
+  ]
+}

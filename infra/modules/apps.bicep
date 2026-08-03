@@ -5,20 +5,28 @@ param location string
 param environmentId string
 param registryLoginServer string
 
-// References to existing resources for RBAC scoping
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
-  name: 'stachattranscripts${envName}'
-}
-resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: 'cog-openai-chat3-${envName}'
+
+resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
+  name: 'foundry-services-chat1-${envName}'
 }
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: 'testkaraichat3${envName}'
+  name: 'testkaraichat9${envName}'
 }
 
 // Reference to your core User identity to avoid Entra ID race conditions
 resource appIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: 'id-app-gateway-${envName}'
+}
+
+resource aiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundryAccount.id, appIdentity.id, 'AzureAIDeveloper')
+  scope: foundryAccount
+  properties: {
+    // Cognitive Services User or Azure AI Developer Role Definition ID
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908') 
+    principalId: appIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 // Target your real custom python container built and resting in your registry repo
@@ -44,7 +52,7 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
         external: false 
         allowInsecure: true
         targetPort: 80 
-        transport: 'http' 
+        transport: 'Http' 
       }
       // Uses the pre-assigned identity block to query Key Vault without a replication lag timeout
       secrets: [
@@ -75,10 +83,6 @@ resource chatBackendApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'MY_DUMMY_SECRET'
               secretRef: 'vault-secret2'
-            }
-            {
-              name: 'STORAGE_ACCOUNT_NAME'
-              value: 'stachattranscripts${envName}'
             }
           ]
         } 

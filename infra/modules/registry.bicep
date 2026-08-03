@@ -4,7 +4,7 @@ param envName string
 param location string 
 param logAnalyticsWorkspaceId string // Required to stream metric telemetry
 param managedIdentityName string
-var acrName = 'aichatregistry${envName}'
+param acrName string
 var acrPullRoleDefinitionId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 // 1. Azure Container Registry Definition

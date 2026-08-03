@@ -81,16 +81,6 @@ module storage './modules/storage.bicep' = {
   }
 }
 
-module openAiModels './modules/openai_models.bicep' = {
-  name: 'openai-models-deployment'
-  scope: rg
-  params: {
-    cognitiveAccountName: aifoundry.outputs.openAiAccountName
-  }
-  dependsOn: [
-    aifoundry 
-  ]
-}
 
 module registry './modules/registry.bicep' = {
   name: 'registry-deployment'
@@ -103,19 +93,17 @@ module registry './modules/registry.bicep' = {
   }
 }
 
-module aifoundry './modules/ai_foundry.bicep' = {
-  name: 'aifoundry-deployment'
-  scope: rg 
+
+module devopsRunner './modules/vm-runner.bicep' = {
+  name: 'devops-runner-deployment'
+  scope: rg
   params: {
     envName: envName
     location: location
-    vnetId: network.outputs.vnetId
-    endpointsSubnetId: network.outputs.endpointsSubnetId
-    keyVaultId: security.outputs.keyVaultId
-    storageAccountId: storage.outputs.storageAccountId
+    devopsSubnetId: network.outputs.devopsSubnetId // Maps reference from network module outputs
+    adminPassword: 'RashiJacky@5301' // Recommend extracting from Key Vault references
   }
 }
-
 
 module containerEnv './modules/container_env.bicep' = {
   name: 'container-env-deployment'
@@ -127,10 +115,23 @@ module containerEnv './modules/container_env.bicep' = {
   }
 }
 
+var dynamicSubnetIds = [
+  network.outputs.endpointsSubnetId
+  network.outputs.agwSubnetId
+  network.outputs.apimSubnetId
+  network.outputs.acaSubnetId
+  network.outputs.devopsSubnetId
+]
 
-
-
-
+module aifoundry './modules/foundry.bicep' = {
+  name: 'aifoundry-deployment'
+  scope: rg 
+  params: {
+    envName: envName
+    location: location
+    subnetIds: dynamicSubnetIds
+  }
+}
 
 
 // ============================================================================
@@ -141,5 +142,4 @@ output vnetId string = network.outputs.vnetId
 output keyVaultUri string = security.outputs.keyVaultUri
 output storageAccountName string = storage.outputs.storageAccountName
 output registryLoginServer string = registry.outputs.registryLoginServer
-output aiProjectConnection string = '${aifoundry.outputs.openAiEndpoint}/api/projects/ai-project-chat-${envName}'
 

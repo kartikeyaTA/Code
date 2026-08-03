@@ -37,6 +37,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Export outputs so downstream networking and compute layers can bind to this logging array
 output workspaceId string = logAnalyticsWorkspace.id
+output workspaceName string = logAnalyticsWorkspace.name
 output workspaceCustomerId string = logAnalyticsWorkspace.properties.customerId
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey

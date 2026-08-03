@@ -2,8 +2,7 @@ metadata description = 'Establishes the foundational Virtual Network, subnet seg
 
 param envName string
 param location string 
-
-var vnetName = 'vnet-ai-chat-${envName}'
+param vnetName string
 var natGatewayName = 'nat-outbound-${envName}'
 var publicIpName = 'pip-nat-${envName}'
 var apimNsgName = 'nsg-apim-${envName}'
@@ -101,12 +100,57 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         name: 'snet-agw'
         properties: {
           addressPrefix: '10.0.1.0/24' 
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.CognitiveServices'
+              locations: [
+                location
+              ]
+            }
+          ]
+        }
+      }
+      {
+        name: 'snet-foundry-agents'
+        properties: {
+          addressPrefix: '10.0.8.0/24'
+          defaultOutboundAccess: false
+          natGateway: {
+            id: natGateway.id
+          }
+          
+          // ◄ MOVE IT HERE: Direct child of subnet properties
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.CognitiveServices'
+              locations: [
+                location
+              ]
+            }
+          ]
+          
+          delegations: [
+            {
+              name: 'foundry-agent-delegation'
+              properties: {
+                serviceName: 'Microsoft.App/environments' // ◄ Keep ONLY this here
+              }
+            }
+          ]
         }
       }
       {
         name: 'snet-devops-runners'
         properties: {
           addressPrefix: '10.0.7.0/24' // Dedicated segment for deployment runners
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.CognitiveServices'
+              locations: [
+                location
+              ]
+            }
+          ]
           natGateway: {
             id: natGateway.id // Inherits the secure outbound NAT Gateway IP
           }
@@ -123,6 +167,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
           natGateway: {
             id: natGateway.id
           }
+          delegations: [
+            {
+              name: 'aca-runtime-delegation'
+              properties: {
+                serviceName: 'Microsoft.App/environments' 
+              }
+            }
+          ]
           serviceEndpoints: [
             {
               service: 'Microsoft.Sql'
@@ -142,13 +194,24 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
             {
               service: 'Microsoft.EventHub'
             }
+            {
+              service: 'Microsoft.CognitiveServices'
+            }
           ]
         }
       }
       {
         name: 'snet-container-apps'
         properties: {
-          addressPrefix: '10.0.4.0/23' 
+          addressPrefix: '10.0.4.0/23'
+              serviceEndpoints: [
+            {
+              service: 'Microsoft.CognitiveServices'
+              locations: [
+                location
+              ]
+            }
+          ] 
           natGateway: {
             id: natGateway.id 
           }
@@ -167,6 +230,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         properties: {
           addressPrefix: '10.0.6.0/24' 
           privateEndpointNetworkPolicies: 'Disabled' 
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.CognitiveServices'
+              locations: [
+                location
+              ]
+            }
+          ]
         }
       }
     ]
@@ -184,3 +255,4 @@ output acaSubnetId string = '${vnet.id}/subnets/snet-container-apps'
 output endpointsSubnetId string = '${vnet.id}/subnets/snet-private-endpoints'
 output natPublicIpAddress string = publicIP.properties.ipAddress
 output devopsSubnetId string = '${vnet.id}/subnets/snet-devops-runners'
+output agentSubnetId string = '${vnet.id}/subnets/snet-foundry-agents'
