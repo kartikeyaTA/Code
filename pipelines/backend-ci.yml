@@ -32,7 +32,6 @@ stages:
     - script: |
         echo "Creating Python Virtual Environment..."
         if [ ! -d ".venv" ]; then
-          echo "Creating Python Virtual Environment..."
           python3 -m venv .venv
         else
           echo "Virtual environment .venv already exists. Skipping creation..."
@@ -50,22 +49,22 @@ stages:
           echo "No requirements.txt found in backend directory, skipping pip install."
         fi
 
-        echo "Executing Pytest..."
-        # Runs pytest on backend directory, generates JUnit XML report for Azure DevOps
+        echo "Creating directory for test artifacts..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/test-results
+
+        echo "Executing Pytest and generating XML + HTML reports..."
         pytest backend/ \
           --cov=backend \
-          --cov-report=xml:coverage.xml \
+          --cov-report=xml:$(Build.ArtifactStagingDirectory)/test-results/coverage.xml \
+          --cov-report=html:$(Build.ArtifactStagingDirectory)/test-results/coverage_html \
           --cov-fail-under=80 \
-          --junitxml=test-results.xml
+          --junitxml=$(Build.ArtifactStagingDirectory)/test-results/test-results.xml
       displayName: 'Execute Python Unit Tests'
 
-    - task: PublishTestResults@2
-      displayName: 'Publish Pytest Results'
-      condition: succeededOrFailed() 
-      inputs:
-        testResultsFormat: 'JUnit'
-        testResultsFiles: '**/test-results.xml'
-        testRunTitle: 'Backend Python Unit Tests'
+    - publish: $(Build.ArtifactStagingDirectory)/test-results
+      artifact: pytest-and-coverage-report
+      displayName: '2. Publish Test & Coverage Artifact'
+      condition: always()
 
     - script: |
         SHORT_SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
