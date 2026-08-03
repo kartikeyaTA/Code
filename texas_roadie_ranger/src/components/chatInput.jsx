@@ -4,6 +4,7 @@ import useVoiceAgent from "./aiVoiceResponse";
 
 const ChartInput = ({ sessionId, onSend, setLoading,handleNewChat, setShowWarning}) => {
     const [message, setMessage] = useState("");
+    const [isTextActive, setIsTextActive] = useState(false)
 
     const wasVoiceActive = useRef(false)
 
@@ -13,7 +14,26 @@ const ChartInput = ({ sessionId, onSend, setLoading,handleNewChat, setShowWarnin
         onSend(reply, sender, options);
     }, [onSend]);
     
-    const { sendMessage, isTextActive, setTextActive } = useTextAgent(handleAgentMessage, setLoading);
+    // const { sendMessage, isTextActive, setTextActive } = useTextAgent(handleAgentMessage, setLoading, sessionId);
+
+    const handleTextResponse = async (trimmedMessage) =>{
+        setLoading(true)
+        const resp = await fetch("http://127.0.0.1:8000/chat",{
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_query: trimmedMessage,
+                conversation_id: sessionId,
+            }),
+        })
+
+        const resp_data = await resp.json()
+        console.log("resp data is ==>",resp_data)
+        onSend(resp_data.reply, "ai")
+        setLoading(false)
+    }
 
     const { isVoiceActive, startVoiceSession, micLevel, status } = useVoiceAgent(
         handleAgentMessage,
@@ -29,6 +49,7 @@ const ChartInput = ({ sessionId, onSend, setLoading,handleNewChat, setShowWarnin
     }, [isVoiceActive]);
 
     const handlesend = async () => {
+        setIsTextActive(true)
         const trimmedMessage = message.trim();
 
         if (!trimmedMessage) {
@@ -36,7 +57,8 @@ const ChartInput = ({ sessionId, onSend, setLoading,handleNewChat, setShowWarnin
         }
 
         onSend(trimmedMessage, "user");
-        sendMessage(trimmedMessage);
+        // sendMessage(trimmedMessage);
+        handleTextResponse(trimmedMessage)
         setMessage("");
     };
 
