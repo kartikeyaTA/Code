@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas Roadhouse — Revamped Wireframe (Login + Home + Chat)</title>
+</head>
+<body style="margin:0; padding:0; font-family:'Segoe UI', 'Open Sans', Roboto, sans-serif; background-color:#FDFBF7; color:#2D251E;">
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 1: LOGIN (converted to fully inline CSS)                -->
+  <!-- ============================================================ -->
+  <div id="screen-login" style="display:flex; width:100%; height:100vh;">
+
+    <!-- Left branding panel -->
+    <div style="flex:1.2; background:linear-gradient(rgba(0,75,43,0.85), rgba(26,18,11,0.9)), url('https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200') center/cover no-repeat; display:flex; flex-direction:column; justify-content:space-between; padding:60px; color:#FFFFFF; min-width:0;">
+      <div style="font-size:24px; font-weight:800; letter-spacing:1px; color:#FFC72C; display:flex; align-items:center; gap:10px;">
+        <span>🤠</span> TEXAS ROADHOUSE
+      </div>
+      <div>
+        <h1 style="font-size:42px; font-weight:800; margin:0 0 20px 0; line-height:1.2;">Legendary Food,<br>Legendary Service.</h1>
+        <p style="font-size:16px; color:#F4EFE6; max-width:500px; line-height:1.6; margin:0;">Sign in to manage your orders, VIP Club rewards, waitlist history, and get help anytime from our virtual host.</p>
+      </div>
+      <div style="font-size:13px; color:rgba(255,255,255,0.6);">© 2026 Texas Roadhouse Core Web Portal. All rights reserved.</div>
+    </div>
+
+    <!-- Right authentication panel -->
+    <div style="flex:1; background-color:#FDFBF7; display:flex; justify-content:center; align-items:center; padding:40px; min-width:340px;">
+      <div style="width:100%; max-width:420px; background:#FFFFFF; border:1px solid #F4EFE6; border-radius:16px; padding:40px 32px; box-shadow:0 10px 30px rgba(26,18,11,0.04);">
+        <div style="margin-bottom:32px;">
+          <h2 style="font-size:24px; font-weight:700; color:#004B2B; margin:0 0 8px 0;">Welcome Back</h2>
+          <p style="font-size:14px; color:#7A7067; margin:0;">Sign in to access the portal dashboard.</p>
+        </div>
+
+        <button onclick="showScreen('home')" style="width:100%; height:50px; display:flex; align-items:center; justify-content:center; gap:14px; background-color:#FFFFFF; border:1px solid #8C8276; border-radius:8px; color:#2F2F2F; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.04); margin-bottom:0;">
+          <svg viewBox="0 0 23 23" width="20" height="20">
+            <path fill="#f35325" d="M0 0h11v11H0z"/>
+            <path fill="#81bc06" d="M12 0h11v11H12z"/>
+            <path fill="#05a6f0" d="M0 12h11v11H0z"/>
+            <path fill="#ffba08" d="M12 12h11v11H12z"/>
+          </svg>
+          <span>Sign in with Microsoft</span>
+        </button>
+
+        <div style="display:flex; align-items:center; text-align:center; margin:24px 0; color:#7A7067; font-size:12px;">
+          <span style="flex:1; border-bottom:1px solid #F4EFE6;"></span>
+          <span style="margin:0 10px;">or use roadhouse account</span>
+          <span style="flex:1; border-bottom:1px solid #F4EFE6;"></span>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px; color:#2D251E;">Email Address</label>
+          <input type="email" placeholder="name@company.com" style="width:100%; height:46px; padding:0 16px; border:1px solid #D5CFC6; border-radius:6px; font-size:14px; background-color:#FDFBF7; outline:none; box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px; color:#2D251E;">Password</label>
+          <input type="password" placeholder="••••••••" style="width:100%; height:46px; padding:0 16px; border:1px solid #D5CFC6; border-radius:6px; font-size:14px; background-color:#FDFBF7; outline:none; box-sizing:border-box;">
+        </div>
+
+        <button onclick="showScreen('home')" style="width:100%; height:48px; background-color:#004B2B; color:#FFFFFF; border:none; border-radius:6px; font-size:15px; font-weight:700; cursor:pointer;">Sign In</button>
+
+        <div style="margin-top:24px; text-align:center; font-size:13px;">
+          <a href="#" style="color:#004B2B; text-decoration:none; font-weight:600;">Forgot password?</a>
+          &nbsp;·&nbsp;
+          <a href="#" style="color:#004B2B; text-decoration:none; font-weight:600;">Create account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 2: HOME (revamped, post-login) + CHAT WIDGET            -->
+  <!-- ============================================================ -->
+  <div id="screen-home" style="display:none;">
+
+    <!-- ===== HEADER ===== -->
+    <header style="position:sticky; top:0; z-index:500; background:#FDFBF7; border-bottom:1px solid #F4EFE6; box-shadow:0 2px 8px rgba(26,18,11,0.05);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 40px; max-width:1400px; margin:0 auto;">
+        <div style="display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800; color:#004B2B; letter-spacing:0.5px;">
+          <span>🤠</span> TEXAS ROADHOUSE
+        </div>
+        <nav style="display:flex; gap:32px; font-size:14px; font-weight:700; color:#2D251E;">
+          <a href="#" style="text-decoration:none; color:#2D251E;">Menu</a>
+          <a href="#" style="text-decoration:none; color:#2D251E;">Locations</a>
+          <a href="#" style="text-decoration:none; color:#004B2B; border-bottom:2px solid #FFC72C; padding-bottom:4px;">VIP Club</a>
+          <a href="#" style="text-decoration:none; color:#2D251E;">Shop</a>
+          <a href="#" style="text-decoration:none; color:#2D251E;">Gift Cards</a>
+        </nav>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button style="background:#FFFFFF; border:1px solid #004B2B; color:#004B2B; font-weight:700; font-size:13px; padding:10px 18px; border-radius:6px; cursor:pointer;">Join Waitlist</button>
+          <button style="background:#004B2B; border:none; color:#FFFFFF; font-weight:700; font-size:13px; padding:10px 18px; border-radius:6px; cursor:pointer;">Order To-Go</button>
+          <div style="width:1px; height:24px; background:#F4EFE6; margin:0 6px;"></div>
+          <div title="My Bag" style="font-size:20px; cursor:pointer;">🛍️</div>
+          <div title="My Account" style="width:36px; height:36px; border-radius:50%; background:#FFC72C; color:#1A120B; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; cursor:pointer;">JD</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== HERO ===== -->
+    <section style="position:relative; height:520px; background:linear-gradient(rgba(26,18,11,0.35), rgba(26,18,11,0.65)), url('https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600') center/cover no-repeat; display:flex; align-items:center;">
+      <div style="max-width:1400px; margin:0 auto; width:100%; padding:0 40px; color:#FFFFFF;">
+        <div style="font-size:13px; font-weight:700; letter-spacing:2px; color:#FFC72C; margin-bottom:16px;">THE GREAT AMERICAN RIB FEST</div>
+        <h1 style="font-size:52px; font-weight:800; max-width:640px; line-height:1.15; margin:0 0 24px 0;">Fall-off-the-bone ribs, slow cooked to legendary.</h1>
+        <div style="display:flex; gap:16px;">
+          <button style="background:#FFC72C; color:#1A120B; border:none; font-weight:800; font-size:14px; padding:14px 26px; border-radius:6px; cursor:pointer;">See the Rib Fest Menu</button>
+          <button style="background:transparent; color:#FFFFFF; border:1px solid #FFFFFF; font-weight:700; font-size:14px; padding:14px 26px; border-radius:6px; cursor:pointer;">Find a Location</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROMO STRIP ===== -->
+    <section style="background:#004B2B; color:#FFFFFF; text-align:center; padding:14px 20px; font-size:13px; font-weight:600;">
+      🎉 We're celebrating America — enter to win a 2026 RAM 1500 Big Horn America250 Special Edition Truck. <a href="#" style="color:#FFC72C; font-weight:800; text-decoration:underline;">Enter Here</a>
+    </section>
+
+    <!-- ===== DINING IN / JOIN WAITLIST ===== -->
+    <section style="max-width:1400px; margin:0 auto; padding:80px 40px; display:flex; align-items:center; gap:60px;">
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:700; letter-spacing:2px; color:#7A7067; margin-bottom:12px;">DINING IN?</div>
+        <h2 style="font-size:34px; font-weight:800; color:#1A120B; margin:0 0 20px 0;">Skip the wait — join our waitlist from anywhere.</h2>
+        <p style="font-size:15px; color:#7A7067; line-height:1.6; max-width:460px; margin:0 0 28px 0;">Add your name to the list at your local Roadhouse and we'll text you when your table's ready. No more standing around the lobby.</p>
+        <button style="background:#004B2B; color:#FFFFFF; border:none; font-weight:700; font-size:14px; padding:14px 28px; border-radius:6px; cursor:pointer;">Join Waitlist</button>
+      </div>
+      <div style="flex:1; height:340px; border-radius:16px; background:#F4EFE6 url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1000') center/cover no-repeat;"></div>
+    </section>
+
+    <!-- ===== START YOUR ORDER ===== -->
+    <section style="background:#F4EFE6; padding:80px 40px;">
+      <div style="max-width:1400px; margin:0 auto;">
+        <h2 style="font-size:30px; font-weight:800; color:#1A120B; text-align:center; margin:0 0 40px 0;">Start Your Order</h2>
+        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:20px;">
+          <!-- category cards -->
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🥖</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Just For Starters</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🥩</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Hand-Cut Steaks</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🍖</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Fall-Off-Bone Ribs</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🍽️</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Texas Size Combos</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🦐</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Dockside Favorites</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:24px 12px; text-align:center; box-shadow:0 4px 14px rgba(26,18,11,0.06); cursor:pointer;">
+            <div style="font-size:34px; margin-bottom:10px;">🍗</div>
+            <div style="font-size:13px; font-weight:700; color:#2D251E;">Chicken Specialties</div>
+          </div>
+        </div>
+        <div style="text-align:center; margin-top:36px;">
+          <button style="background:transparent; border:2px solid #004B2B; color:#004B2B; font-weight:700; font-size:14px; padding:12px 28px; border-radius:6px; cursor:pointer;">See Full Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STORYTELLING BLOCKS ===== -->
+    <section style="max-width:1400px; margin:0 auto; padding:80px 40px; display:flex; flex-direction:column; gap:70px;">
+      <div style="display:flex; align-items:center; gap:60px;">
+        <div style="flex:1; height:320px; border-radius:16px; background:#F4EFE6 url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000') center/cover no-repeat;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:700; letter-spacing:2px; color:#7A7067; margin-bottom:12px;">MADE FROM SCRATCH</div>
+          <h3 style="font-size:26px; font-weight:800; color:#1A120B; line-height:1.35; margin:0 0 18px 0;">Legendary Food, Legendary Service® starts with taking no shortcuts.</h3>
+          <p style="font-size:14px; color:#7A7067; line-height:1.6; margin:0 0 20px 0;">We take great pride in every plate we serve, every time — from our hand-cut steaks to our fresh-baked rolls.</p>
+          <a href="#" style="color:#004B2B; font-weight:700; text-decoration:none; font-size:14px;">Learn More →</a>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:60px; flex-direction:row-reverse;">
+        <div style="flex:1; height:320px; border-radius:16px; background:#F4EFE6 url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1000') center/cover no-repeat;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:700; letter-spacing:2px; color:#7A7067; margin-bottom:12px;">LOCAL STORIES</div>
+          <h3 style="font-size:26px; font-weight:800; color:#1A120B; line-height:1.35; margin:0 0 18px 0;">Serving our community goes beyond our Hand-Cut Steaks.</h3>
+          <p style="font-size:14px; color:#7A7067; line-height:1.6; margin:0 0 20px 0;">Every location has a story to tell — meet the roadies behind your local restaurant.</p>
+          <a href="#" style="color:#004B2B; font-weight:700; text-decoration:none; font-size:14px;">Learn More →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== INSTAGRAM GALLERY ===== -->
+    <section style="background:#1A120B; padding:70px 40px;">
+      <div style="max-width:1400px; margin:0 auto;">
+        <h2 style="font-size:24px; font-weight:800; color:#FFFFFF; text-align:center; letter-spacing:1px; margin:0 0 32px 0;">FOLLOW US ON INSTAGRAM</h2>
+        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:14px;">
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1432139555190-58524dae6a55?q=80&w=400') center/cover no-repeat;"></div>
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=400') center/cover no-repeat;"></div>
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1546241072-48010ad2862c?q=80&w=400') center/cover no-repeat;"></div>
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=400') center/cover no-repeat;"></div>
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1558030006-450675393462?q=80&w=400') center/cover no-repeat;"></div>
+          <div style="height:150px; border-radius:8px; background:#2D251E url('https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=400') center/cover no-repeat;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FINAL CTA ===== -->
+    <section style="background:#004B2B; padding:60px 40px; text-align:center;">
+      <h2 style="font-size:28px; font-weight:800; color:#FFFFFF; margin:0 0 24px 0;">Mouth watering yet?</h2>
+      <div style="display:flex; gap:16px; justify-content:center;">
+        <button style="background:#FFC72C; color:#1A120B; border:none; font-weight:800; font-size:14px; padding:14px 28px; border-radius:6px; cursor:pointer;">Join Waitlist</button>
+        <button style="background:transparent; color:#FFFFFF; border:1px solid #FFFFFF; font-weight:700; font-size:14px; padding:14px 28px; border-radius:6px; cursor:pointer;">Order To-Go</button>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer style="background:#FDFBF7; border-top:1px solid #F4EFE6; padding:60px 40px 30px 40px;">
+      <div style="max-width:1400px; margin:0 auto; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:40px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:800; color:#004B2B; margin-bottom:14px;"><span>🤠</span> TEXAS ROADHOUSE</div>
+          <p style="font-size:13px; color:#7A7067; line-height:1.6; max-width:280px;">Legendary steaks, ribs, and made-from-scratch sides — serving up American cuisine since day one.</p>
+          <div style="display:flex; gap:14px; margin-top:16px; font-size:18px;">
+            <span style="cursor:pointer;">📘</span><span style="cursor:pointer;">🐦</span><span style="cursor:pointer;">📷</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#1A120B; margin-bottom:14px;">Company</div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:#7A7067;">
+            <a href="#" style="color:#7A7067; text-decoration:none;">About Us</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Press Room</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Careers</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Contact Us</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#1A120B; margin-bottom:14px;">Resources</div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:#7A7067;">
+            <a href="#" style="color:#7A7067; text-decoration:none;">Investors</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Nutrition &amp; Allergens</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Community Impact</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Sustainability</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#1A120B; margin-bottom:14px;">Legal</div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:#7A7067;">
+            <a href="#" style="color:#7A7067; text-decoration:none;">Trust Center</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Terms of Use</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Privacy Policy</a>
+            <a href="#" style="color:#7A7067; text-decoration:none;">Accessibility</a>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:1400px; margin:40px auto 0 auto; border-top:1px solid #F4EFE6; padding-top:20px; font-size:12px; color:#7A7067; text-align:center;">
+        © 2026 Texas Roadhouse Delaware LLC. All rights reserved.
+      </div>
+    </footer>
+
+    <!-- ============================================================ -->
+    <!-- CHAT WIDGET                                                    -->
+    <!-- ============================================================ -->
+
+    <!-- Floating chat launcher icon -->
+    <div id="chat-launcher" onclick="openChat()" style="position:fixed; bottom:28px; right:28px; width:64px; height:64px; border-radius:50%; background:#004B2B; box-shadow:0 8px 24px rgba(0,75,43,0.35); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2000; border:2px solid #FFC72C;">
+      <span style="font-size:28px;">💬</span>
+    </div>
+
+    <!-- Chat panel: floating card, resizable, expandable to fullscreen -->
+    <div id="chat-panel" style="display:none; position:fixed; bottom:28px; right:28px; width:400px; height:600px; min-width:320px; min-height:380px; background:#FFFFFF; border-radius:16px; box-shadow:0 16px 48px rgba(26,18,11,0.25); z-index:2001; flex-direction:column; border:1px solid #F4EFE6; overflow:hidden;">
+
+      <!-- Corner drag handle: resizes BOTH width and height (top-left corner, since panel is anchored bottom-right) -->
+      <div id="chat-resize-handle" onmousedown="startResize(event,'both')" title="Drag to resize" style="position:absolute; top:0; left:0; width:22px; height:22px; cursor:nwse-resize; z-index:2002; display:flex; align-items:flex-start; justify-content:flex-start; padding:4px;">
+        <svg width="12" height="12" viewBox="0 0 12 12" style="opacity:0.55;">
+          <line x1="1" y1="11" x2="11" y2="1" stroke="#7A7067" stroke-width="1.4"/>
+          <line x1="5" y1="11" x2="11" y2="5" stroke="#7A7067" stroke-width="1.4"/>
+        </svg>
+      </div>
+
+      <!-- Left edge handle: resizes WIDTH only -->
+      <div id="chat-resize-handle-w" onmousedown="startResize(event,'width')" title="Drag to resize width" style="position:absolute; top:22px; left:0; width:6px; height:calc(100% - 22px); cursor:ew-resize; z-index:2002;"></div>
+
+      <!-- Top edge handle: resizes HEIGHT only -->
+      <div id="chat-resize-handle-h" onmousedown="startResize(event,'height')" title="Drag to resize height" style="position:absolute; top:0; left:22px; width:calc(100% - 22px); height:6px; cursor:ns-resize; z-index:2002;"></div>
+
+      <!-- Header -->
+      <div style="background:#004B2B; color:#FFFFFF; padding:16px 20px 16px 30px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#FFC72C; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">🤠</div>
+          <div>
+            <div style="font-size:14px; font-weight:700;">Roadhouse Assistant</div>
+            <div style="font-size:11px; color:#C9E7D8;">● Online now</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <span onclick="toggleFullscreen()" id="fullscreen-icon" title="Expand to fullscreen" style="cursor:pointer; font-size:17px; line-height:1;">⛶</span>
+          <span onclick="closeChat()" title="Close chat" style="cursor:pointer; font-size:15px; line-height:1; width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-weight:700;">✕</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div style="flex:1; overflow-y:auto; padding:20px; background:#FDFBF7; display:flex; flex-direction:column; gap:14px;">
+
+        <div style="max-width:80%; align-self:flex-start; background:#FFFFFF; border:1px solid #F4EFE6; border-radius:12px 12px 12px 2px; padding:12px 16px; font-size:13px; color:#2D251E; box-shadow:0 2px 6px rgba(26,18,11,0.04);">
+          Howdy! 🤠 I'm your Roadhouse Assistant. I can help you track an order, join a waitlist, check VIP rewards, or answer menu questions. What can I help with?
+        </div>
+
+        <div style="max-width:80%; align-self:flex-end; background:#004B2B; border-radius:12px 12px 2px 12px; padding:12px 16px; font-size:13px; color:#FFFFFF;">
+          Is my to-go order still on track?
+        </div>
+
+        <div style="max-width:80%; align-self:flex-start; background:#FFFFFF; border:1px solid #F4EFE6; border-radius:12px 12px 12px 2px; padding:12px 16px; font-size:13px; color:#2D251E; box-shadow:0 2px 6px rgba(26,18,11,0.04);">
+          You're all set — Order #48213 is being prepared and should be ready for pickup by 7:40 PM.
+        </div>
+
+        <!-- voice message example bubble -->
+        <div style="max-width:80%; align-self:flex-end; background:#004B2B; border-radius:12px 12px 2px 12px; padding:10px 16px; font-size:13px; color:#FFFFFF; display:flex; align-items:center; gap:10px;">
+          <span>🎙️</span>
+          <div style="display:flex; align-items:center; gap:2px;">
+            <span style="width:3px; height:10px; background:#FFC72C; border-radius:2px;"></span>
+            <span style="width:3px; height:18px; background:#FFC72C; border-radius:2px;"></span>
+            <span style="width:3px; height:8px; background:#FFC72C; border-radius:2px;"></span>
+            <span style="width:3px; height:14px; background:#FFC72C; border-radius:2px;"></span>
+            <span style="width:3px; height:20px; background:#FFC72C; border-radius:2px;"></span>
+            <span style="width:3px; height:9px; background:#FFC72C; border-radius:2px;"></span>
+          </div>
+          <span style="font-size:11px; color:#C9E7D8;">0:07</span>
+        </div>
+      </div>
+
+      <!-- Voice listening indicator (hidden by default) -->
+      <div id="voice-indicator" style="display:none; padding:10px 20px; background:#FFF7E0; border-top:1px solid #F4EFE6; font-size:12px; color:#8A6D00; text-align:center; flex-shrink:0;">
+        🎙️ Listening… tap the mic again to stop
+      </div>
+
+      <!-- Input bar -->
+      <div style="border-top:1px solid #F4EFE6; padding:14px 16px; display:flex; align-items:center; gap:10px; background:#FFFFFF; flex-shrink:0;">
+        <input id="chat-text-input" type="text" placeholder="Type a message…" style="flex:1; height:42px; border:1px solid #D5CFC6; border-radius:20px; padding:0 18px; font-size:13px; outline:none; background:#FDFBF7;">
+        <div onclick="toggleVoice()" id="mic-btn" title="Voice input" style="width:42px; height:42px; min-width:42px; border-radius:50%; background:#F4EFE6; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;">🎙️</div>
+        <div title="Send" style="width:42px; height:42px; min-width:42px; border-radius:50%; background:#004B2B; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; color:#FFC72C;">➤</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function showScreen(name) {
+      document.getElementById('screen-login').style.display = (name === 'login') ? 'flex' : 'none';
+      document.getElementById('screen-home').style.display = (name === 'home') ? 'block' : 'none';
+      if (name === 'login') { closeChat(); }
+      window.scrollTo(0,0);
+    }
+
+    // ---- CHAT WIDGET STATE ----
+    var chatState = 'closed'; // closed | open | fullscreen
+    var lastWidth = 400;
+    var lastHeight = 600;
+
+    function openChat() {
+      var panel = document.getElementById('chat-panel');
+      panel.style.display = 'flex';
+      document.getElementById('chat-launcher').style.display = 'none';
+      panel.style.width = lastWidth + 'px';
+      panel.style.height = lastHeight + 'px';
+      chatState = 'open';
+    }
+    function closeChat() {
+      var panel = document.getElementById('chat-panel');
+      panel.style.display = 'none';
+      document.getElementById('chat-launcher').style.display = 'flex';
+      chatState = 'closed';
+    }
+    function toggleFullscreen() {
+      var panel = document.getElementById('chat-panel');
+      var icon = document.getElementById('fullscreen-icon');
+      var handleCorner = document.getElementById('chat-resize-handle');
+      var handleW = document.getElementById('chat-resize-handle-w');
+      var handleH = document.getElementById('chat-resize-handle-h');
+      if (chatState === 'fullscreen') {
+        panel.style.top = 'auto';
+        panel.style.left = 'auto';
+        panel.style.width = lastWidth + 'px';
+        panel.style.height = lastHeight + 'px';
+        panel.style.borderRadius = '16px';
+        icon.textContent = '⛶';
+        icon.title = 'Expand to fullscreen';
+        handleCorner.style.display = 'flex';
+        handleW.style.display = 'block';
+        handleH.style.display = 'block';
+        chatState = 'open';
+      } else {
+        panel.style.top = '0';
+        panel.style.left = '0';
+        panel.style.bottom = '0';
+        panel.style.right = '0';
+        panel.style.width = '100%';
+        panel.style.height = '100%';
+        panel.style.borderRadius = '0';
+        icon.textContent = '❐';
+        icon.title = 'Exit fullscreen';
+        handleCorner.style.display = 'none';
+        handleW.style.display = 'none';
+        handleH.style.display = 'none';
+        chatState = 'fullscreen';
+      }
+    }
+    function toggleVoice() {
+      var indicator = document.getElementById('voice-indicator');
+      var mic = document.getElementById('mic-btn');
+      var listening = indicator.style.display === 'block';
+      if (listening) {
+        indicator.style.display = 'none';
+        mic.style.background = '#F4EFE6';
+      } else {
+        indicator.style.display = 'block';
+        mic.style.background = '#FFC72C';
+      }
+    }
+
+    // ---- MANUAL DRAG-TO-RESIZE (width-only, height-only, or both) ----
+    var resizing = false;
+    var resizeMode = 'both';
+    var startX, startY, startWidth, startHeight;
+    function startResize(e, mode) {
+      if (chatState === 'fullscreen') return;
+      resizing = true;
+      resizeMode = mode || 'both';
+      var panel = document.getElementById('chat-panel');
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = panel.offsetWidth;
+      startHeight = panel.offsetHeight;
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    }
+    document.addEventListener('mousemove', function(e) {
+      if (!resizing) return;
+      var panel = document.getElementById('chat-panel');
+      if (resizeMode === 'width' || resizeMode === 'both') {
+        var newWidth = startWidth - (e.clientX - startX);
+        if (newWidth < 320) newWidth = 320;
+        if (newWidth > window.innerWidth - 56) newWidth = window.innerWidth - 56;
+        panel.style.width = newWidth + 'px';
+        lastWidth = newWidth;
+      }
+      if (resizeMode === 'height' || resizeMode === 'both') {
+        var newHeight = startHeight - (e.clientY - startY);
+        if (newHeight < 380) newHeight = 380;
+        if (newHeight > window.innerHeight - 56) newHeight = window.innerHeight - 56;
+        panel.style.height = newHeight + 'px';
+        lastHeight = newHeight;
+      }
+    });
+    document.addEventListener('mouseup', function() {
+      resizing = false;
+      document.body.style.userSelect = 'auto';
+    });
+  </script>
+
+</body>
+</html>
