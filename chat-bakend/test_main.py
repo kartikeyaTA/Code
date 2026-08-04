@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 # 1. Set Mock Environment Variables BEFORE importing app.py
 # ---------------------------------------------------------------------
 os.environ["PROJECT_ENDPOINT"] = "https://mock-endpoint.cognitiveservices.azure.com"
-os.environ["AGENT_ID"] = "mock-agent-id-123"
 os.environ["AGENT_NAME"] = "mock-agent-name"
 
 # ---------------------------------------------------------------------

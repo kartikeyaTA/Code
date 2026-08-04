@@ -1,0 +1,41 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - infra/* # ◄ Only triggers if you change files in your infrastructure folder
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  serviceConnectionName: 'azure-service-connection' # Must match your ADO Service Connection name exact
+  subscriptionId: 'a0c64e05-02e0-4758-891f-e6731cfa3357' # ◄ Update with your real subscription ID
+
+stages:
+- stage: ValidateAndDeploy
+  displayName: 'Validate & Provision Resource Group'
+  jobs:
+  - job: DeployRG
+    displayName: 'Deploy Core Resource Group'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Execute Subscription-Level Bicep Stack'
+      inputs:
+        azureSubscription: $(serviceConnectionName)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Executing What-If preview..."
+          az deployment sub what-if \
+            --location eastus2 \
+            --template-file infra/main.bicep \
+            --parameters infra/environment/dev.bicepparam
+          
+          echo "Provisioning core resource group..."
+          az deployment sub create \
+            --name 'deploy-rg-dev' \
+            --location eastus2 \
+            --template-file infra/main.bicep \
+            --parameters infra/environment/dev.bicepparam
