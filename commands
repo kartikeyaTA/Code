@@ -1,0 +1,41 @@
+az acr build --registry txrhacr --image servicenow_mcp:v1.0.0 .
+
+az containerapp update \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --image txrhacr.azurecr.io/test:latest3 \
+  --revision-suffix v106
+
+az containerapp show \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --query "properties.configuration.ingress.traffic[0].revisionName || properties.latestReadyRevisionName" -o tsv
+
+az containerapp revision set-mode \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --mode multiple
+
+az containerapp revision show \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --revision txrh-ca-test--v101 \
+  --query "properties.fqdn" -o tsv
+
+# 1. Dynamically get the latest revision name (index -1)
+LATEST_REV=$(az containerapp revision list \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --query "sort_by(@, &properties.createdTime)[-1].name" -o tsv)
+
+# 2. Dynamically get the previous revision name (index -2)
+PREV_REV=$(az containerapp revision list \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --query "sort_by(@, &properties.createdTime)[-2].name" -o tsv)
+
+# 3. Route 100% traffic to the previous revision and 0% to the latest revision
+az containerapp ingress traffic set \
+  --name txrh-ca-test \
+  --resource-group txrh_tiger_rg \
+  --revision-weight "$PREV_REV=100" "$LATEST_REV=0"
