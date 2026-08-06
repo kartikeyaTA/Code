@@ -1,7 +1,7 @@
 import pytest
 import httpx
 from unittest.mock import MagicMock, patch
-from main import (
+from main_backend import (
     app,
     create_incident,
     get_incidents_by_user,
