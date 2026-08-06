@@ -39,3 +39,17 @@ az containerapp ingress traffic set \
   --name txrh-ca-test \
   --resource-group txrh_tiger_rg \
   --revision-weight "$PREV_REV=100" "$LATEST_REV=0"
+
+
+variables:
+  # Scenario 1: Triggered by CI Pipeline completion
+  - ${{ if or(eq(variables['Build.Reason'], 'BuildCompletion'), eq(variables['Build.Reason'], 'ResourceTrigger')) }}:
+    - group: backend-text-dev
+
+  # Scenario 2: PR opened targeting 'uat'
+  - ${{ if and(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/uat')) }}:
+    - group: backend-text-uat
+
+  # Scenario 3: PR opened targeting 'main'
+  - ${{ if and(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/main')) }}:
+    - group: backend-text-prod
