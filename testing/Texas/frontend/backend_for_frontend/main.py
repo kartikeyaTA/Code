@@ -29,7 +29,7 @@ async def example():
 
 # Locate frontend dist directory relative to main.py
 # .parent goes up from main.py to /backend, .parent.parent goes up to root project directory
-FRONTEND_DIST = Path(__file__).parent.parent / "texas_roadie_ranger" / "dist"
+FRONTEND_DIST = Path(__file__).parent.parent / "web_app" / "dist"
 
 # Mount bundled assets directory (/assets)
 assets_dir = FRONTEND_DIST / "assets"
@@ -45,7 +45,7 @@ async def serve_spa(request: Request, full_path: str):
             status_code=503,
             content={
                 "error": "Frontend build missing",
-                "message": "Run `npm run build` inside 'texas_roadie_ranger/' first.",
+                "message": "Run `npm run build` inside 'web_app/' first.",
             },
         )
 

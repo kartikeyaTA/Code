@@ -47,7 +47,7 @@ function App() {
                   onClick={() => setShowDashboard(true)}
                   className="border rounded-[9999px] p-1.5 bg-[#004B2B] text-white hover:text-[#FFC72C] text-l border-white cursor-pointer transition-all duration-200 hover:border-[#FFC72C]"
                 >
-                  Dashboard
+                  Dashboard1234455
                 </button>
                 <button className="flex items-center justify-center border rounded-[50%] h-[40px] w-[40px] bg-[#004B2B] text-white transition-all duration-200 hover:text-[#FFC72C]">
                   <FaUser className="text-lg" />

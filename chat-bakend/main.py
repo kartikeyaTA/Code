@@ -26,11 +26,11 @@ from fastapi.responses import StreamingResponse
 # ---------------------------------------------------------------------
 load_dotenv()
 
-PROJECT_ENDPOINT = os.environ["PROJECT_ENDPOINT"]
-AGENT_ID = os.environ["AGENT_ID"]
-AGENT_NAME = os.environ["AGENT_NAME"]
+# PROJECT_ENDPOINT = os.environ["PROJECT_ENDPOINT"]
+# AGENT_ID = os.environ["AGENT_ID"]
+# AGENT_NAME = os.environ["AGENT_NAME"]
 
-print("AGENT_ID", AGENT_NAME)
+# print("AGENT_ID", AGENT_NAME)
 
 # ---------------------------------------------------------------------
 # FastAPI app
@@ -48,98 +48,98 @@ app.add_middleware(
 # ---------------------------------------------------------------------
 # Azure AI Foundry clients
 # ---------------------------------------------------------------------
-credential = DefaultAzureCredential()
+# credential = DefaultAzureCredential()
 
-project_client = AIProjectClient(
-    endpoint=PROJECT_ENDPOINT,
-    credential=credential,
-)
+# project_client = AIProjectClient(
+#     endpoint=PROJECT_ENDPOINT,
+#     credential=credential,
+# )
 
-agent = project_client.agents.get(agent_name=AGENT_NAME)
-openai_client = project_client.get_openai_client()
+# agent = project_client.agents.get(agent_name=AGENT_NAME)
+# openai_client = project_client.get_openai_client()
 
-# ---------------------------------------------------------------------
-# Request / Response Models
-# ---------------------------------------------------------------------
-class CreateConversationResponse(BaseModel):
-    conversation_id: str
-
-
-class ChatRequest(BaseModel):
-    conversation_id: str
-    user_query: str
+# # ---------------------------------------------------------------------
+# # Request / Response Models
+# # ---------------------------------------------------------------------
+# class CreateConversationResponse(BaseModel):
+#     conversation_id: str
 
 
-class ChatResponse(BaseModel):
-    conversation_id: str
-    reply: str
+# class ChatRequest(BaseModel):
+#     conversation_id: str
+#     user_query: str
 
 
-# ---------------------------------------------------------------------
-# Create Conversation
-# ---------------------------------------------------------------------
-@app.post("/conversations", response_model=CreateConversationResponse)
-def create_conversation():
-    """
-    Creates a new Foundry conversation.
-    """
-
-    try:
-        conversation = openai_client.conversations.create()
-
-        return CreateConversationResponse(
-            conversation_id=conversation.id
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create conversation: {str(e)}",
-        )
+# class ChatResponse(BaseModel):
+#     conversation_id: str
+#     reply: str
 
 
-# ---------------------------------------------------------------------
-# Chat
-# ---------------------------------------------------------------------
-@app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    """
-    Sends a user message to an existing conversation
-    and invokes the Foundry Agent.
-    """
+# # ---------------------------------------------------------------------
+# # Create Conversation
+# # ---------------------------------------------------------------------
+# @app.post("/conversations", response_model=CreateConversationResponse)
+# def create_conversation():
+#     """
+#     Creates a new Foundry conversation.
+#     """
 
-    try:
+#     try:
+#         conversation = openai_client.conversations.create()
 
-        response = openai_client.responses.create(
-            conversation=req.conversation_id,
-            input=req.user_query,
-            extra_body={
-                "agent_reference": {"name": agent.name, "type": "agent_reference"}
-            },
-        )
+#         return CreateConversationResponse(
+#             conversation_id=conversation.id
+#         )
 
-        print(response)
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to create conversation: {str(e)}",
+#         )
 
-        if response.status == "failed":
-            raise HTTPException(
-                status_code=502,
-                detail=f"Agent execution failed: {response.last_error}",
-            )
 
-        return ChatResponse(
-            conversation_id=req.conversation_id,
-            reply=response.output_text,
-        )
+# # ---------------------------------------------------------------------
+# # Chat
+# # ---------------------------------------------------------------------
+# @app.post("/chat", response_model=ChatResponse)
+# def chat(req: ChatRequest):
+#     """
+#     Sends a user message to an existing conversation
+#     and invokes the Foundry Agent.
+#     """
 
-    except HTTPException:
-        raise
+#     try:
 
-    except Exception as e:
-        print(e)
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+#         response = openai_client.responses.create(
+#             conversation=req.conversation_id,
+#             input=req.user_query,
+#             extra_body={
+#                 "agent_reference": {"name": agent.name, "type": "agent_reference"}
+#             },
+#         )
+
+#         print(response)
+
+#         if response.status == "failed":
+#             raise HTTPException(
+#                 status_code=502,
+#                 detail=f"Agent execution failed: {response.last_error}",
+#             )
+
+#         return ChatResponse(
+#             conversation_id=req.conversation_id,
+#             reply=response.output_text,
+#         )
+
+#     except HTTPException:
+#         raise
+
+#     except Exception as e:
+#         print(e)
+#         raise HTTPException(
+#             status_code=500,
+#             detail=str(e),
+#         )
 
 
 # ---------------------------------------------------------------------
@@ -148,3 +148,7 @@ def chat(req: ChatRequest):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/connect")
+def connect():
+    return {"Connetion working"}
