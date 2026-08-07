@@ -33,7 +33,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 # Configuration
 # --------------------------------------------------------------------------
 PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
-AGENT_ID = "txrh-demoagent-1"
+AGENT_ID = "txrh-demoagent-1-copy"
 SESSIONS_DIR = Path(__file__).parent / "sessions"
 SESSIONS_DIR.mkdir(exist_ok=True)
 
