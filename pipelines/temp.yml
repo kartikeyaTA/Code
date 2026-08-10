@@ -1,0 +1,184 @@
+parameters:
+  - name: serviceName
+    type: string
+  - name: serviceFolder
+    type: string
+  - name: imageRepository
+    type: string
+  - name: azureServiceConnection
+    type: string
+  - name: acrName
+    type: string
+  - name: agentPoolName
+    type: string
+    default: Default
+  - name: agentName
+    type: string
+  - name: containerApp
+    type: string
+  - name: resourceGroup
+    type: string
+  - name: subscriptionId
+    type: string
+  - name: PROJECT_ENDPOINT
+    type: string
+  - name: AGENT_NAME
+    type: string
+  - name: ClientID
+    type: string
+
+stages:
+  - stage: Deploy
+
+    jobs:
+      - job: ValidateBranchFlow
+
+        pool:
+          name: ${{ parameters.agentPoolName }}
+
+        steps:
+          - bash: |
+              REASON="$(Build.Reason)"
+              SRC="$(System.PullRequest.SourceBranch)"
+              TGT="$(System.PullRequest.TargetBranch)"
+
+              echo "Build Reason  : $REASON"
+              echo "Source Branch : $SRC"
+              echo "Target Branch : $TGT"
+
+              # Dev deploys arrive via CI pipeline-completion trigger, not a real PR.
+              # Nothing to validate here — let it through.
+              if [ "$REASON" == "ResourceTrigger" ]; then
+                echo "Dev deploy via pipeline trigger — skipping branch-flow check."
+                echo "##vso[task.setvariable variable=branchFlowValid;isOutput=true]true"
+                exit 0
+              fi
+
+              # Any other run through this template must be a real PR event.
+              # Enforce: dev -> uat and uat -> main only.
+              VALID=false
+
+              if [ "$TGT" == "refs/heads/uat" ] && [ "$SRC" == "refs/heads/dev" ]; then
+                VALID=true
+              fi
+
+              if [ "$TGT" == "refs/heads/main" ] && [ "$SRC" == "refs/heads/uat" ]; then
+                VALID=true
+              fi
+
+              if [ "$VALID" = false ]; then
+                echo "##vso[task.logissue type=error]Invalid PR flow: '$SRC' -> '$TGT' is not allowed. Only dev->uat and uat->main are permitted."
+                echo "##vso[task.setvariable variable=branchFlowValid;isOutput=true]false"
+                exit 1
+              fi
+
+              echo "Branch flow valid: $SRC -> $TGT"
+              echo "##vso[task.setvariable variable=branchFlowValid;isOutput=true]true"
+            name: checkFlow
+            displayName: Validate Source/Target Branch Flow
+
+          - bash: |
+              echo "Invalid PR flow detected — abandoning PR $(System.PullRequest.PullRequestId)."
+
+              az repos pr update \
+                --id $(System.PullRequest.PullRequestId) \
+                --status abandoned \
+                --org "$(System.TeamFoundationCollectionUri)" \
+                --detect false
+
+              echo "PR $(System.PullRequest.PullRequestId) abandoned."
+            displayName: Abandon Invalid PR
+            condition: and(failed(), eq(variables['Build.Reason'], 'PullRequest'))
+            env:
+              AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+      - job: DeployContainer
+        dependsOn: ValidateBranchFlow
+        condition: succeeded()
+
+        pool:
+          name: ${{ parameters.agentPoolName }}
+          demands:
+            - Agent.Name -equals ${{ parameters.agentName }}
+
+        steps:
+          - checkout: self
+
+          - bash: |
+              TAG=$(cat $(Build.SourcesDirectory)/${{ parameters.serviceFolder }}/image_tag.txt | tr -d '\r\n')
+
+              IMAGE="${{ parameters.acrName }}.azurecr.io/${{ parameters.imageRepository }}:latest"
+
+              echo "Build Reason : $(Build.Reason)"
+              echo "Target Branch: $(System.PullRequest.TargetBranch)"
+              echo "Image        : $IMAGE"
+              echo "Tag          : $TAG"
+
+              echo "##vso[task.setvariable variable=fullImage]$IMAGE"
+              echo "##vso[task.setvariable variable=tag]$TAG"
+
+            displayName: Get Image Tag
+
+          - task: AzureCLI@2
+            displayName: Update Container App
+
+            inputs:
+              azureSubscription: '${{ parameters.azureServiceConnection }}'
+              scriptType: bash
+              scriptLocation: inlineScript
+
+              inlineScript: |
+                echo "containerApp=${{ parameters.containerApp }}"
+                echo "resourceGroup=${{ parameters.resourceGroup }}"
+                echo "subscriptionId=${{ parameters.subscriptionId }}"
+
+                az account set --subscription "${{ parameters.subscriptionId }}"
+
+                CURRENT=$(az containerapp show \
+                  --name ${{ parameters.containerApp }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --query "properties.configuration.ingress.traffic[0].revisionName" -o tsv)
+
+                echo "Current Revision: $CURRENT"
+
+                REVISION=$(echo "$(tag)")
+                echo "Revision $REVISION"
+
+                az containerapp update \
+                  --name ${{ parameters.containerApp }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --image "$(fullImage)" \
+                  --revision-suffix "$REVISION" \
+                  --set-env-vars \
+                    PROJECT_ENDPOINT="${{ parameters.PROJECT_ENDPOINT }}" \
+                    AGENT_NAME="${{ parameters.AGENT_NAME }}" \
+                    AZURE_CLIENT_ID="${{ parameters.ClientID }}"
+
+                NEW_REVISION=$(az containerapp show \
+                  --name ${{ parameters.containerApp }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --query properties.latestRevisionName \
+                  -o tsv)
+
+                echo "New Revision: $NEW_REVISION"
+
+                az containerapp ingress traffic set \
+                  --name ${{ parameters.containerApp }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --revision-weight "$NEW_REVISION=0" "$CURRENT=100"
+
+                echo "Display FQDN for the Revision"
+
+                FQDN=$(az containerapp show \
+                  --name ${{ parameters.containerApp }} \
+                  --resource-group ${{ parameters.resourceGroup }} \
+                  --query "properties.configuration.ingress.fqdn" -o tsv)
+
+                echo "FQDN: $FQDN"
+
+                echo "Running Curl"
+                echo "Using URL: https://$FQDN/health"
+                curl -vk https://$FQDN/health
+                echo "Using URL: https://$FQDN/connect"
+                curl -vk https://$FQDN/connect
+                echo "Curl ran"
