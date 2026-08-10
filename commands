@@ -1,3 +1,30 @@
+az config set extension.use_dynamic_install=yes_without_prompt > /dev/null 2>&1
+az config set extension.dynamic_install_allow_preview=true > /dev/null 2>&1
+az extension add --name log-analytics
+
+RESULT=$(az monitor log-analytics query \
+  --workspace "184c895d-439f-4a77-bc2a-9b872befec3a" \
+  --analytics-query "
+    ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(24h)
+    | where RevisionName_s contains 'servicenow-mcp-app--0000008'
+    | parse Log_s with * '\" ' httpStatus:int ' ' *
+    | summarize
+        totalLogs = count(),
+        errorLogs = countif(
+            Stream_s == 'stderr'
+            or httpStatus >= 500
+            or Log_s has_any ('ERROR', 'Exception', 'Critical', 'Traceback', 'Internal Server Error')
+        )
+    | project errorRate = iff(totalLogs == 0, 0.0, (errorLogs * 100.0) / totalLogs)
+  " \
+  --query "[0].errorRate" -o tsv)
+
+echo "Error rate: $RESULT%"
+Error rate: 3.523382447149263%
+
+
+
 az acr build --registry txrhacr --image servicenow_mcp:v1.0.0 .
  az containerapp logs show   --name servicenow-mcp-app   --resource-group txrh_tiger_rg   --follow   --format text
 az containerapp update \
