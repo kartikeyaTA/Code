@@ -1,0 +1,30 @@
+Act as Senior principal devops arch and decide on the CI/CD pipeline design as per the req. ​‌
+
+Req: ​‌
+1. Image should be build once and deployed to multiple env​‌
+2. Secrets Not pushed in the repo​‌
+3. Code check should be present. ​‌
+4. Service Isolation should be present ​‌
+5. Rollbacks should be smooth​‌
+6. Pipeline shoud not be env specific means use proper varaible groups per env. ​‌
+7. Code promotion stargety should be present (dev-->uat and uat--> main only allowed)​‌
+
+Now my Plan ​‌
+CI Pipeline (Runs only on dev push): Code checkout,unit test,image build,trivy scan,image push. ​‌
+
+CD Pipeline ​‌
+   1. PR Open (triggers by CI on dev or when pr is open to either uat or main): Check build reason if PR then source and target branches allinged with policy or else PR closed, Creates new container rev in respective env (live traffic not transfered), does health endpoint checks, Zap scan (basic only to check that without auth any API is assicible or not and cros and all as mainly APIs are behind intra auth and we don't want any secrets in pipeline. I belive industry standards are there for seprate security adits and end to end test in this case as token are having OBO tokens as well). In this if health check fails PR is automatically closed. 
+
+2. PR Closed ( Trigger via PR Open on dev or code merged on either uat or main): transfer live traffic, checks health endpoint if it fails rollback to old version.​‌
+
+Additionally we don't have dynamic change detection on the service as we have limited services and isolation is required with the dependices. To maintain DRY we are using templates and main files for each services just call those templates per service we have 3 main files ( CI,PR open and merged). ​‌
+
+All variables are passed through varaible groups which are env specific and on the runtime detirmined which to use. ​‌
+
+For secret scanning ADO scans are enabled as well as to proctect direct pushes on the branch ADO branch policies are enabled with approval flow on uat and main as well. ​‌
+
+This is what we have planned as per our understanding please provide the rating on this plan and suggest if something we are not considering. ​‌
+
+P.S: If we have already discussed not to have multiple uat and prod deployment proper cycles should be there so not to have multiple revisions. If this is not followed we would merge PR open and close into single pipeline running after code is merged to respective branches.​‌
+
+
