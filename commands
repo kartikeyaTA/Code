@@ -7,6 +7,7 @@ RESULT=$(az monitor log-analytics query \
   --analytics-query "
     ContainerAppConsoleLogs_CL
     | where TimeGenerated > ago(24h)
+    | where Log_s contains 'HTTP/1.1'
     | where RevisionName_s contains 'servicenow-mcp-app--0000008'
     | parse Log_s with * '\" ' httpStatus:int ' ' *
     | summarize
