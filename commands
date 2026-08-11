@@ -1,7 +1,7 @@
 az config set extension.use_dynamic_install=yes_without_prompt > /dev/null 2>&1
 az config set extension.dynamic_install_allow_preview=true > /dev/null 2>&1
 az extension add --name log-analytics
-
+docker run --rm -v $(pwd):/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py     -t /zap/wrk/openapi.json     -f openapi     -O "$TARGET_URL"     -r zap_api_report.html     -J zap_api_report.json     -I
 RESULT=$(az monitor log-analytics query \
   --workspace "184c895d-439f-4a77-bc2a-9b872befec3a" \
   --analytics-query "
