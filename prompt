@@ -15,7 +15,9 @@ CI Pipeline (Runs only on dev push): Code checkout,unit test,image build,trivy s
 CD Pipeline ​‌
    1. PR Open (triggers by CI on dev or when pr is open to either uat or main): Check build reason if PR then source and target branches allinged with policy or else PR closed, Creates new container rev in respective env (live traffic not transfered), does health endpoint checks, Zap scan (basic only to check that without auth any API is assicible or not and cros and all as mainly APIs are behind intra auth and we don't want any secrets in pipeline. I belive industry standards are there for seprate security adits and end to end test in this case as token are having OBO tokens as well). In this if health check fails PR is automatically closed. 
 
-2. PR Closed ( Trigger via PR Open on dev or code merged on either uat or main): transfer live traffic, checks health endpoint if it fails rollback to old version.​‌
+2. PR Closed ( Trigger via PR Open on dev or code merged on either uat or main): transfer live traffic 20%, checks health endpoint if it fails rollback to old version, sleep for 5 mins check https code through logs if 10% to logs are giving error rollback if not transfer complete traffic again check health endpoint and if failed rollback.
+
+Image tags are not latest they are basically kept in the git repo itself.
 
 Additionally we don't have dynamic change detection on the service as we have limited services and isolation is required with the dependices. To maintain DRY we are using templates and main files for each services just call those templates per service we have 3 main files ( CI,PR open and merged). ​‌
 
