@@ -1,5 +1,280 @@
-{"query": "What is a phishing scam?", "ground_truth": "A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]", "response": "A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]\nAre you satisfied with the agent's response?\nTicket created successfully INC0010092. I created a ticket because your message was a QUERY, and ticket creation/updation is mandatory for queries."}
-{"query": "How do I Create An Email Signature?", "ground_truth": "Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]", "response": "Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]\nAre you satisfied with the agent's response?\nTicket created successfully INC0010093. I created a ticket because your message was a QUERY, and ticket creation/updation is mandatory for queries."}
-{"query": "How do I quit an application that isn't responding?", "ground_truth": "On Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. Reference: KB0000013", "response": "On Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. Reference: KB0000013\nAre you satisfied with the agent's response?\nTicket created successfully INC0010094. I created a ticket because your intent was a query, and ticket creation/updation is mandatory for queries."}
-{"query": "Can I upgrade my operating system? What are the system requirements?", "ground_truth": "For Mac OS X, upgrade support depends on version/model; e.g., OS X 10.12 requires a Mid-2008+ supported Mac, 2GB memory, OS X 10.6.8 or later, and 64GB available space. [KB0005010] Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-bit), and 16/20 GB free space. [KB0000021]", "response": "For Mac OS X, upgrade support depends on version/model; e.g., OS X 10.12 requires a Mid-2008+ supported Mac, 2GB memory, OS X 10.6.8 or later, and 64GB available space. [KB0005010]\nWindows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-bit), and 16/20 GB free space. [KB0000021]\nAre you satisfied with the agent's response?\nTicket created successfully INC0010095. I created a ticket because your message was a QUERY, and ticket creation is mandatory for queries."}
-{"query": "Are Copyrighted Files Illegal to Have On My Computer?", "ground_truth": "It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. Reference: KB0000009", "response": "It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. Reference: KB0000009\nAre you satisfied with the agent's response?\nTicket created successfully INC0010096. I created a ticket because your message was a QUERY, and ticket creation/updation is mandatory for queries."}
+import os
+import sys
+import json
+from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from azure.core.exceptions import ResourceNotFoundError, ServiceRequestError
+from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import PromptAgentDefinition, MCPTool
+
+# Azure AI Evaluation Imports
+from azure.ai.evaluation import evaluate, RelevanceEvaluator, GroundednessEvaluator
+
+
+# ============================================================================
+# 1. PARAMETERS & CONFIGURATION
+# ============================================================================
+project_endpoint = 'https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project'
+azure_openai_endpoint = "https://roadie-ranger-foundry-resource.cognitiveservices.azure.com/"
+
+agent_name = "txrh-demoagent-2-copy-1234"
+prompt_file_path = "prompt.txt"
+
+# Single Model used for both Candidate Inference and Evaluation Scoring
+model_deployment = "gpt-5.4"
+
+# Evaluation Configuration
+eval_dataset_path = os.environ.get("EVAL_DATASET_PATH", "eval_dataset1.jsonl")
+eval_score_threshold = float(os.environ.get("EVAL_SCORE_THRESHOLD", "5.0"))
+
+# MCP Tool Configuration
+# mcp_server_label = os.environ.get("MCP_SERVER_LABEL", "mcptool")
+# mcp_server_url = 'https://apim-gateway-application-test-dev-txrh-mcp.azure-api.net/sse/sse'
+# mcp_project_connection_id = os.environ.get("MCP_PROJECT_CONNECTION_ID", "mcp-servicenow-oauth-passthrough1")
+# mcp_require_approval = os.environ.get("MCP_REQUIRE_APPROVAL", "never")
+
+# if not mcp_project_connection_id:
+#     print("❌ MCP_PROJECT_CONNECTION_ID is required.")
+#     sys.exit(1)
+
+if not os.path.exists(prompt_file_path):
+    print(f"📁 Local Error: '{prompt_file_path}' not found! Creating template file...")
+    with open(prompt_file_path, "w", encoding="utf-8") as f:
+        f.write("You are an expert AI agent running inside Microsoft Foundry.")
+
+print(f"📖 Reading system instructions from '{prompt_file_path}'...")
+with open(prompt_file_path, "r", encoding="utf-8") as file:
+    new_instructions = file.read().strip()
+
+
+# ============================================================================
+# 2. MCP TOOL HELPERS
+# ============================================================================
+# def build_mcp_tool() -> MCPTool:
+#     return MCPTool(
+#         server_label=mcp_server_label,
+#         server_url=mcp_server_url,
+#         require_approval=mcp_require_approval,
+#         project_connection_id=mcp_project_connection_id,
+#     )
+
+
+# def ensure_mcp_tool(existing_tools) -> list:
+#     tools = list(existing_tools or [])
+#     updated_tools = []
+#     found = False
+
+#     for t in tools:
+#         t_type = t.get("type") if isinstance(t, dict) else getattr(t, "type", None)
+#         t_label = t.get("server_label") if isinstance(t, dict) else getattr(t, "server_label", None)
+#         if t_type == "mcp" and t_label == mcp_server_label:
+#             print(f"🔄 MCP tool '{mcp_server_label}' found -- reconciling to current config.")
+#             updated_tools.append(build_mcp_tool())
+#             found = True
+#         else:
+#             updated_tools.append(t)
+
+#     if not found:
+#         print(f"🛠️ MCP tool '{mcp_server_label}' not found on agent -- creating & connecting it now.")
+#         updated_tools.append(build_mcp_tool())
+
+#     return updated_tools
+
+
+# ============================================================================
+# 3. EVALUATION TEST ENGINE
+# ============================================================================
+def run_evaluation_test(candidate_instructions: str, azure_credential) -> bool:
+    """
+    Executes an Azure AI evaluation suite using gpt-5.4 for candidate response
+    generation and evaluation metric scoring.
+    """
+    print(f"\n🧪 STARTING EVALUATION TEST against candidate prompt...")
+
+    if not os.path.exists(eval_dataset_path):
+        print(f"❌ Evaluation Dataset Error: File '{eval_dataset_path}' not found.")
+        return False
+
+    # Initialize Token Provider and AzureOpenAI Client for gpt-5.4 inference
+    token_provider = get_bearer_token_provider(
+        azure_credential,
+        "https://cognitiveservices.azure.com/.default"
+    )
+
+    aoai_client = AzureOpenAI(
+        azure_endpoint=azure_openai_endpoint,
+        azure_ad_token_provider=token_provider,
+        api_version="2024-10-21"
+    )
+
+    # Candidate Runner executing real inference against gpt-5.4
+    def target_agent_runner(query: str):
+        try:
+            response = aoai_client.chat.completions.create(
+                model=model_deployment,
+                messages=[
+                    {"role": "system", "content": candidate_instructions},
+                    {"role": "user", "content": query}
+                ],
+                max_completion_tokens=80000
+            )
+            return {"response": response.choices[0].message.content}
+        except Exception as err:
+            print(f"⚠️ Error querying '{model_deployment}': {err}")
+            return {"response": "Error generating response."}
+
+    # Model configuration targeting gpt-5.4
+    model_config = {
+        "azure_endpoint": azure_openai_endpoint,
+        "azure_deployment": model_deployment,
+        "api_version": "2024-10-21"
+    }
+
+    relevance_eval = RelevanceEvaluator(
+        model_config=model_config,
+        credential=azure_credential,
+        is_reasoning_model=True
+    )
+    groundedness_eval = GroundednessEvaluator(
+        model_config=model_config,
+        credential=azure_credential,
+        is_reasoning_model=True
+    )
+
+    print(f"📊 Running evaluators on dataset '{eval_dataset_path}' using model '{model_deployment}'...")
+    try:
+        eval_result = evaluate(
+            data=eval_dataset_path,
+            target=target_agent_runner,
+            evaluators={
+                "relevance": relevance_eval,
+                "groundedness": groundedness_eval,
+            },
+            evaluator_config={
+                "relevance": {
+                    "query": "${data.query}",
+                    "response": "${target.response}"
+                },
+                "groundedness": {
+                    "response": "${target.response}",
+                    "context": "${data.ground_truth}"  # Maps dataset ground_truth to context
+                }
+            },
+            model_config=model_config,
+            credential=azure_credential
+        )
+
+        metrics = eval_result.get("metrics", {})
+
+        # Robust score extractor searching returned metric dict keys
+        def extract_score(target_key):
+            for key, val in metrics.items():
+                if target_key in key and isinstance(val, (int, float)):
+                    return float(val)
+            return 0.0
+
+        relevance_score = extract_score("relevance")
+        groundedness_score = extract_score("groundedness")
+        avg_score = (relevance_score + groundedness_score) / 2.0 if (relevance_score and groundedness_score) else 0.0
+
+        print(f"\n📈 Evaluation Results:")
+        print(f"   - Raw Metrics Returned: {metrics}")
+        print(f"   - Relevance Score:    {relevance_score:.2f} / 5.0")
+        print(f"   - Groundedness Score: {groundedness_score:.2f} / 5.0")
+        print(f"   - Average Score:      {avg_score:.2f} / 5.0 (Threshold: {eval_score_threshold})")
+
+        if avg_score >= eval_score_threshold:
+            print("✅ EVALUATION PASSED: Candidate prompt meets quality standards.")
+            return True
+        else:
+            print(f"❌ EVALUATION FAILED: Average score {avg_score:.2f} is below threshold {eval_score_threshold}.")
+            return False
+
+    except Exception as e:
+        print(f"❌ Evaluation Execution Exception: {e}")
+        return False
+
+
+# ============================================================================
+# 4. DEPLOYMENT & PUBLISHING ENGINE
+# ============================================================================
+print("\n🚀 Initializing secure Foundry project client transaction...")
+credential = DefaultAzureCredential()
+
+with AIProjectClient(
+        endpoint=project_endpoint,
+        credential=credential,
+        allow_preview=True
+) as client:
+
+    # 1. Verify MCP Connection
+    # try:
+    #     client.connections.get(mcp_project_connection_id)
+    #     print(f" -> MCP connection '{mcp_project_connection_id}' found.")
+    # except ResourceNotFoundError:
+    #     print(f"❌ MCP connection '{mcp_project_connection_id}' does not exist.")
+    #     sys.exit(1)
+    # except ServiceRequestError as e:
+    #     print(f"❌ Network/DNS error reaching Foundry endpoint: {e}")
+    #     sys.exit(1)
+
+    # 2. Check Existing Agent & Detect Prompt Delta
+    prompt_has_changed = True
+    agent_exists = False
+
+    try:
+        print(f"🔍 Searching for existing tracking configuration for '{agent_name}'...")
+        existing_agent = client.agents.get(agent_name=agent_name)
+        agent_exists = True
+
+        latest_definition = existing_agent.versions.latest.definition
+        current_instructions = (
+            latest_definition.get("instructions", "")
+            if isinstance(latest_definition, dict)
+            else getattr(latest_definition, "instructions", "")
+        )
+
+        if current_instructions.strip() == new_instructions.strip():
+            print("ℹ️ Prompt has NOT changed. Instructions match the published version.")
+            prompt_has_changed = False
+        else:
+            print("🔔 PROMPT CHANGE DETECTED: Local 'prompt.txt' differs from published version.")
+
+    except ResourceNotFoundError:
+        print(f"\n⚠️ Agent '{agent_name}' does not exist. Initial creation required.")
+
+    # 3. Pre-Publish Evaluation & Release Gating
+    if prompt_has_changed or not agent_exists:
+        print("\n🧪 Change detected. Initiating Pre-Publish Evaluation...")
+        
+        eval_passed = run_evaluation_test(new_instructions, credential)
+
+        if not eval_passed:
+            print("\n⛔ PUBLISH BLOCKED: Evaluation test failed. The new agent version will NOT be published.")
+            sys.exit(1)
+
+        print(f"\n🚀 EVALUATION PASSED! Proceeding to publish agent version using '{model_deployment}'...")
+       # mcp_tool = build_mcp_tool()
+
+        new_version = client.agents.create_version(
+            agent_name=agent_name,
+            definition=PromptAgentDefinition(
+                model=model_deployment,
+                instructions=new_instructions,
+               # tools=[mcp_tool],
+            )
+        )
+
+        print(f"\n🎯 PUBLISH SUCCESS: Pushed version '{new_version.version}' to '{agent_name}'.")
+
+        if new_version.version:
+            print(f"##vso[task.setvariable variable=AgentVersion;]{new_version.version}")
+            with open("version.txt", "w", encoding="utf-8") as f:
+                f.write(str(new_version.version))
+            print(f"🚀 Successfully exposed version '{new_version.version}' to pipeline context.")
+        else:
+            print("❌ Failed to resolve a valid agent version string.")
+            sys.exit(1)
+
+    else:
+        print("\n⏩ SKIPPING PUBLISH: No prompt changes detected and published agent is up to date.")
