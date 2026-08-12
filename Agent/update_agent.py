@@ -10,14 +10,14 @@ from azure.ai.projects.models import PromptAgentDefinition, MCPTool  # 🎯 IMPO
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
 project_endpoint = 'https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project'
-agent_name = "txrh-demoagent-1-copy"
+agent_name = "txrh-demoagent-2-copy-1234"
 prompt_file_path = "prompt.txt"
 model_deployment = "gpt-5.4"
 
 # 🎯 MCP TOOL CONFIG -- points at your MCP server hosted on Azure Container Apps
 mcp_server_label = os.environ.get("MCP_SERVER_LABEL", "mcptool")
-mcp_server_url = 'https://servicenow-mcp-app.greenmeadow-610a0edf.eastus.azurecontainerapps.io/sse'  # confirm this is your real MCP endpoint path (often /mcp, not root "/")
-mcp_project_connection_id = os.environ.get("MCP_PROJECT_CONNECTION_ID", "mcp-servicenow-copy")  # name of a pre-created Custom Keys connection holding x-api-key
+mcp_server_url = 'https://apim-gateway-application-test-dev-txrh-mcp.azure-api.net/mcp-snow/sse'  # confirm this is your real MCP endpoint path (often /mcp, not root "/")
+mcp_project_connection_id = os.environ.get("MCP_PROJECT_CONNECTION_ID", "mcp-servicenow-oauth-passthrough2")  # name of a pre-created Custom Keys connection holding x-api-key
 mcp_require_approval = os.environ.get("MCP_REQUIRE_APPROVAL", "never")  # "never" | "always"
 
 if not mcp_project_connection_id:
@@ -124,10 +124,14 @@ with AIProjectClient(
             current_definition.instructions = new_instructions
             current_definition.model = model_deployment
             current_definition.tools = ensure_mcp_tool(getattr(current_definition, "tools", None))
-
+        mcp_tool = build_mcp_tool()
         new_version = client.agents.create_version(
             agent_name=agent_name,
-            definition=current_definition
+            definition=PromptAgentDefinition(
+                model=model_deployment,
+                instructions=new_instructions,
+                tools=[mcp_tool],
+            )
         )
         print(f"\n🎯 UPDATE SUCCESS: Pushed version '{new_version.version}' to '{agent_name}'.")
         if new_version.version:

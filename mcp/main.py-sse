@@ -4,10 +4,13 @@ import os
 import httpx
 from fastmcp import FastMCP
 from starlette.datastructures import Headers
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 # --- CONTEXT VAR ---
+# Safely holds the token per-request across concurrent executions
 snow_token_var = contextvars.ContextVar("snow_token", default="")
 
 # --- CONFIGURATION ---
@@ -24,23 +27,34 @@ class ServiceNowTokenMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
+        # We only process HTTP requests
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
 
+        # Extract headers using Starlette's Headers wrapper
         headers = Headers(scope=scope)
+        print("I am printing all the headers")
+        print(headers)
+
+        # Extract ServiceNow secret key / token passed from headers
         incoming_snow_key = headers.get("my-snow-secret-key", "")
         token_id = snow_token_var.set(incoming_snow_key)
 
         try:
+            # Pass control to the application layer
             await self.app(scope, receive, send)
         finally:
+            # Reset context var to prevent leakage across requests
             snow_token_var.reset(token_id)
 
 
 # --- HELPERS ---
 def _basic_auth_header() -> str:
+    # Retrieve dynamic token from current request context
     snow_password = snow_token_var.get()
+
+    # Fallback to default password if header was not provided
     if not snow_password:
         snow_password = SERVICENOW_PASSWORD_FALLBACK
 
@@ -48,17 +62,6 @@ def _basic_auth_header() -> str:
         f"{SERVICENOW_USERNAME}:{snow_password}".encode()
     ).decode()
     return f"Basic {token}"
-
-
-# --- HEALTH & ROOT ROUTES ---
-@mcp.custom_route("/health", methods=["GET"])
-async def health(request: Request):
-    return JSONResponse({"status": "ok"})
-
-
-@mcp.custom_route("/", methods=["GET"])
-async def root_ping(request: Request):
-    return JSONResponse({"status": "running", "mcp_endpoint": "/mcp"})
 
 
 # --- MCP TOOLS ---
@@ -208,11 +211,10 @@ async def search_kb_via_table_api(
 
 
 # --- STARLETTE APPS / ROUTES ---
-# Streamable HTTP configuration with explicit route path & disabled origin checks
-app = mcp.http_app(
-    transport="http",
-    path="/mcp",
-    host_origin_protection=False
-)
+async def health(request: Request):
+    return JSONResponse({"status": "ok"})
 
+
+app = mcp.http_app(transport="sse")
 app.add_middleware(ServiceNowTokenMiddleware)
+app.add_route("/health", health, methods=["GET"])
