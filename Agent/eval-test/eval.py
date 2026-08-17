@@ -417,11 +417,11 @@ def main():
         print(f"   • Tool Call Accuracy:  {tool_score:.2f} / 5.0")
         print(f"   • Average Score:       {avg_score:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})")
 
-        if passed:
+        if rel_score >= EVAL_SCORE_THRESHOLD and grd_score >= EVAL_SCORE_THRESHOLD and tool_score >= EVAL_SCORE_THRESHOLD:
             print("✅ EVALUATION PASSED")
             sys.exit(0)
         else:
-            print(f"❌ EVALUATION FAILED: Average score {avg_score:.2f} is below threshold {EVAL_SCORE_THRESHOLD}.")
+            print(f"❌ EVALUATION FAILED: One or more individual scores fell below threshold {EVAL_SCORE_THRESHOLD}.")
             sys.exit(1)
 
     finally:
