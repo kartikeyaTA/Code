@@ -1,156 +1,144 @@
-import json
 import os
 import sys
-import tempfile
-from azure.identity import DefaultAzureCredential
-from azure.ai.projects import AIProjectClient
-from azure.ai.evaluation import (
-    evaluate,
-    RelevanceEvaluator,
-    GroundednessEvaluator,
-    ToolCallAccuracyEvaluator
+import json
+import httpx
+from openai import OpenAI
+
+# Configuration
+APIM_BASE_URL = os.environ.get(
+    "APIM_OPENAI_BASE_URL",
+    "https://apim-gateway-application-test-dev-txrh-mcp.azure-api.net/roadie-ranger-foundry-resource/openai/v1"
 )
+APIM_SUBSCRIPTION_KEY = os.environ.get("APIM_SUBSCRIPTION_KEY", "1007fc188a6d4675b308ab24a7480f47")
+MODEL_DEPLOYMENT = "gpt-5.4"
+EVAL_DATASET_PATH = os.environ.get("EVAL_DATASET_PATH", "snow_eval_dataset.jsonl")
+EVAL_SCORE_THRESHOLD = float(os.environ.get("EVAL_SCORE_THRESHOLD", "3.5"))
+PROMPT_FILE_PATH = "prompt.txt"
 
 # ============================================================================
-# CONFIGURATION
+# GLOBAL HTTPX HEADER INJECTION FOR APIM GATEWAY
 # ============================================================================
-PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
-JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
-CANDIDATE_AGENT_NAME = "txrh-demoagent-2-copy-eval-candidate"
-DATASET_FILE_PATH = "snow_eval_dataset.json"
-TOOLS_FILE_PATH = "tools_schema.json"
+_orig_async_init = httpx.AsyncClient.__init__
+_orig_sync_init = httpx.Client.__init__
 
-if not os.path.exists(DATASET_FILE_PATH) or not os.path.exists(TOOLS_FILE_PATH):
-    print(f"❌ Prerequisites missing: Ensure '{DATASET_FILE_PATH}' and '{TOOLS_FILE_PATH}' exist.")
-    sys.exit(1)
+def _patched_async_init(self, *args, **kwargs):
+    headers = kwargs.get("headers") or {}
+    if isinstance(headers, dict):
+        headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
+        headers["api-key"] = APIM_SUBSCRIPTION_KEY
+    kwargs["headers"] = headers
+    _orig_async_init(self, *args, **kwargs)
 
-credential = DefaultAzureCredential()
-project_client = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential, allow_preview=True)
+def _patched_sync_init(self, *args, **kwargs):
+    headers = kwargs.get("headers") or {}
+    if isinstance(headers, dict):
+        headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
+        headers["api-key"] = APIM_SUBSCRIPTION_KEY
+    kwargs["headers"] = headers
+    _orig_sync_init(self, *args, **kwargs)
 
-model_config = {
-    "azure_endpoint": PROJECT_ENDPOINT,
-    "azure_deployment": JUDGE_MODEL_DEPLOYMENT
-}
-
-# 1. Resolve Candidate Agent ID
-try:
-    candidate_agent = project_client.agents.get(agent_name=CANDIDATE_AGENT_NAME)
-    CANDIDATE_AGENT_ID = candidate_agent.id
-except Exception as e:
-    print(f"❌ Could not resolve Candidate Agent '{CANDIDATE_AGENT_NAME}': {e}")
-    sys.exit(1)
+httpx.AsyncClient.__init__ = _patched_async_init
+httpx.Client.__init__ = _patched_sync_init
 
 
-# ============================================================================
-# TARGET RUNNER FUNCTION
-# ============================================================================
-def agent_target_runner(query: str):
-    """Executes query turn against candidate agent and intercepts tool calls."""
-    try:
-        # Correct direct SDK calls on project_client.agents
-        thread = project_client.agents.create_thread()
-        project_client.agents.create_message(thread_id=thread.id, role="user", content=query)
-        run = project_client.agents.create_run(thread_id=thread.id, assistant_id=CANDIDATE_AGENT_ID)
-
-        actual_tool_calls = []
-        response_text = ""
-
-        # Poll run status
-        while run.status in ["queued", "in_progress", "requires_action"]:
-            run = project_client.agents.get_run(thread_id=thread.id, run_id=run.id)
-
-            if run.status == "requires_action":
-                tool_calls = run.required_action.submit_tool_outputs.tool_calls
-                for tc in tool_calls:
-                    actual_tool_calls.append({
-                        "name": tc.function.name,
-                        "arguments": json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-                    })
-                # Cancel run to prevent executing live MCP backend
-                project_client.agents.cancel_run(thread_id=thread.id, run_id=run.id)
-                break
-
-            if run.status == "completed":
-                messages = project_client.agents.list_messages(thread_id=thread.id)
-                response_text = messages.data[0].content[0].text.value
-                break
-
-        return {
-            "response": response_text,
-            "tool_calls": actual_tool_calls
-        }
-    except Exception as e:
-        print(f"⚠️ Runner error on query '{query[:40]}': {e}")
-        return {"response": "", "tool_calls": []}
-
-
-# ============================================================================
-# MAIN EVALUATION ENGINE
-# ============================================================================
 def main():
-    print(f"🧪 Loading dataset from '{DATASET_FILE_PATH}' and tools from '{TOOLS_FILE_PATH}'...")
-    
-    with open(DATASET_FILE_PATH, "r", encoding="utf-8") as f:
-        eval_json = json.load(f)
+    print(f"🧪 Running evaluation test via APIM Gateway ({APIM_BASE_URL})...")
 
-    with open(TOOLS_FILE_PATH, "r", encoding="utf-8") as f:
-        tool_defs = json.load(f)
+    if not os.path.exists(EVAL_DATASET_PATH) or not os.path.exists(PROMPT_FILE_PATH):
+        print(f"❌ Required files missing: '{EVAL_DATASET_PATH}' or '{PROMPT_FILE_PATH}'")
+        sys.exit(1)
 
-    dataset_records = eval_json.get("data", [])
+    with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
+        candidate_instructions = f.read().strip()
 
-    # Inject tool_definitions into dataset records for ToolCallAccuracyEvaluator
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False, encoding="utf-8") as temp_jsonl:
-        for record in dataset_records:
-            record["tool_definitions"] = tool_defs
-            temp_jsonl.write(json.dumps(record) + "\n")
-        temp_jsonl_path = temp_jsonl.name
+    client = OpenAI(
+        base_url=APIM_BASE_URL,
+        api_key=APIM_SUBSCRIPTION_KEY,
+        default_headers={
+            "api-key": APIM_SUBSCRIPTION_KEY,
+            "Ocp-Apim-Subscription-Key": APIM_SUBSCRIPTION_KEY
+        }
+    )
+
+    model_config = {
+        "type": "openai",
+        "base_url": APIM_BASE_URL,
+        "model": MODEL_DEPLOYMENT,
+        "api_key": APIM_SUBSCRIPTION_KEY
+    }
+
+    def target_agent_runner(query: str):
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_DEPLOYMENT,
+                messages=[
+                    {"role": "system", "content": candidate_instructions},
+                    {"role": "user", "content": query}
+                ],
+                max_completion_tokens=80000
+            )
+            output_text = response.choices[0].message.content or ""
+            return {"response": output_text}
+        except Exception as err:
+            print(f"⚠️ Runner error on query '{query[:40]}': {err}")
+            return {"response": "Error generating response."}
+
+    from azure.ai.evaluation import evaluate, RelevanceEvaluator, GroundednessEvaluator
+
+    eval_init_kwargs = {
+        "model_config": model_config,
+        "is_reasoning_model": True
+    }
+
+    relevance_eval = RelevanceEvaluator(**eval_init_kwargs)
+    groundedness_eval = GroundednessEvaluator(**eval_init_kwargs)
 
     try:
-        print(f"🚀 Running evaluate() using temporary dataset: '{temp_jsonl_path}'...")
-
-        relevance_eval = RelevanceEvaluator(model_config=model_config)
-        groundedness_eval = GroundednessEvaluator(model_config=model_config)
-        tool_accuracy_eval = ToolCallAccuracyEvaluator(model_config=model_config)
-
         eval_result = evaluate(
-            data=temp_jsonl_path,
-            target=agent_target_runner,
+            data=EVAL_DATASET_PATH,
+            target=target_agent_runner,
             evaluators={
                 "relevance": relevance_eval,
                 "groundedness": groundedness_eval,
-                "tool_accuracy": tool_accuracy_eval
             },
             evaluator_config={
                 "relevance": {
-                    "column_mapping": {
-                        "query": "${data.query}",
-                        "response": "${target.response}"
-                    }
+                    "column_mapping": {"query": "${data.query}", "response": "${target.response}"}
                 },
                 "groundedness": {
-                    "column_mapping": {
-                        "response": "${target.response}",
-                        "context": "${data.context}"
-                    }
-                },
-                "tool_accuracy": {
-                    "column_mapping": {
-                        "query": "${data.query}",
-                        "tool_calls": "${target.tool_calls}",
-                        "tool_definitions": "${data.tool_definitions}"
-                    }
+                    "column_mapping": {"response": "${target.response}", "context": "${data.ground_truth}"}
                 }
-            }
+            },
+            model_config=model_config
         )
 
-        print("\n📊 LOCAL EVALUATION SUMMARY METRICS:")
         metrics = eval_result.get("metrics", {})
-        for metric_name, score in metrics.items():
-            print(f"  • {metric_name}: {score}")
 
-    finally:
-        if os.path.exists(temp_jsonl_path):
-            os.remove(temp_jsonl_path)
+        def extract_score(target_key):
+            for key, val in metrics.items():
+                if target_key in key and isinstance(val, (int, float)):
+                    return float(val)
+            return 0.0
+
+        relevance_score = extract_score("relevance")
+        groundedness_score = extract_score("groundedness")
+        avg_score = (relevance_score + groundedness_score) / 2.0 if (relevance_score and groundedness_score) else 0.0
+
+        print(f"\n📊 Evaluation Results:")
+        print(f"   • Relevance Score:    {relevance_score:.2f} / 5.0")
+        print(f"   • Groundedness Score: {groundedness_score:.2f} / 5.0")
+        print(f"   • Average Score:      {avg_score:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})")
+
+        if avg_score >= EVAL_SCORE_THRESHOLD:
+            print("✅ EVALUATION PASSED")
+            sys.exit(0)
+        else:
+            print(f"❌ EVALUATION FAILED: Average score {avg_score:.2f} is below threshold {EVAL_SCORE_THRESHOLD}.")
+            sys.exit(1)
+
+    except Exception as e:
+        print(f"❌ Evaluation error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
