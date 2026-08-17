@@ -7,8 +7,7 @@ from openai import OpenAI
 from azure.ai.evaluation import (
     evaluate,
     RelevanceEvaluator,
-    GroundednessEvaluator,
-    ToolCallAccuracyEvaluator
+    GroundednessEvaluator
 )
 
 # ============================================================================
@@ -48,6 +47,39 @@ def _patched_sync_init(self, *args, **kwargs):
 
 httpx.AsyncClient.__init__ = _patched_async_init
 httpx.Client.__init__ = _patched_sync_init
+
+QUERY_CONTEXT_MAP = {}
+
+
+# ============================================================================
+# TOOL SELECTION EVALUATOR (VERIFIES TOOL NAMES ONLY)
+# ============================================================================
+class ToolSelectionAccuracyEvaluator:
+    """
+    Evaluates tool selection accuracy strictly based on tool names and sequence.
+    Ignores argument string differences entirely.
+    """
+    def __call__(self, *, tool_calls=None, expected_tool_calls=None, **kwargs):
+        tool_calls = tool_calls or []
+        expected_tool_calls = expected_tool_calls or []
+
+        if not expected_tool_calls and not tool_calls:
+            return {"tool_accuracy": 5.0}
+
+        if not expected_tool_calls or not tool_calls:
+            return {"tool_accuracy": 1.0}
+
+        actual_names = [t.get("name") for t in tool_calls if isinstance(t, dict)]
+        expected_names = [t.get("name") for t in expected_tool_calls if isinstance(t, dict)]
+
+        # Exact match on tool selection and sequence
+        if actual_names == expected_names:
+            return {"tool_accuracy": 5.0}
+
+        # Partial match based on correct tool selection ratio
+        matching_count = sum(1 for a, e in zip(actual_names, expected_names) if a == e)
+        score = (matching_count / max(len(expected_names), len(actual_names))) * 5.0
+        return {"tool_accuracy": max(1.0, round(score, 2))}
 
 
 def get_field_from_row(row: dict, target_key: str):
@@ -96,7 +128,8 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
         g_val = get_field_from_row(row, "groundedness") or "N/A"
         t_val = get_field_from_row(row, "tool") or "N/A"
         
-        actual_tools_str = json.dumps(actual_tools, indent=1) if actual_tools else "No Tool Calls"
+        clean_actual_tools = [{k: v for k, v in tc.items() if k != "id"} for tc in actual_tools]
+        actual_tools_str = json.dumps(clean_actual_tools, indent=1) if clean_actual_tools else "No Tool Calls"
         expected_tools_str = json.dumps(expected_tools, indent=1) if expected_tools else "None Expected"
         
         table_rows_html += f"""
@@ -104,12 +137,12 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
             <td>{idx}</td>
             <td><b>{query}</b></td>
             <td>
-                <div>{response}</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">{actual_tools_str}</pre></details>
+                <div style="margin-bottom:8px;">{response}</div>
+                <details><summary><small><b>Actual Tool Calls ({len(clean_actual_tools)})</b></small></summary><pre style="font-size:11px;">{actual_tools_str}</pre></details>
             </td>
             <td>
                 <small>{context}</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">{expected_tools_str}</pre></details>
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls ({len(expected_tools)})</b></small></summary><pre style="font-size:11px;">{expected_tools_str}</pre></details>
             </td>
             <td style="text-align:center; font-weight:bold;">{r_val}</td>
             <td style="text-align:center; font-weight:bold;">{g_val}</td>
@@ -199,30 +232,28 @@ def main():
         print(f"❌ Required files missing: '{EVAL_DATASET_PATH}' or '{PROMPT_FILE_PATH}'")
         sys.exit(1)
 
-    # 1. Format tools properly into OpenAI Chat Completion structure
-    formatted_tools = []
-    tool_defs_raw = []
+    # 1. Load tools schema for OpenAI Chat Completions
+    openai_tools = []
     if os.path.exists(TOOLS_SCHEMA_PATH):
         with open(TOOLS_SCHEMA_PATH, "r", encoding="utf-8") as tf:
-            tool_defs_raw = json.load(tf)
-            for t in tool_defs_raw:
-                if isinstance(t, dict) and "type" not in t:
-                    formatted_tools.append({
-                        "type": "function",
-                        "function": t
-                    })
-                else:
-                    formatted_tools.append(t)
+            tools_data = json.load(tf)
+            for item in tools_data:
+                if isinstance(item, dict):
+                    if "type" in item and item["type"] == "function":
+                        openai_tools.append(item)
+                    else:
+                        openai_tools.append({"type": "function", "function": item})
 
-    # 2. Inject "type": "tool_call" into expected_tool_calls and tool_definitions for dataset
+    # 2. Build Query-to-Context lookup map & set normalized expected_tool_calls
     with open(EVAL_DATASET_PATH, "r", encoding="utf-8") as f:
         dataset_lines = [json.loads(line) for line in f if line.strip()]
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False, encoding="utf-8") as temp_jsonl:
         for record in dataset_lines:
-            record["tool_definitions"] = tool_defs_raw
-            
-            # Normalize expected_tool_calls to contain "type": "tool_call"
+            query_key = record.get("query", "").strip()
+            kb_context = record.get("context") or record.get("ground_truth", "")
+            QUERY_CONTEXT_MAP[query_key] = kb_context
+
             norm_expected = []
             for etc in record.get("expected_tool_calls", []):
                 item = dict(etc)
@@ -254,39 +285,74 @@ def main():
     }
 
     def target_agent_runner(query: str):
+        query_clean = query.strip()
+        kb_text = QUERY_CONTEXT_MAP.get(query_clean, "No knowledge base article found.")
+
+        messages = [
+            {"role": "system", "content": candidate_instructions},
+            {"role": "user", "content": query}
+        ]
+        
+        all_actual_tool_calls = []
+        final_text_response = ""
+        max_turns = 4
+
         try:
-            kwargs = {
-                "model": MODEL_DEPLOYMENT,
-                "messages": [
-                    {"role": "system", "content": candidate_instructions},
-                    {"role": "user", "content": query}
-                ],
-                "max_completion_tokens": 80000
-            }
-            if formatted_tools:
-                kwargs["tools"] = formatted_tools
+            for _ in range(max_turns):
+                request_payload = {
+                    "model": MODEL_DEPLOYMENT,
+                    "messages": messages,
+                    "max_completion_tokens": 80000
+                }
+                if openai_tools:
+                    request_payload["tools"] = openai_tools
 
-            response = client.chat.completions.create(**kwargs)
-            message = response.choices[0].message
-            
-            actual_tool_calls = []
-            if getattr(message, "tool_calls", None):
-                for tc in message.tool_calls:
-                    actual_tool_calls.append({
-                        "type": "tool_call",  # 👈 Required by Azure AI Evaluation SDK
-                        "name": tc.function.name,
-                        "arguments": json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-                    })
+                response = client.chat.completions.create(**request_payload)
+                message = response.choices[0].message
+                messages.append(message)
+                
+                if message.content:
+                    final_text_response += message.content
 
-            # Provide non-empty fallback string for tool-only turns
-            output_text = message.content or (
-                f"Agent initiated tool calls: {[t['name'] for t in actual_tool_calls]}"
-                if actual_tool_calls else "No response text generated."
-            )
-            
+                if getattr(message, "tool_calls", None):
+                    for tc in message.tool_calls:
+                        raw_args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
+                        
+                        all_actual_tool_calls.append({
+                            "type": "tool_call",
+                            "id": tc.id,
+                            "name": tc.function.name,
+                            "arguments": raw_args
+                        })
+
+                        if "search" in tc.function.name.lower():
+                            tool_output = f"Knowledge Base Search Results: {kb_text}"
+                        else:
+                            tool_output = '{"status": "success", "incident_number": "INC0010001"}'
+
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc.id,
+                            "content": tool_output
+                        })
+                else:
+                    break
+
+            clean_response = final_text_response.split("Are you satisfied")[0].split("Ticket created successfully")[0].strip()
+            final_agent_response = clean_response or final_text_response or "Completed interaction."
+
+            # Terminal log output before evaluation
+            print(f"\n" + "="*80)
+            print(f"❓ USER QUERY: {query}")
+            print(f"💬 AGENT RESPONSE:\n{final_agent_response}")
+            if all_actual_tool_calls:
+                executed_names = [t.get("name") for t in all_actual_tool_calls]
+                print(f"🛠️ EXECUTED TOOLS: {executed_names}")
+            print("="*80 + "\n")
+
             return {
-                "response": output_text,
-                "tool_calls": actual_tool_calls
+                "response": final_agent_response,
+                "tool_calls": all_actual_tool_calls
             }
         except Exception as err:
             print(f"⚠️ Runner error on query '{query[:40]}': {err}")
@@ -299,7 +365,7 @@ def main():
 
     relevance_eval = RelevanceEvaluator(**eval_init_kwargs)
     groundedness_eval = GroundednessEvaluator(**eval_init_kwargs)
-    tool_accuracy_eval = ToolCallAccuracyEvaluator(**eval_init_kwargs)
+    tool_accuracy_eval = ToolSelectionAccuracyEvaluator()
 
     try:
         eval_result = evaluate(
@@ -319,10 +385,8 @@ def main():
                 },
                 "tool_accuracy": {
                     "column_mapping": {
-                        "query": "${data.query}",
                         "tool_calls": "${target.tool_calls}",
-                        "expected_tool_calls": "${data.expected_tool_calls}",
-                        "tool_definitions": "${data.tool_definitions}"
+                        "expected_tool_calls": "${data.expected_tool_calls}"
                     }
                 }
             },

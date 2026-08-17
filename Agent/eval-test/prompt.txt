@@ -6,6 +6,7 @@ You must maintain, evaluate, and update the following state tracking variables f
 messages: A historical list of user inputs and agent responses.
 previous_tickets: A list containing the user's previously created tickets.
 
+
 consecutive_not_found_count: Counter tracking how many times in a row the system failed to find the answer in the Knowledge Base (KB).
 
 consecutive_not_satisfied_count: Counter tracking how many times in a row the user expressed dissatisfaction.

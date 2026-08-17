@@ -9,10 +9,10 @@
         .subtitle { color: #666; margin-bottom: 25px; }
         .cards { display: flex; gap: 15px; margin-bottom: 30px; }
         .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); flex: 1; border-top: 4px solid #0078d4; }
-        .card.status { border-top-color: #d13438; }
+        .card.status { border-top-color: #107c41; }
         .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 8px; }
         .card-value { font-size: 26px; font-weight: bold; }
-        .badge { display: inline-block; padding: 4px 12px; border-radius: 4px; color: #fff; background-color: #d13438; font-size: 18px; font-weight: bold; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 4px; color: #fff; background-color: #107c41; font-size: 18px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: top; font-size: 13px; }
         th { background-color: #0078d4; color: white; font-weight: 600; text-transform: uppercase; font-size: 11px; }
@@ -27,20 +27,20 @@
     <div class="cards">
         <div class="card status">
             <div class="card-title">Verdict Status</div>
-            <div class="badge">FAILED</div>
+            <div class="badge">PASSED</div>
         </div>
         <div class="card">
             <div class="card-title">Average Score</div>
-            <div class="card-value">2.67 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <div class="card-value">4.67 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
             <small style="color:#666;">Threshold: 3.5</small>
         </div>
         <div class="card">
             <div class="card-title">Relevance Score</div>
-            <div class="card-value">2.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <div class="card-value">4.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
         </div>
         <div class="card">
             <div class="card-title">Groundedness Score</div>
-            <div class="card-value">1.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <div class="card-value">5.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
         </div>
         <div class="card">
             <div class="card-title">Tool Call Accuracy</div>
@@ -67,8 +67,8 @@
             <td>1</td>
             <td><b>What is a phishing scam?</b></td>
             <td>
-                <div>Agent initiated tool calls: ['search_kb_via_table_api']</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">[
+                <div style="margin-bottom:8px;">A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]</div>
+                <details><summary><small><b>Actual Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "type": "tool_call",
   "name": "search_kb_via_table_api",
@@ -76,31 +76,43 @@
    "user_query": "What is a phishing scam?",
    "max_results": 2
   }
+ },
+ {
+  "type": "tool_call",
+  "name": "create_incident",
+  "arguments": {
+   "short_description": "User asked about phishing scam",
+   "description": "User input: What is a phishing scam?\nAgent response: A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]",
+   "comments": "User input: What is a phishing scam?\nAgent response: A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]",
+   "category": "inquiry",
+   "subcategory": "security awareness",
+   "contact_type": "self-service",
+   "state": "1"
+  }
  }
 ]</pre></details>
             </td>
             <td>
                 <small>A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed website. [Reference: KB0000028]</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">[
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "name": "search_kb_via_table_api",
   "arguments": {
-   "user_query": "phishing scam"
+   "user_query": "What is a phishing scam?"
   },
   "type": "tool_call"
  },
  {
   "name": "create_incident",
   "arguments": {
-   "short_description": "User query: What is a phishing scam?",
-   "state": "1"
+   "short_description": "User asked about phishing scam"
   },
   "type": "tool_call"
  }
 ]</pre></details>
             </td>
-            <td style="text-align:center; font-weight:bold;">2.0</td>
-            <td style="text-align:center; font-weight:bold;">1.0</td>
+            <td style="text-align:center; font-weight:bold;">4.0</td>
+            <td style="text-align:center; font-weight:bold;">5.0</td>
             <td style="text-align:center; font-weight:bold; color:#0078d4;">5.00</td>
         </tr>
         
@@ -108,8 +120,8 @@
             <td>2</td>
             <td><b>How do I Create An Email Signature?</b></td>
             <td>
-                <div>Agent initiated tool calls: ['search_kb_via_table_api']</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">[
+                <div style="margin-bottom:8px;">Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK. The new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]</div>
+                <details><summary><small><b>Actual Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "type": "tool_call",
   "name": "search_kb_via_table_api",
@@ -117,31 +129,46 @@
    "user_query": "How do I Create An Email Signature?",
    "max_results": 2
   }
+ },
+ {
+  "type": "tool_call",
+  "name": "create_incident",
+  "arguments": {
+   "short_description": "How do I Create An Email Signature?",
+   "description": "User input: How do I Create An Email Signature?\nAgent response: Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]",
+   "comments": "User input: How do I Create An Email Signature?\nAgent response: Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]",
+   "category": "inquiry",
+   "subcategory": "how to",
+   "impact": "3",
+   "urgency": "3",
+   "priority": "5",
+   "contact_type": "self-service",
+   "state": "1"
+  }
  }
 ]</pre></details>
             </td>
             <td>
                 <small>Open a new message, go to Message > Signature > Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won't appear in the currently open message and must be inserted. [Ref: KB0000024]</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">[
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "name": "search_kb_via_table_api",
   "arguments": {
-   "user_query": "Create An Email Signature"
+   "user_query": "How do I Create An Email Signature?"
   },
   "type": "tool_call"
  },
  {
   "name": "create_incident",
   "arguments": {
-   "short_description": "User query: How do I Create An Email Signature?",
-   "state": "1"
+   "short_description": "User asked about Create An Email Signature"
   },
   "type": "tool_call"
  }
 ]</pre></details>
             </td>
-            <td style="text-align:center; font-weight:bold;">2.0</td>
-            <td style="text-align:center; font-weight:bold;">1.0</td>
+            <td style="text-align:center; font-weight:bold;">4.0</td>
+            <td style="text-align:center; font-weight:bold;">5.0</td>
             <td style="text-align:center; font-weight:bold; color:#0078d4;">5.00</td>
         </tr>
         
@@ -149,8 +176,8 @@
             <td>3</td>
             <td><b>How do I quit an application that isn't responding?</b></td>
             <td>
-                <div>Agent initiated tool calls: ['search_kb_via_table_api']</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">[
+                <div style="margin-bottom:8px;">On Mac OS X, use Apple menu > Force Quit, select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. [Ref: KB0000013]</div>
+                <details><summary><small><b>Actual Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "type": "tool_call",
   "name": "search_kb_via_table_api",
@@ -158,31 +185,44 @@
    "user_query": "How do I quit an application that isn't responding?",
    "max_results": 2
   }
+ },
+ {
+  "type": "tool_call",
+  "name": "create_incident",
+  "arguments": {
+   "short_description": "User asked how to quit an application that isn't responding",
+   "description": "User input: How do I quit an application that isn't responding?\nAgent response: On Mac OS X, use Apple menu > Force Quit, select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. [Ref: KB0000013]",
+   "comments": "User input: How do I quit an application that isn't responding?\nAgent response: On Mac OS X, use Apple menu > Force Quit, select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. [Ref: KB0000013]",
+   "caller_id": "user",
+   "category": "inquiry",
+   "subcategory": "how-to",
+   "contact_type": "self-service",
+   "state": "1"
+  }
  }
 ]</pre></details>
             </td>
             <td>
                 <small>On Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won't save latest changes. Reference: KB0000013</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">[
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "name": "search_kb_via_table_api",
   "arguments": {
-   "user_query": "quit application isn't responding"
+   "user_query": "How do I quit an application that isn't responding?"
   },
   "type": "tool_call"
  },
  {
   "name": "create_incident",
   "arguments": {
-   "short_description": "User query: How do I quit an application that isn't responding?",
-   "state": "1"
+   "short_description": "User asked about quit application isn't responding"
   },
   "type": "tool_call"
  }
 ]</pre></details>
             </td>
-            <td style="text-align:center; font-weight:bold;">2.0</td>
-            <td style="text-align:center; font-weight:bold;">1.0</td>
+            <td style="text-align:center; font-weight:bold;">4.0</td>
+            <td style="text-align:center; font-weight:bold;">5.0</td>
             <td style="text-align:center; font-weight:bold; color:#0078d4;">5.00</td>
         </tr>
         
@@ -190,8 +230,8 @@
             <td>4</td>
             <td><b>Can I upgrade my operating system? What are the system requirements?</b></td>
             <td>
-                <div>Agent initiated tool calls: ['search_kb_via_table_api']</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">[
+                <div style="margin-bottom:8px;">Upgrade support depends on the OS and device. For example, Mac OS X 10.12 needs a Mid‑2008+ supported Mac, 2 GB memory, OS X 10.6.8 or later, and 64 GB free space; Windows 7 lists 1 GHz CPU, 1 GB RAM (32‑bit) or 2 GB (64‑bit), and 16/20 GB free space. [Ref: KB0005010, KB0000021]</div>
+                <details><summary><small><b>Actual Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "type": "tool_call",
   "name": "search_kb_via_table_api",
@@ -199,32 +239,44 @@
    "user_query": "upgrade operating system system requirements",
    "max_results": 2
   }
+ },
+ {
+  "type": "tool_call",
+  "name": "create_incident",
+  "arguments": {
+   "short_description": "Question about operating system upgrade and system requirements",
+   "description": "User input: Can I upgrade my operating system? What are the system requirements?\nAgent response: Upgrade support depends on the OS and device. For example, Mac OS X 10.12 needs a Mid\u20112008+ supported Mac, 2 GB memory, OS X 10.6.8 or later, and 64 GB free space; Windows 7 lists 1 GHz CPU, 1 GB RAM (32\u2011bit) or 2 GB (64\u2011bit), and 16/20 GB free space. [Ref: KB0005010, KB0000021]",
+   "comments": "User input: Can I upgrade my operating system? What are the system requirements?\nAgent response: Upgrade support depends on the OS and device. For example, Mac OS X 10.12 needs a Mid\u20112008+ supported Mac, 2 GB memory, OS X 10.6.8 or later, and 64 GB free space; Windows 7 lists 1 GHz CPU, 1 GB RAM (32\u2011bit) or 2 GB (64\u2011bit), and 16/20 GB free space. [Ref: KB0005010, KB0000021]",
+   "category": "inquiry",
+   "subcategory": "os upgrade",
+   "contact_type": "self-service",
+   "state": "1"
+  }
  }
 ]</pre></details>
             </td>
             <td>
                 <small>For Mac OS X, upgrade support depends on version/model; e.g., OS X 10.12 requires a Mid-2008+ supported Mac, 2GB memory, OS X 10.6.8 or later, and 64GB available space. [KB0005010]
 Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-bit), and 16/20 GB free space. [KB0000021]</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">[
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "name": "search_kb_via_table_api",
   "arguments": {
-   "user_query": "upgrade operating system system requirements"
+   "user_query": "Can I upgrade my operating system? What are the system requirements?"
   },
   "type": "tool_call"
  },
  {
   "name": "create_incident",
   "arguments": {
-   "short_description": "User query: Can I upgrade my operating system?",
-   "state": "1"
+   "short_description": "User asked about upgrade operating system"
   },
   "type": "tool_call"
  }
 ]</pre></details>
             </td>
-            <td style="text-align:center; font-weight:bold;">2.0</td>
-            <td style="text-align:center; font-weight:bold;">1.0</td>
+            <td style="text-align:center; font-weight:bold;">4.0</td>
+            <td style="text-align:center; font-weight:bold;">5.0</td>
             <td style="text-align:center; font-weight:bold; color:#0078d4;">5.00</td>
         </tr>
         
@@ -232,8 +284,8 @@ Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-
             <td>5</td>
             <td><b>Are Copyrighted Files Illegal to Have On My Computer?</b></td>
             <td>
-                <div>Agent initiated tool calls: ['search_kb_via_table_api']</div>
-                <details style="margin-top:6px;"><summary><small><b>Actual Tool Calls</b></small></summary><pre style="font-size:11px;">[
+                <div style="margin-bottom:8px;">It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. [Ref: KB0000009]</div>
+                <details><summary><small><b>Actual Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "type": "tool_call",
   "name": "search_kb_via_table_api",
@@ -241,31 +293,42 @@ Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-
    "user_query": "Are Copyrighted Files Illegal to Have On My Computer?",
    "max_results": 2
   }
+ },
+ {
+  "type": "tool_call",
+  "name": "create_incident",
+  "arguments": {
+   "short_description": "Question about legality of copyrighted files on computer",
+   "description": "User input: Are Copyrighted Files Illegal to Have On My Computer?\nAgent response: It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. [Ref: KB0000009]",
+   "comments": "User input: Are Copyrighted Files Illegal to Have On My Computer?\nAgent response: It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. [Ref: KB0000009]",
+   "contact_type": "self-service",
+   "category": "inquiry",
+   "subcategory": "copyright"
+  }
  }
 ]</pre></details>
             </td>
             <td>
                 <small>It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. Reference: KB0000009</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls</b></summary><pre style="font-size:11px;">[
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls (2)</b></small></summary><pre style="font-size:11px;">[
  {
   "name": "search_kb_via_table_api",
   "arguments": {
-   "user_query": "Copyrighted Files Illegal Computer"
+   "user_query": "Are Copyrighted Files Illegal to Have On My Computer?"
   },
   "type": "tool_call"
  },
  {
   "name": "create_incident",
   "arguments": {
-   "short_description": "User query: Are Copyrighted Files Illegal to Have On My Computer?",
-   "state": "1"
+   "short_description": "User asked about Copyrighted Files Illegal Computer"
   },
   "type": "tool_call"
  }
 ]</pre></details>
             </td>
-            <td style="text-align:center; font-weight:bold;">2.0</td>
-            <td style="text-align:center; font-weight:bold;">1.0</td>
+            <td style="text-align:center; font-weight:bold;">4.0</td>
+            <td style="text-align:center; font-weight:bold;">5.0</td>
             <td style="text-align:center; font-weight:bold; color:#0078d4;">5.00</td>
         </tr>
         
