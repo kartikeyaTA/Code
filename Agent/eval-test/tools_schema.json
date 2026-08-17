@@ -1,0 +1,185 @@
+[
+  {
+    "name": "create_incident",
+    "description": "Create a new incident in ServiceNow.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "short_description": {
+          "type": "string",
+          "description": "Brief summary of the incident"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed explanation of the issue"
+        },
+        "caller_id": {
+          "type": "string",
+          "description": "User ID or sys_id of the caller"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the incident"
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Subcategory of the incident"
+        },
+        "impact": {
+          "type": "string",
+          "description": "Impact level (1=High, 2=Medium, 3=Low)"
+        },
+        "urgency": {
+          "type": "string",
+          "description": "Urgency level (1=High, 2=Medium, 3=Low)"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority level (1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning)"
+        },
+        "assignment_group": {
+          "type": "string",
+          "description": "Assignment group name or sys_id"
+        },
+        "assigned_to": {
+          "type": "string",
+          "description": "Assigned user's username or sys_id"
+        },
+        "state": {
+          "type": "string",
+          "description": "State code (default '1' for New)"
+        },
+        "contact_type": {
+          "type": "string",
+          "description": "Contact type (e.g., email, phone, self-service)"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the issue"
+        },
+        "cmdb_ci": {
+          "type": "string",
+          "description": "Configuration item"
+        },
+        "work_notes": {
+          "type": "string",
+          "description": "Internal work notes"
+        },
+        "comments": {
+          "type": "string",
+          "description": "Customer-facing comments"
+        }
+      },
+      "required": ["short_description"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_incidents_by_user",
+    "description": "Retrieve all incidents opened by a specific user within the last 7 days.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "target_username": {
+          "type": "string",
+          "description": "The system username (user_name) of the person who opened the tickets"
+        }
+      },
+      "required": ["target_username"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_incident_by_number_and_user",
+    "description": "Retrieve details of a specific incident using its ticket number and the username of the person who opened it.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "ticket_number": {
+          "type": "string",
+          "description": "The exact incident number (e.g., 'INC0010001')"
+        },
+        "target_username": {
+          "type": "string",
+          "description": "The system username (user_name) of the person who opened the ticket"
+        }
+      },
+      "required": ["ticket_number", "target_username"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "update_incident",
+    "description": "Update an existing incident in ServiceNow using its sys_id.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "sys_id": {
+          "type": "string",
+          "description": "The unique 32-character identifier (sys_id) of the incident record"
+        },
+        "short_description": {
+          "type": "string",
+          "description": "Updated brief summary of the incident"
+        },
+        "description": {
+          "type": "string",
+          "description": "Updated detailed description"
+        },
+        "state": {
+          "type": "string",
+          "description": "State code — 1=New, 2=In Progress, 3=On Hold, 4=Resolved, 5=Closed, 6=Canceled"
+        },
+        "impact": {
+          "type": "string",
+          "description": "Impact level — 1=High, 2=Medium, 3=Low"
+        },
+        "urgency": {
+          "type": "string",
+          "description": "Urgency level — 1=High, 2=Medium, 3=Low"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority — 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning"
+        },
+        "assignment_group": {
+          "type": "string",
+          "description": "Name or sys_id of the group to assign the incident to"
+        },
+        "assigned_to": {
+          "type": "string",
+          "description": "Username or sys_id of the person assigned"
+        },
+        "work_notes": {
+          "type": "string",
+          "description": "Internal notes to append (not visible to caller)"
+        },
+        "comments": {
+          "type": "string",
+          "description": "Customer-facing comments to append (visible to caller)"
+        }
+      },
+      "required": ["sys_id"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "search_kb_via_table_api",
+    "description": "Queries the ServiceNow kb_knowledge table using a raw string text search.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "user_query": {
+          "type": "string",
+          "description": "The text search query to find knowledge base articles"
+        },
+        "max_results": {
+          "type": "integer",
+          "description": "Maximum number of knowledge base results to return (default is 2)"
+        }
+      },
+      "required": ["user_query"],
+      "additionalProperties": false
+    }
+  }
+]
