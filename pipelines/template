@@ -1,0 +1,215 @@
+parameters:
+- name: serviceFolder
+  type: string
+- name: imageRepository
+  type: string
+- name: acrName
+  type: string
+
+steps:
+- checkout: self
+
+# --- STEP 1: Validate Source/Target Branch Flow ---
+- bash: |
+    REASON="$(Build.Reason)"
+    SRC="$(System.PullRequest.SourceBranch)"
+    TGT="$(System.PullRequest.TargetBranch)"
+
+    echo "Build Reason  : $REASON"
+    echo "Source Branch : $SRC"
+    echo "Target Branch : $TGT"
+
+    if [ "$REASON" == "ResourceTrigger" ]; then
+      echo "Dev deploy via pipeline trigger. Skipping validation."
+      exit 0
+    fi
+
+    if [ "$TGT" == "refs/heads/dev" ] && [ "$SRC" != "refs/heads/kartikeya/snow-mcp" ]; then
+      echo "pipeline Failed"
+      echo "##vso[task.logissue type=error]Only dev -> uat PRs are allowed."
+      exit 1
+    fi
+
+    if [ "$TGT" == "refs/heads/main" ] && [ "$SRC" != "refs/heads/uat" ]; then
+      echo "##vso[task.logissue type=error]Only uat -> main PRs are allowed."
+      exit 1
+    fi
+
+    echo "Branch flow valid: $SRC -> $TGT"
+  displayName: 'Validate Source/Target Branch Flow'
+
+# --- STEP 2: Auto-Abandon PR on Failure ---
+- bash: |
+    echo "Invalid PR Flow detected. Abandoning PR $(System.PullRequest.PullRequestId)."
+
+    az repos pr update \
+      --id $(System.PullRequest.PullRequestId) \
+      --status abandoned \
+      --org "$(System.TeamFoundationCollectionUri)" \
+      --detect false
+
+    echo "PR $(System.PullRequest.PullRequestId) abandoned."
+  displayName: 'Abandon Invalid PR'
+  condition: and(failed(), eq(variables['Build.Reason'], 'PullRequest'))
+  env:
+    AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+# --- STEP 3: Get Image Tag ---
+- bash: |
+    TAG=$(cat $(Build.SourcesDirectory)/${{ parameters.serviceFolder }}/image_tag.txt)
+    IMAGE="${{ parameters.acrName }}.azurecr.io/${{ parameters.imageRepository }}:${TAG}"
+
+    echo "Build Reason : $(Build.Reason)"
+    echo "Target Branch: $(System.PullRequest.TargetBranch)"
+    echo "Image        : $IMAGE"
+    echo "Tag          : $TAG"
+
+    echo "##vso[task.setvariable variable=fullImage]$IMAGE"
+    echo "##vso[task.setvariable variable=tag]$TAG"
+  displayName: 'Get Image Tag'
+
+# --- STEP 4: Deploy New Revision ---
+- task: AzureCLI@2
+  displayName: 'Deploy New Revision'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az account set --subscription "$(subscriptionId)"
+
+      CURRENT=$(az containerapp show \
+        --name "$(containerApp)" \
+        --resource-group "$(resourceGroup)" \
+        --query "properties.configuration.ingress.traffic[0].revisionName" \
+        -o tsv)
+
+      echo "Current Revision: $CURRENT"
+      echo "##vso[task.setvariable variable=currentRevision]$CURRENT"
+
+      az containerapp update \
+        --name "$(containerApp)" \
+        --resource-group "$(resourceGroup)" \
+        --image "$(fullImage)" \
+        --set-env-vars \
+          KEY_VAULT_NAME="$(KEY_VAULT_NAME)" \
+          SERVICENOW_INSTANCE_URL="$(SERVICENOW_INSTANCE_URL)" \
+          AZURE_CLIENT_ID="$(AZURE_CLIENT_ID)"
+
+      NEW_REVISION=$(az containerapp show \
+        --name "$(containerApp)" \
+        --resource-group "$(resourceGroup)" \
+        --query "properties.latestRevisionName" \
+        -o tsv)
+
+      echo "New Revision: $NEW_REVISION"
+      echo "##vso[task.setvariable variable=newRevision]$NEW_REVISION"
+
+# --- STEP 5: Keep Current Revision Active ---
+- task: AzureCLI@2
+  displayName: 'Keep Current Revision Active'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az account set --subscription "$(subscriptionId)"
+
+      if [ -n "$(currentRevision)" ]; then
+        echo "Keeping current revision active"
+        echo "New revision deployed with 0% traffic"
+
+        az containerapp ingress traffic set \
+          --name "$(containerApp)" \
+          --resource-group "$(resourceGroup)" \
+          --revision-weight \
+            "$(newRevision)=0" \
+            "$(currentRevision)=100"
+      fi
+
+# --- STEP 6: Get Revision FQDN ---
+- task: AzureCLI@2
+  displayName: 'Get Revision FQDN'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az account set --subscription "$(subscriptionId)"
+
+      FQDN=$(az containerapp revision show \
+        --name "$(containerApp)" \
+        --resource-group "$(resourceGroup)" \
+        --revision "$(newRevision)" \
+        --query properties.fqdn \
+        -o tsv)
+
+      echo "Revision FQDN: $FQDN"
+      echo "##vso[task.setvariable variable=revisionFqdn]$FQDN"
+
+# --- STEP 7: Validate Revision Health ---
+- task: AzureCLI@2
+  displayName: 'Validate Revision Health'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "--------------------------------------------------"
+      echo "Running Revision Validation"
+      echo "--------------------------------------------------"
+
+      for i in {1..5}; do
+        echo ""
+        echo "Health Check Attempt $i"
+
+        HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$(revisionFqdn)/health")
+
+        echo "Health Response Code: $HEALTH_CODE"
+
+        if [ "$HEALTH_CODE" != "200" ]; then
+          echo "Health endpoint failed."
+          exit 1
+        fi
+
+        sleep 10
+      done
+
+      echo "All 5 health checks passed"
+
+# --- STEP 8: Run ZAP API Scan ---
+- bash: |
+    SPEC_DIR="$(Build.SourcesDirectory)/${{ parameters.serviceFolder }}"
+    REPORT_DIR="$(Build.ArtifactStagingDirectory)/zap-report"
+
+    mkdir -p "$REPORT_DIR"
+    sudo chmod -R 777 "$REPORT_DIR"
+
+    echo "Spec Directory   : $SPEC_DIR"
+    echo "Report Directory : $REPORT_DIR"
+
+    ls -la "$SPEC_DIR"
+
+    sudo docker run --rm \
+      -v "$SPEC_DIR:/zap/wrk/spec:ro" \
+      -v "$REPORT_DIR:/zap/wrk/reports:rw" \
+      -t zaproxy/zap-stable \
+      zap-api-scan.py \
+        -t /zap/wrk/spec/openapi.json \
+        -f openapi \
+        -O "https://$(revisionFqdn)" \
+        -r reports/zap_api_report.html \
+        -J reports/zap_api_report.json \
+        -I
+
+    echo "Generated Reports"
+    ls -la "$REPORT_DIR"
+  displayName: 'Run ZAP API Scan'
+
+# --- STEP 9: Publish ZAP Reports ---
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish ZAP Reports'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/zap-report'
+    artifact: 'zap-report'
+    publishLocation: 'pipeline'
