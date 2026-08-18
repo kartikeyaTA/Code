@@ -1,0 +1,62 @@
+trigger:
+  branches:
+    include:
+      - test
+      - dev
+
+pr:
+  branches:
+    include:
+      - uat
+      - main
+
+pool:
+  name: WSL-Pool
+
+jobs:
+# ====================================================================
+# SCENARIO 1: Dev / Test Branch Runs (CI Triggers or Direct Commits)
+# ====================================================================
+- job: Dev_Test_Pipeline
+  displayName: 'Dev/Test Environment Job'
+  condition: |
+    or(
+      eq(variables['Build.Reason'], 'ResourceTrigger'),
+      eq(variables['Build.SourceBranch'], 'refs/heads/test'),
+      eq(variables['Build.SourceBranch'], 'refs/heads/dev')
+    )
+  variables:
+  - group: test1  # Loads dev/test variable group
+
+  steps:
+  - template: templates/test-template.yml
+    parameters:
+      envName: 'Dev/Test'
+
+# ====================================================================
+# SCENARIO 2: UAT Pull Requests (dev/test -> uat)
+# ====================================================================
+- job: Validate_UAT_PR
+  displayName: 'UAT PR Flow & Validation'
+  condition: and(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/uat'))
+  variables:
+  - group: test2  # Loads UAT variable group
+
+  steps:
+  - template: templates/test-template.yml
+    parameters:
+      envName: 'UAT'
+
+# ====================================================================
+# SCENARIO 3: Main/Prod Pull Requests (uat -> main)
+# ====================================================================
+- job: Validate_Main_PR
+  displayName: 'Main/Prod PR Flow & Validation'
+  condition: and(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/main'))
+  variables:
+  - group: test  # Loads Main/Prod variable group
+
+  steps:
+  - template: templates/test-template.yml
+    parameters:
+      envName: 'Main/Prod'
