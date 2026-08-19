@@ -1,215 +1,111 @@
-parameters:
-- name: serviceFolder
-  type: string
-- name: imageRepository
-  type: string
-- name: acrName
-  type: string
-
-steps:
-- checkout: self
-
-# --- STEP 1: Validate Source/Target Branch Flow ---
-- bash: |
-    REASON="$(Build.Reason)"
-    SRC="$(System.PullRequest.SourceBranch)"
-    TGT="$(System.PullRequest.TargetBranch)"
-
-    echo "Build Reason  : $REASON"
-    echo "Source Branch : $SRC"
-    echo "Target Branch : $TGT"
-
-    if [ "$REASON" == "ResourceTrigger" ]; then
-      echo "Dev deploy via pipeline trigger. Skipping validation."
-      exit 0
-    fi
-
-    if [ "$TGT" == "refs/heads/dev" ] && [ "$SRC" != "refs/heads/kartikeya/snow-mcp" ]; then
-      echo "pipeline Failed"
-      echo "##vso[task.logissue type=error]Only dev -> uat PRs are allowed."
-      exit 1
-    fi
-
-    if [ "$TGT" == "refs/heads/main" ] && [ "$SRC" != "refs/heads/uat" ]; then
-      echo "##vso[task.logissue type=error]Only uat -> main PRs are allowed."
-      exit 1
-    fi
-
-    echo "Branch flow valid: $SRC -> $TGT"
-  displayName: 'Validate Source/Target Branch Flow'
-
-# --- STEP 2: Auto-Abandon PR on Failure ---
-- bash: |
-    echo "Invalid PR Flow detected. Abandoning PR $(System.PullRequest.PullRequestId)."
-
-    az repos pr update \
-      --id $(System.PullRequest.PullRequestId) \
-      --status abandoned \
-      --org "$(System.TeamFoundationCollectionUri)" \
-      --detect false
-
-    echo "PR $(System.PullRequest.PullRequestId) abandoned."
-  displayName: 'Abandon Invalid PR'
-  condition: and(failed(), eq(variables['Build.Reason'], 'PullRequest'))
-  env:
-    AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-
-# --- STEP 3: Get Image Tag ---
-- bash: |
-    TAG=$(cat $(Build.SourcesDirectory)/${{ parameters.serviceFolder }}/image_tag.txt)
-    IMAGE="${{ parameters.acrName }}.azurecr.io/${{ parameters.imageRepository }}:${TAG}"
-
-    echo "Build Reason : $(Build.Reason)"
-    echo "Target Branch: $(System.PullRequest.TargetBranch)"
-    echo "Image        : $IMAGE"
-    echo "Tag          : $TAG"
-
-    echo "##vso[task.setvariable variable=fullImage]$IMAGE"
-    echo "##vso[task.setvariable variable=tag]$TAG"
-  displayName: 'Get Image Tag'
-
-# --- STEP 4: Deploy New Revision ---
 - task: AzureCLI@2
-  displayName: 'Deploy New Revision'
-  inputs:
-    azureSubscription: '$(azureServiceConnection)'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      az account set --subscription "$(subscriptionId)"
+      displayName: 'Deploy to Slot (0% Traffic) & Run Health Check'
+      inputs:
+        azureSubscription: '${{ parameters.azureServiceConnection }}'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          SLOT_NAME="staging"
+          WEBAPP="${{ parameters.webApp }}"
+          RG="${{ parameters.resourceGroup }}"
 
-      CURRENT=$(az containerapp show \
-        --name "$(containerApp)" \
-        --resource-group "$(resourceGroup)" \
-        --query "properties.configuration.ingress.traffic[0].revisionName" \
-        -o tsv)
+          az account set --subscription "${{ parameters.subscriptionId }}"
 
-      echo "Current Revision: $CURRENT"
-      echo "##vso[task.setvariable variable=currentRevision]$CURRENT"
+          # 1. Create staging slot if it doesn't exist
+          az webapp deployment slot create \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --slot $SLOT_NAME
 
-      az containerapp update \
-        --name "$(containerApp)" \
-        --resource-group "$(resourceGroup)" \
-        --image "$(fullImage)" \
-        --set-env-vars \
-          KEY_VAULT_NAME="$(KEY_VAULT_NAME)" \
-          SERVICENOW_INSTANCE_URL="$(SERVICENOW_INSTANCE_URL)" \
-          AZURE_CLIENT_ID="$(AZURE_CLIENT_ID)"
+          # 2. Ensure initial traffic routing to staging is 0%
+          az webapp traffic-routing set \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --distribution $SLOT_NAME=0
 
-      NEW_REVISION=$(az containerapp show \
-        --name "$(containerApp)" \
-        --resource-group "$(resourceGroup)" \
-        --query "properties.latestRevisionName" \
-        -o tsv)
+          # 3. Deploy container image to the STAGING SLOT
+          az webapp config container set \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --slot $SLOT_NAME \
+            --container-image-name "$(fullImage)"
 
-      echo "New Revision: $NEW_REVISION"
-      echo "##vso[task.setvariable variable=newRevision]$NEW_REVISION"
+          # 4. Set App Settings on the STAGING SLOT
+          az webapp config appsettings set \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --slot $SLOT_NAME \
+            --settings \
+              AAD_CLIENT_ID=${{ parameters.AAD_CLIENT_ID }} \
+              AAD_CLIENT_SECRET=${{ parameters.AAD_CLIENT_SECRET }} \
+              AAD_TENANT_ID=${{ parameters.AAD_TENANT_ID }} \
+              AAD_REDIRECT_URI=${{ parameters.AAD_REDIRECT_URI }} \
+              AAD_LOGIN_SCOPES=${{ parameters.AAD_LOGIN_SCOPES }} \
+              BACKEND_SCOPES=${{ parameters.BACKEND_SCOPES }} \
+              POST_LOGIN_REDIRECT=${{ parameters.POST_LOGIN_REDIRECT }} \
+              BACKEND_URL=${{ parameters.BACKEND_URL }} \
+              KEY_VAULT=${{ parameters.KEY_VAULT }}
 
-# --- STEP 5: Keep Current Revision Active ---
-- task: AzureCLI@2
-  displayName: 'Keep Current Revision Active'
-  inputs:
-    azureSubscription: '$(azureServiceConnection)'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      az account set --subscription "$(subscriptionId)"
+          # 5. Fetch Direct Slot FQDN for isolated testing
+          SLOT_FQDN=$(az webapp deployment slot show \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --slot $SLOT_NAME \
+            --query "defaultHostName" -o tsv)
 
-      if [ -n "$(currentRevision)" ]; then
-        echo "Keeping current revision active"
-        echo "New revision deployed with 0% traffic"
+          echo "Direct Staging URL: https://$SLOT_FQDN"
+          echo "##vso[task.setvariable variable=slotFqdn]$SLOT_FQDN"
 
-        az containerapp ingress traffic set \
-          --name "$(containerApp)" \
-          --resource-group "$(resourceGroup)" \
-          --revision-weight \
-            "$(newRevision)=0" \
-            "$(currentRevision)=100"
-      fi
+          # 6. Health check on 0% traffic direct slot FQDN
+          echo "Running health check on slot..."
+          curl -f -I "https://$SLOT_FQDN/health" || { echo "❌ Slot health check failed"; exit 1; }
 
-# --- STEP 6: Get Revision FQDN ---
-- task: AzureCLI@2
-  displayName: 'Get Revision FQDN'
-  inputs:
-    azureSubscription: '$(azureServiceConnection)'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      az account set --subscription "$(subscriptionId)"
+    # OPTIONAL: Place your ZAP Scan Task here targeting https://$(slotFqdn)
 
-      FQDN=$(az containerapp revision show \
-        --name "$(containerApp)" \
-        --resource-group "$(resourceGroup)" \
-        --revision "$(newRevision)" \
-        --query properties.fqdn \
-        -o tsv)
+    - task: AzureCLI@2
+      displayName: 'Divert 20% Traffic & Monitor'
+      inputs:
+        azureSubscription: '${{ parameters.azureServiceConnection }}'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          SLOT_NAME="staging"
+          WEBAPP="${{ parameters.webApp }}"
+          RG="${{ parameters.resourceGroup }}"
 
-      echo "Revision FQDN: $FQDN"
-      echo "##vso[task.setvariable variable=revisionFqdn]$FQDN"
+          echo "Diverting 20% traffic to $SLOT_NAME slot..."
+          az webapp traffic-routing set \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --distribution $SLOT_NAME=20
 
-# --- STEP 7: Validate Revision Health ---
-- task: AzureCLI@2
-  displayName: 'Validate Revision Health'
-  inputs:
-    azureSubscription: '$(azureServiceConnection)'
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      echo "--------------------------------------------------"
-      echo "Running Revision Validation"
-      echo "--------------------------------------------------"
+          # Allow app to warm up under 20% load
+          sleep 15
 
-      for i in {1..5}; do
-        echo ""
-        echo "Health Check Attempt $i"
+          # Health check main production URL
+          echo "Checking health on main domain..."
+          curl -f -I "https://$WEBAPP.azurewebsites.net/health" || {
+            echo "❌ 20% rollout health check failed! Executing rollback..."
+            az webapp traffic-routing clear --resource-group $RG --name $WEBAPP
+            exit 1
+          }
 
-        HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$(revisionFqdn)/health")
+    - task: AzureCLI@2
+      displayName: 'Promote 100% Traffic (Slot Swap)'
+      inputs:
+        azureSubscription: '${{ parameters.azureServiceConnection }}'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          SLOT_NAME="staging"
+          WEBAPP="${{ parameters.webApp }}"
+          RG="${{ parameters.resourceGroup }}"
 
-        echo "Health Response Code: $HEALTH_CODE"
+          echo "Swapping $SLOT_NAME slot to production..."
+          az webapp deployment slot swap \
+            --resource-group $RG \
+            --name $WEBAPP \
+            --slot $SLOT_NAME \
+            --target-slot production
 
-        if [ "$HEALTH_CODE" != "200" ]; then
-          echo "Health endpoint failed."
-          exit 1
-        fi
-
-        sleep 10
-      done
-
-      echo "All 5 health checks passed"
-
-# --- STEP 8: Run ZAP API Scan ---
-- bash: |
-    SPEC_DIR="$(Build.SourcesDirectory)/${{ parameters.serviceFolder }}"
-    REPORT_DIR="$(Build.ArtifactStagingDirectory)/zap-report"
-
-    mkdir -p "$REPORT_DIR"
-    sudo chmod -R 777 "$REPORT_DIR"
-
-    echo "Spec Directory   : $SPEC_DIR"
-    echo "Report Directory : $REPORT_DIR"
-
-    ls -la "$SPEC_DIR"
-
-    sudo docker run --rm \
-      -v "$SPEC_DIR:/zap/wrk/spec:ro" \
-      -v "$REPORT_DIR:/zap/wrk/reports:rw" \
-      -t zaproxy/zap-stable \
-      zap-api-scan.py \
-        -t /zap/wrk/spec/openapi.json \
-        -f openapi \
-        -O "https://$(revisionFqdn)" \
-        -r reports/zap_api_report.html \
-        -J reports/zap_api_report.json \
-        -I
-
-    echo "Generated Reports"
-    ls -la "$REPORT_DIR"
-  displayName: 'Run ZAP API Scan'
-
-# --- STEP 9: Publish ZAP Reports ---
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish ZAP Reports'
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/zap-report'
-    artifact: 'zap-report'
-    publishLocation: 'pipeline'
+          echo "✅ Production deployment complete!"
