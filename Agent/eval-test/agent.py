@@ -1,9 +1,12 @@
 import os
 import sys
+import time
 import json
-import httpx
+import html
 import tempfile
-from openai import OpenAI
+import httpx
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
 from azure.ai.evaluation import (
     evaluate,
     RelevanceEvaluator,
@@ -13,54 +16,50 @@ from azure.ai.evaluation import (
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-APIM_BASE_URL = os.environ.get(
-    "APIM_OPENAI_BASE_URL",
-    "https://apim-gateway-application-test-dev-txrh-mcp.azure-api.net/roadie-ranger-foundry-resource/openai/v1"
+PROJECT_ENDPOINT = os.environ.get(
+    "PROJECT_ENDPOINT",
+    "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
 )
-APIM_SUBSCRIPTION_KEY = os.environ.get("APIM_SUBSCRIPTION_KEY", "1007fc188a6d4675b308ab24a7480f47")
-MODEL_DEPLOYMENT = "gpt-5.4"
+AGENT_NAME = os.environ.get("AGENT_NAME", "txrh-demoagent-2-copy-eval-candidate")
+JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
 EVAL_DATASET_PATH = os.environ.get("EVAL_DATASET_PATH", "snow_eval_dataset.jsonl")
-TOOLS_SCHEMA_PATH = "tools_schema.json"
 EVAL_SCORE_THRESHOLD = float(os.environ.get("EVAL_SCORE_THRESHOLD", "3.5"))
-PROMPT_FILE_PATH = "prompt.txt"
 HTML_REPORT_PATH = "eval_report.html"
 
+APIM_SUBSCRIPTION_KEY = os.environ.get("APIM_SUBSCRIPTION_KEY", "")
 
+# APIM Gateway Header Patching (if using APIM endpoints)
+if APIM_SUBSCRIPTION_KEY:
+    _orig_async_init = httpx.AsyncClient.__init__
+    _orig_sync_init = httpx.Client.__init__
 
-# Global HTTPX Header Injection for APIM Gateway
-_orig_async_init = httpx.AsyncClient.__init__
-_orig_sync_init = httpx.Client.__init__
+    def _patched_async_init(self, *args, **kwargs):
+        headers = kwargs.get("headers") or {}
+        if isinstance(headers, dict):
+            headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
+            headers["api-key"] = APIM_SUBSCRIPTION_KEY
+        kwargs["headers"] = headers
+        _orig_async_init(self, *args, **kwargs)
 
-def _patched_async_init(self, *args, **kwargs):
-    headers = kwargs.get("headers") or {}
-    if isinstance(headers, dict):
-        headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
-        headers["api-key"] = APIM_SUBSCRIPTION_KEY
-    kwargs["headers"] = headers
-    _orig_async_init(self, *args, **kwargs)
+    def _patched_sync_init(self, *args, **kwargs):
+        headers = kwargs.get("headers") or {}
+        if isinstance(headers, dict):
+            headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
+            headers["api-key"] = APIM_SUBSCRIPTION_KEY
+        kwargs["headers"] = headers
+        _orig_sync_init(self, *args, **kwargs)
 
-def _patched_sync_init(self, *args, **kwargs):
-    headers = kwargs.get("headers") or {}
-    if isinstance(headers, dict):
-        headers["Ocp-Apim-Subscription-Key"] = APIM_SUBSCRIPTION_KEY
-        headers["api-key"] = APIM_SUBSCRIPTION_KEY
-    kwargs["headers"] = headers
-    _orig_sync_init(self, *args, **kwargs)
-
-httpx.AsyncClient.__init__ = _patched_async_init
-httpx.Client.__init__ = _patched_sync_init
+    httpx.AsyncClient.__init__ = _patched_async_init
+    httpx.Client.__init__ = _patched_sync_init
 
 QUERY_CONTEXT_MAP = {}
 
 
 # ============================================================================
-# TOOL SELECTION EVALUATOR (VERIFIES TOOL NAMES ONLY)
+# TOOL SELECTION EVALUATOR (NAME & SEQUENCE MATCHING)
 # ============================================================================
 class ToolSelectionAccuracyEvaluator:
-    """
-    Evaluates tool selection accuracy strictly based on tool names and sequence.
-    Ignores argument string differences entirely.
-    """
+    """Evaluates tool selection accuracy strictly based on tool names and sequence."""
     def __call__(self, *, tool_calls=None, expected_tool_calls=None, **kwargs):
         tool_calls = tool_calls or []
         expected_tool_calls = expected_tool_calls or []
@@ -74,21 +73,22 @@ class ToolSelectionAccuracyEvaluator:
         actual_names = [t.get("name") for t in tool_calls if isinstance(t, dict)]
         expected_names = [t.get("name") for t in expected_tool_calls if isinstance(t, dict)]
 
-        # Exact match on tool selection and sequence
         if actual_names == expected_names:
             return {"tool_accuracy": 5.0}
 
-        # Partial match based on correct tool selection ratio
         matching_count = sum(1 for a, e in zip(actual_names, expected_names) if a == e)
         score = (matching_count / max(len(expected_names), len(actual_names))) * 5.0
         return {"tool_accuracy": max(1.0, round(score, 2))}
 
 
+# ============================================================================
+# PARSING & REPORT HELPERS
+# ============================================================================
 def get_field_from_row(row: dict, target_key: str):
-    """Extracts values safely across flat and nested evaluator row formats."""
+    """Safely extracts metrics and row data across flat and nested evaluator formats."""
     inputs = row.get("inputs", {})
     outputs = row.get("outputs", {})
-    
+
     combined = {}
     if isinstance(inputs, dict):
         combined.update(inputs)
@@ -111,40 +111,48 @@ def get_field_from_row(row: dict, target_key: str):
 
 
 def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_score, passed):
-    """Generates a styled HTML dashboard from evaluation outputs."""
+    """Generates a styled HTML dashboard report from evaluation execution."""
     status_color = "#107c41" if passed else "#d13438"
     status_text = "PASSED" if passed else "FAILED"
-    
+
     rows = eval_result.get("rows", [])
     table_rows_html = ""
-    
+
     for idx, row in enumerate(rows, 1):
         query = get_field_from_row(row, "query") or "N/A"
         context = get_field_from_row(row, "ground_truth") or get_field_from_row(row, "context") or "N/A"
         response = get_field_from_row(row, "response") or "N/A"
-        
+
         actual_tools = get_field_from_row(row, "tool_calls") or []
         expected_tools = get_field_from_row(row, "expected_tool_calls") or []
-        
+
         r_val = get_field_from_row(row, "relevance") or "N/A"
         g_val = get_field_from_row(row, "groundedness") or "N/A"
-        t_val = get_field_from_row(row, "tool") or "N/A"
-        
-        clean_actual_tools = [{k: v for k, v in tc.items() if k != "id"} for tc in actual_tools]
+        t_val = get_field_from_row(row, "tool_accuracy") or get_field_from_row(row, "tool") or "N/A"
+
+        clean_actual_tools = [{k: v for k, v in tc.items() if k != "id"} for tc in actual_tools] if isinstance(actual_tools, list) else []
         actual_tools_str = json.dumps(clean_actual_tools, indent=1) if clean_actual_tools else "No Tool Calls"
         expected_tools_str = json.dumps(expected_tools, indent=1) if expected_tools else "None Expected"
-        
+
+        # Pre-format text variables outside f-strings to prevent SyntaxError in Python < 3.12
+        query_fmt = html.escape(str(query))
+        response_fmt = html.escape(str(response)).replace("\n", "<br>")
+        context_fmt = html.escape(str(context))
+        actual_tools_fmt = html.escape(actual_tools_str)
+        expected_tools_fmt = html.escape(expected_tools_str)
+        expected_len = len(expected_tools) if isinstance(expected_tools, list) else 0
+
         table_rows_html += f"""
         <tr>
-            <td>{idx}</td>
-            <td><b>{query}</b></td>
+            <td style="text-align:center;">{idx}</td>
+            <td><b>{query_fmt}</b></td>
             <td>
-                <div style="margin-bottom:8px;">{response}</div>
-                <details><summary><small><b>Actual Tool Calls ({len(clean_actual_tools)})</b></small></summary><pre style="font-size:11px;">{actual_tools_str}</pre></details>
+                <div style="margin-bottom:8px;">{response_fmt}</div>
+                <details><summary><small><b>Actual Tool Calls ({len(clean_actual_tools)})</b></small></summary><pre style="font-size:11px;">{actual_tools_fmt}</pre></details>
             </td>
             <td>
-                <small>{context}</small>
-                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls ({len(expected_tools)})</b></small></summary><pre style="font-size:11px;">{expected_tools_str}</pre></details>
+                <small>{context_fmt}</small>
+                <details style="margin-top:6px;"><summary><small><b>Expected Tool Calls ({expected_len})</b></small></summary><pre style="font-size:11px;">{expected_tools_fmt}</pre></details>
             </td>
             <td style="text-align:center; font-weight:bold;">{r_val}</td>
             <td style="text-align:center; font-weight:bold;">{g_val}</td>
@@ -156,7 +164,7 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Agent Evaluation Summary</title>
+    <title>AI Agent Evaluation Dashboard</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f8f9fa; color: #333; }}
         h1 {{ margin-bottom: 5px; color: #111; }}
@@ -175,8 +183,8 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
     </style>
 </head>
 <body>
-    <h1>🤖 AI Agent Evaluation Report</h1>
-    <div class="subtitle">Evaluated via APIM Gateway | Model: {MODEL_DEPLOYMENT} </div>
+    <h1>🤖 AI Agent Evaluation Dashboard</h1>
+    <div class="subtitle">Target Agent: <b>{AGENT_NAME}</b> | Judge Model: {JUDGE_MODEL_DEPLOYMENT}</div>
     
     <div class="cards">
         <div class="card status">
@@ -206,10 +214,10 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
     <table>
         <thead>
             <tr>
-                <th style="width: 3%;">#</th>
+                <th style="width: 3%; text-align:center;">#</th>
                 <th style="width: 18%;">User Query</th>
-                <th style="width: 36%;">Generated Response & Tool Calls</th>
-                <th style="width: 27%;">Context & Expected Tool Calls</th>
+                <th style="width: 36%;">Agent Text Output & Tool Calls</th>
+                <th style="width: 27%;">Knowledge Context & Expected Tools</th>
                 <th style="width: 5%; text-align:center;">Rel</th>
                 <th style="width: 5%; text-align:center;">Grd</th>
                 <th style="width: 6%; text-align:center;">Tool Acc</th>
@@ -224,29 +232,42 @@ def generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_scor
 """
     with open(HTML_REPORT_PATH, "w", encoding="utf-8") as f:
         f.write(html_content)
-    print(f"📄 HTML Evaluation report generated: '{HTML_REPORT_PATH}'")
 
 
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
 def main():
-    print(f"🧪 Running evaluation test via APIM Gateway ({APIM_BASE_URL})...")
+    print(f"🧪 Initializing Evaluation Pipeline for Agent: '{AGENT_NAME}'...")
 
-    if not os.path.exists(EVAL_DATASET_PATH) or not os.path.exists(PROMPT_FILE_PATH):
-        print(f"❌ Required files missing: '{EVAL_DATASET_PATH}' or '{PROMPT_FILE_PATH}'")
+    if not os.path.exists(EVAL_DATASET_PATH):
+        print(f"❌ Local Error: '{EVAL_DATASET_PATH}' not found!")
         sys.exit(1)
 
-    # 1. Load tools schema for OpenAI Chat Completions
-    openai_tools = []
-    if os.path.exists(TOOLS_SCHEMA_PATH):
-        with open(TOOLS_SCHEMA_PATH, "r", encoding="utf-8") as tf:
-            tools_data = json.load(tf)
-            for item in tools_data:
-                if isinstance(item, dict):
-                    if "type" in item and item["type"] == "function":
-                        openai_tools.append(item)
-                    else:
-                        openai_tools.append({"type": "function", "function": item})
+    # 1. Initialize Azure AI Project Client
+    credential = DefaultAzureCredential()
+    project_client = AIProjectClient(
+        endpoint=PROJECT_ENDPOINT,
+        credential=credential
+    )
 
-    # 2. Build Query-to-Context lookup map & set normalized expected_tool_calls
+    # 2. Fetch Target Agent ID using list() to prevent AttributeError
+    print("🔍 Fetching target agent ID from project...")
+    agents_list = project_client.agents.list()
+    target_agent = None
+    for agent in agents_list:
+        if getattr(agent, "name", None) == AGENT_NAME:
+            target_agent = agent
+            break
+
+    if not target_agent:
+        print(f"❌ Error: Agent '{AGENT_NAME}' not found in Azure AI Project!")
+        sys.exit(1)
+
+    agent_id = target_agent.id
+    print(f"✅ Resolved Target Agent ID: {agent_id}")
+
+    # 3. Pre-process dataset and build Query-to-Context Map
     with open(EVAL_DATASET_PATH, "r", encoding="utf-8") as f:
         dataset_lines = [json.loads(line) for line in f if line.strip()]
 
@@ -258,7 +279,7 @@ def main():
 
             norm_expected = []
             for etc in record.get("expected_tool_calls", []):
-                item = dict(etc)
+                item = dict(etc) if isinstance(etc, dict) else {"name": str(etc)}
                 if "type" not in item:
                     item["type"] = "tool_call"
                 norm_expected.append(item)
@@ -267,57 +288,27 @@ def main():
             temp_jsonl.write(json.dumps(record) + "\n")
         temp_jsonl_path = temp_jsonl.name
 
-    with open(PROMPT_FILE_PATH, "r", encoding="utf-8") as f:
-        candidate_instructions = f.read().strip()
-
-    client = OpenAI(
-        base_url=APIM_BASE_URL,
-        api_key=APIM_SUBSCRIPTION_KEY,
-        default_headers={
-            "api-key": APIM_SUBSCRIPTION_KEY,
-            "Ocp-Apim-Subscription-Key": APIM_SUBSCRIPTION_KEY
-        }
-    )
-
-    model_config = {
-        "type": "openai",
-        "base_url": APIM_BASE_URL,
-        "model": MODEL_DEPLOYMENT,
-        "api_key": APIM_SUBSCRIPTION_KEY
-    }
-
+    # 4. Define Target Runner against Azure Agent
     def target_agent_runner(query: str):
         query_clean = query.strip()
         kb_text = QUERY_CONTEXT_MAP.get(query_clean, "No knowledge base article found.")
 
-        messages = [
-            {"role": "system", "content": candidate_instructions},
-            {"role": "user", "content": query}
-        ]
-        
         all_actual_tool_calls = []
-        final_text_response = ""
-        max_turns = 4
+        final_agent_response = ""
 
         try:
-            for _ in range(max_turns):
-                request_payload = {
-                    "model": MODEL_DEPLOYMENT,
-                    "messages": messages,
-                    "max_completion_tokens": 80000
-                }
-                if openai_tools:
-                    request_payload["tools"] = openai_tools
+            thread = project_client.agents.create_thread()
+            project_client.agents.create_message(thread_id=thread.id, role="user", content=query)
+            run = project_client.agents.create_run(thread_id=thread.id, assistant_id=agent_id)
 
-                response = client.chat.completions.create(**request_payload)
-                message = response.choices[0].message
-                messages.append(message)
-                
-                if message.content:
-                    final_text_response += message.content
+            while True:
+                run = project_client.agents.get_run(thread_id=thread.id, run_id=run.id)
 
-                if getattr(message, "tool_calls", None):
-                    for tc in message.tool_calls:
+                if run.status == "requires_action":
+                    tool_calls = run.required_action.submit_tool_outputs.tool_calls
+                    tool_outputs = []
+
+                    for tc in tool_calls:
                         raw_args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
                         
                         all_actual_tool_calls.append({
@@ -327,49 +318,75 @@ def main():
                             "arguments": raw_args
                         })
 
-                        if "search" in tc.function.name.lower():
-                            tool_output = f"Knowledge Base Search Results: {kb_text}"
+                        # Feed dataset ground_truth as tool response output
+                        if "search" in tc.function.name.lower() or "kb" in tc.function.name.lower():
+                            output_content = f"Knowledge Base Search Results: {kb_text}"
                         else:
-                            tool_output = '{"status": "success", "incident_number": "INC0010001"}'
+                            output_content = json.dumps({"status": "success", "incident_number": "INC0010001"})
 
-                        messages.append({
-                            "role": "tool",
+                        tool_outputs.append({
                             "tool_call_id": tc.id,
-                            "content": tool_output
+                            "output": output_content
                         })
-                else:
+
+                    run = project_client.agents.submit_tool_outputs(
+                        thread_id=thread.id,
+                        run_id=run.id,
+                        tool_outputs=tool_outputs
+                    )
+
+                elif run.status == "completed":
+                    messages = project_client.agents.list_messages(thread_id=thread.id)
+                    msg_list = messages.data if hasattr(messages, "data") else messages
+                    for msg in msg_list:
+                        if msg.role == "assistant":
+                            for block in msg.content:
+                                if hasattr(block, "text") and hasattr(block.text, "value"):
+                                    final_agent_response += block.text.value
+                            break
                     break
 
-            clean_response = final_text_response.split("Are you satisfied")[0].split("Ticket created successfully")[0].strip()
-            final_agent_response = clean_response or final_text_response or "Completed interaction."
+                elif run.status in ["failed", "cancelled", "expired"]:
+                    final_agent_response = "Error: Agent run failed."
+                    break
 
-            # Terminal log output before evaluation
-            print(f"\n" + "="*80)
-            print(f"❓ USER QUERY: {query}")
-            print(f"💬 AGENT RESPONSE:\n{final_agent_response}")
+                time.sleep(1)
+
+            clean_response = final_agent_response.split("Are you satisfied")[0].split("Ticket created successfully")[0].strip()
+            response_text = clean_response or final_agent_response or "Completed interaction."
+
+            print(f"\n❓ QUERY: {query[:50]}...")
+            print(f"💬 AGENT RESPONSE: {response_text[:80]}...")
             if all_actual_tool_calls:
-                executed_names = [t.get("name") for t in all_actual_tool_calls]
-                print(f"🛠️ EXECUTED TOOLS: {executed_names}")
-            print("="*80 + "\n")
+                print(f"🛠️ EXECUTED TOOLS: {[t['name'] for t in all_actual_tool_calls]}")
 
             return {
-                "response": final_agent_response,
+                "response": response_text,
                 "tool_calls": all_actual_tool_calls
             }
+
         except Exception as err:
-            print(f"⚠️ Runner error on query '{query[:40]}': {err}")
+            print(f"⚠️ Agent runner error on query '{query[:40]}': {err}")
             return {"response": "Error generating response.", "tool_calls": []}
+
+    # 5. Initialize Evaluators & Model Config
+    model_config = {
+        "azure_endpoint": PROJECT_ENDPOINT,
+        "azure_deployment": JUDGE_MODEL_DEPLOYMENT
+    }
 
     eval_init_kwargs = {
         "model_config": model_config,
-        "is_reasoning_model": True
+        "credential": credential
     }
 
     relevance_eval = RelevanceEvaluator(**eval_init_kwargs)
     groundedness_eval = GroundednessEvaluator(**eval_init_kwargs)
     tool_accuracy_eval = ToolSelectionAccuracyEvaluator()
 
+    # 6. Execute Evaluation
     try:
+        print("\n🚀 Starting Evaluation Engine against Azure AI Agent...")
         eval_result = evaluate(
             data=temp_jsonl_path,
             target=target_agent_runner,
@@ -406,24 +423,28 @@ def main():
         rel_score = extract_score("relevance")
         grd_score = extract_score("groundedness")
         tool_score = extract_score("tool")
-        
+
         scores = [s for s in [rel_score, grd_score, tool_score] if s > 0]
         avg_score = sum(scores) / len(scores) if scores else 0.0
-        passed = avg_score >= EVAL_SCORE_THRESHOLD
+        passed = (rel_score >= EVAL_SCORE_THRESHOLD and grd_score >= EVAL_SCORE_THRESHOLD and tool_score >= EVAL_SCORE_THRESHOLD)
 
         generate_html_report(eval_result, avg_score, rel_score, grd_score, tool_score, passed)
 
-        print(f"\n📊 Evaluation Summary:")
-        print(f"   • Relevance Score:     {rel_score:.2f} / 5.0")
-        print(f"   • Groundedness Score:  {grd_score:.2f} / 5.0")
-        print(f"   • Tool Call Accuracy:  {tool_score:.2f} / 5.0")
-        print(f"   • Average Score:       {avg_score:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})")
+        print("\n" + "=" * 80)
+        print("📊 EVALUATION SUMMARY DASHBOARD")
+        print("=" * 80)
+        print(f"🎯 Target Agent:        {AGENT_NAME}")
+        print(f"   • Relevance Score:    {rel_score:.2f} / 5.0")
+        print(f"   • Groundedness Score: {grd_score:.2f} / 5.0")
+        print(f"   • Tool Call Accuracy: {tool_score:.2f} / 5.0")
+        print(f"   • Overall Average:    {avg_score:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})")
+        print("-" * 80)
 
-        if rel_score >= EVAL_SCORE_THRESHOLD and grd_score >= EVAL_SCORE_THRESHOLD and tool_score >= EVAL_SCORE_THRESHOLD:
-            print("✅ EVALUATION PASSED")
+        if passed:
+            print("✅ VERDICT: EVALUATION PASSED")
             sys.exit(0)
         else:
-            print(f"❌ EVALUATION FAILED: One or more individual scores fell below threshold {EVAL_SCORE_THRESHOLD}.")
+            print("❌ VERDICT: EVALUATION FAILED (One or more scores below threshold)")
             sys.exit(1)
 
     finally:

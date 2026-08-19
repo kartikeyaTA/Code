@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Agent Evaluation Report</title>
+    <title>AI Agent Tool Selection Report</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f8f9fa; color: #333; }
         h1 { margin-bottom: 5px; color: #111; }
@@ -17,11 +17,12 @@
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: top; font-size: 13px; }
         th { background-color: #0078d4; color: white; font-weight: 600; text-transform: uppercase; font-size: 11px; }
         tr:hover { background-color: #f1f3f5; }
+        pre { background: #f1f3f5; padding: 6px; border-radius: 4px; overflow-x: auto; margin: 0; }
     </style>
 </head>
 <body>
-    <h1>🤖 AI Agent Evaluation Report</h1>
-    <div class="subtitle">Target Agent: <b>txrh-demoagent-2-copy-eval-candidate</b> | Judge Model: roadie-ranger-foundry-resource/gpt-5.4</div>
+    <h1>🤖 AI Agent Evaluation Report (builtin.tool_selection)</h1>
+    <div class="subtitle">Target Agent: <b>txrh-demoagent-2-copy</b> | Judge Model: roadie-ranger-foundry-resource/gpt-5.4</div>
     
     <div class="cards">
         <div class="card status">
@@ -29,17 +30,9 @@
             <div class="badge">FAILED</div>
         </div>
         <div class="card">
-            <div class="card-title">Overall Score</div>
-            <div class="card-value">0.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
-            <small style="color:#666;">Threshold: 3.5</small>
-        </div>
-        <div class="card">
-            <div class="card-title">Relevance Score</div>
-            <div class="card-value">0.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
-        </div>
-        <div class="card">
-            <div class="card-title">Groundedness Score</div>
-            <div class="card-value">0.00 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <div class="card-title">Tool Selection Accuracy</div>
+            <div class="card-value">0.0%</div>
+            <small style="color:#666;">Threshold: 70%</small>
         </div>
     </div>
 
@@ -48,58 +41,18 @@
         <thead>
             <tr>
                 <th style="width: 4%; text-align:center;">#</th>
-                <th style="width: 22%;">User Query</th>
-                <th style="width: 42%;">Generated Agent Response</th>
-                <th style="width: 22%;">Ground Truth Context</th>
-                <th style="width: 5%; text-align:center;">Relevance</th>
-                <th style="width: 5%; text-align:center;">Groundedness</th>
+                <th style="width: 35%;">User Query</th>
+                <th style="width: 50%;">Generated Agent Tool Calls</th>
+                <th style="width: 11%; text-align:center;">Tool Score</th>
             </tr>
         </thead>
         <tbody>
             
         <tr>
             <td style="text-align:center;">1</td>
-            <td><b>What is a phishing scam?</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;type&quot;: &quot;function_call&quot;, &quot;tool_call_id&quot;: &quot;call_ZaVbwPVXoSf9LH4Fc7absxrM&quot;, &quot;name&quot;: &quot;search_kb_via_table_api&quot;, &quot;arguments&quot;: {&quot;user_query&quot;: &quot;What is a phishing scam?&quot;, &quot;max_results&quot;: 2}}]</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed websites. [Reference: KB0000028]</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">N/A</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">N/A</td>
-        </tr>
-        
-        <tr>
-            <td style="text-align:center;">2</td>
-            <td><b>How do I Create An Email Signature?</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;type&quot;: &quot;function_call&quot;, &quot;tool_call_id&quot;: &quot;call_tfmTAr2SYwcrwdzwXVj5NCKv&quot;, &quot;name&quot;: &quot;search_kb_via_table_api&quot;, &quot;arguments&quot;: {&quot;user_query&quot;: &quot;How do I Create An Email Signature?&quot;, &quot;max_results&quot;: 2}}]</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>Open a new message, go to Message &gt; Signature &gt; Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won&#x27;t appear in the currently open message and must be inserted. [Ref: KB0000024]</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">N/A</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">N/A</td>
-        </tr>
-        
-        <tr>
-            <td style="text-align:center;">3</td>
-            <td><b>How do I quit an application that isn&#x27;t responding?</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;type&quot;: &quot;function_call&quot;, &quot;tool_call_id&quot;: &quot;call_NivfyN1YcAgdxGx4Lfas3iqg&quot;, &quot;name&quot;: &quot;search_kb_via_table_api&quot;, &quot;arguments&quot;: {&quot;user_query&quot;: &quot;How do I quit an application that isn&#x27;t responding?&quot;, &quot;max_results&quot;: 2}}]</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>On Mac OS X, use Apple menu &gt; Force Quit..., select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won&#x27;t save latest changes. Reference: KB0000013</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">N/A</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">N/A</td>
-        </tr>
-        
-        <tr>
-            <td style="text-align:center;">4</td>
-            <td><b>Can I upgrade my operating system? What are the system requirements?</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;type&quot;: &quot;function_call&quot;, &quot;tool_call_id&quot;: &quot;call_CdtPbDJj7IBeYy3kwarjZmiD&quot;, &quot;name&quot;: &quot;search_kb_via_table_api&quot;, &quot;arguments&quot;: {&quot;user_query&quot;: &quot;upgrade operating system system requirements&quot;, &quot;max_results&quot;: 3}}]</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>For Mac OS X, upgrade support depends on version/model; e.g., OS X 10.12 requires a Mid-2008+ supported Mac, 2GB memory, OS X 10.6.8 or later, and 64GB available space. [KB0005010]<br>Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-bit), and 16/20 GB free space. [KB0000021]</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">N/A</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">N/A</td>
-        </tr>
-        
-        <tr>
-            <td style="text-align:center;">5</td>
-            <td><b>Are Copyrighted Files Illegal to Have On My Computer?</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;type&quot;: &quot;function_call&quot;, &quot;tool_call_id&quot;: &quot;call_YzGxsf1scJaP5G1fys4pBBiV&quot;, &quot;name&quot;: &quot;search_kb_via_table_api&quot;, &quot;arguments&quot;: {&quot;user_query&quot;: &quot;Are Copyrighted Files Illegal to Have On My Computer?&quot;, &quot;max_results&quot;: 2}}]</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. Reference: KB0000009</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">N/A</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">N/A</td>
+            <td><b>Search knowledge base articles for phishing scam information</b></td>
+            <td><pre style="font-size:11px;">No tool calls generated</pre></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">0%</td>
         </tr>
         
         </tbody>

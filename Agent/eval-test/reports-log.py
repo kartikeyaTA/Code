@@ -3,124 +3,159 @@ import sys
 import time
 import json
 import html
+import tempfile
+import ast
 from azure.identity import DefaultAzureCredential
 from azure.core.exceptions import ResourceExistsError
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import TestingCriterionAzureAIEvaluator
+from openai.types.eval_create_params import DataSourceConfigCustom
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
-AGENT_NAME = "txrh-demoagent-2-copy-eval-candidate"
-LOCAL_DATASET_PATH = "snow_eval_dataset.jsonl"
-JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
+PROJECT_ENDPOINT = os.environ.get(
+    "FOUNDRY_PROJECT_ENDPOINT",
+    "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
+)
+AGENT_NAME = os.environ.get("AGENT_NAME", "txrh-demoagent-2-copy")
+JUDGE_MODEL_DEPLOYMENT = os.environ.get("FOUNDRY_MODEL_NAME", "roadie-ranger-foundry-resource/gpt-5.4")
+LOCAL_DATASET_PATH = os.environ.get("EVAL_DATASET_PATH", "snow_eval_data.jsonl")
 HTML_REPORT_PATH = "eval_report.html"
-EVAL_SCORE_THRESHOLD = 3.5
+EVAL_SCORE_THRESHOLD = 0.7
 
+DEFAULT_DUMMY_TOOLS = [
+    {
+        "name": "mcp_mcp-eval-test.search_kb_via_table_api",
+        "type": "function",
+        "description": "Search knowledge base articles in ServiceNow.",
+        "parameters": {
+            "type": "object",
+            "properties": {"user_query": {"type": "string"}},
+            "required": ["user_query"]
+        }
+    },
+    {
+        "name": "mcp_mcp-eval-test.create_incident",
+        "type": "function",
+        "description": "Create a new support incident ticket in ServiceNow.",
+        "parameters": {
+            "type": "object",
+            "properties": {"short_description": {"type": "string"}},
+            "required": ["short_description"]
+        }
+    }
+]
 if not os.path.exists(LOCAL_DATASET_PATH):
     print(f"❌ Local Error: '{LOCAL_DATASET_PATH}' not found!")
     sys.exit(1)
 
-# Load local dataset as fallback reference
-local_dataset_rows = []
-with open(LOCAL_DATASET_PATH, "r", encoding="utf-8") as f:
-    for line in f:
-        if line.strip():
-            local_dataset_rows.append(json.loads(line.strip()))
+
+# ============================================================================
+# DATASET RESILIENT LOADER & FORMATTER
+# ============================================================================
+def load_dataset_resilient(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+
+    try:
+        parsed = json.loads(content)
+        if isinstance(parsed, list):
+            return parsed
+        elif isinstance(parsed, dict):
+            return [parsed]
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        parsed = ast.literal_eval(content)
+        if isinstance(parsed, list):
+            return parsed
+        elif isinstance(parsed, dict):
+            return [parsed]
+    except Exception:
+        pass
+
+    dataset_rows = []
+    for line in content.splitlines():
+        clean_line = line.strip().rstrip(",")
+        if clean_line in ["[", "]"]:
+            continue
+        if clean_line:
+            try:
+                row = json.loads(clean_line)
+                dataset_rows.append(row)
+            except json.JSONDecodeError:
+                try:
+                    row = ast.literal_eval(clean_line)
+                    if isinstance(row, dict):
+                        dataset_rows.append(row)
+                except Exception:
+                    continue
+    return dataset_rows
+
+
+def format_tool_definitions(tools):
+    formatted = []
+    for t in tools:
+        if isinstance(t, dict):
+            if "function" in t and isinstance(t["function"], dict):
+                fn = t["function"]
+                if "name" in fn:
+                    formatted.append({
+                        "name": fn["name"],
+                        "type": t.get("type", "function"),
+                        "description": fn.get("description", ""),
+                        "parameters": fn.get("parameters", {})
+                    })
+            elif "name" in t:
+                formatted.append({
+                    "name": t["name"],
+                    "type": t.get("type", "function"),
+                    "description": t.get("description", ""),
+                    "parameters": t.get("parameters", {})
+                })
+    return formatted or DEFAULT_DUMMY_TOOLS
 
 
 # ============================================================================
-# PARSING HELPERS
+# PARSING & REPORT HELPERS
 # ============================================================================
 def clean_html(text):
-    """Escapes HTML special characters and converts newlines to line breaks."""
     if not text or text == "N/A":
         return "N/A"
     return html.escape(str(text)).replace("\n", "<br>")
 
 
-def parse_query(data, row_idx):
-    """Extracts user query from API payload or local dataset fallback."""
+def parse_query(data, row_idx, local_rows):
     for key in ["query", "user_query", "input_text"]:
         if data.get(key):
             return str(data[key])
-            
     for key in ["item", "input", "source"]:
         if isinstance(data.get(key), dict) and data[key].get("query"):
             return str(data[key]["query"])
-
-    if row_idx < len(local_dataset_rows):
-        return local_dataset_rows[row_idx].get("query", "N/A")
+    if row_idx < len(local_rows):
+        return local_rows[row_idx].get("query", "N/A")
     return "N/A"
 
 
-def parse_ground_truth(data, row_idx):
-    """Extracts ground truth from API payload or local dataset fallback."""
-    for key in ["ground_truth", "context", "expected_output"]:
-        if data.get(key):
-            return str(data[key])
-            
-    for key in ["item", "input"]:
-        if isinstance(data.get(key), dict) and data[key].get("ground_truth"):
-            return str(data[key]["ground_truth"])
-
-    if row_idx < len(local_dataset_rows):
-        return local_dataset_rows[row_idx].get("ground_truth") or local_dataset_rows[row_idx].get("context", "N/A")
-    return "N/A"
-
-
-def parse_response(data):
-    """
-    Extracts ONLY the assistant/agent generated output, ignoring system prompts.
-    """
-    sample = data.get("sample")
+def parse_tool_calls(data):
+    sample = data.get("sample") or {}
     if isinstance(sample, dict):
+        tool_calls = sample.get("tool_calls")
+        if tool_calls:
+            return json.dumps(tool_calls, indent=2)
+
         items = sample.get("output_items") or sample.get("output") or sample.get("messages") or []
         if isinstance(items, list):
-            for msg in reversed(items):
-                if isinstance(msg, dict):
-                    role = str(msg.get("role", "")).lower()
-                    if role in ["assistant", "agent", "model"]:
-                        content = msg.get("content") or msg.get("text")
-                        if content:
-                            if isinstance(content, list):
-                                parts = [c.get("text", "") if isinstance(c, dict) else str(c) for c in content]
-                                return "".join(parts).strip()
-                            return str(content).strip()
-
-        out_text = sample.get("output_text")
-        if out_text and isinstance(out_text, str) and not out_text.startswith("Role & Objective"):
-            return out_text.strip()
-
-    def find_assistant_content(obj):
-        if isinstance(obj, dict):
-            role = str(obj.get("role", "")).lower()
-            if role in ["assistant", "agent", "model"] and ("content" in obj or "text" in obj):
-                c = obj.get("content") or obj.get("text")
-                if c:
-                    return str(c).strip()
-            for k, v in obj.items():
-                if k in ["input", "input_messages", "item", "system_prompt"]:
-                    continue
-                res = find_assistant_content(v)
-                if res:
-                    return res
-        elif isinstance(obj, list):
-            for item in reversed(obj):
-                res = find_assistant_content(item)
-                if res:
-                    return res
-        return None
-
-    res = find_assistant_content(data)
-    return res if res else "N/A"
+            for item in items:
+                if isinstance(item, dict) and item.get("tool_calls"):
+                    return json.dumps(item["tool_calls"], indent=2)
+    return "No tool calls generated"
 
 
 def parse_metric_score(data, metric_name):
-    """Extracts 1-5 numerical score for evaluators."""
     target = metric_name.lower()
-
     results_list = data.get("testing_criteria_results") or data.get("results") or []
     if isinstance(results_list, list):
         for item in results_list:
@@ -134,7 +169,7 @@ def parse_metric_score(data, metric_name):
     def deep_score(obj):
         if isinstance(obj, dict):
             for k, v in obj.items():
-                if target in k.lower():
+                if target in k.lower() or "tool" in k.lower():
                     if isinstance(v, (int, float)):
                         return float(v)
                     if isinstance(v, dict) and "score" in v:
@@ -149,50 +184,24 @@ def parse_metric_score(data, metric_name):
                     return res
         return None
 
-    return deep_score(data)
+    res = deep_score(data)
+    return res if res is not None else 0.0
 
 
-def extract_row_error(data):
-    """Extracts explicit error strings from output row item payloads."""
-    if data.get("error"):
-        return str(data["error"])
-    if data.get("error_message"):
-        return str(data["error_message"])
-        
-    sample = data.get("sample")
-    if isinstance(sample, dict) and sample.get("error"):
-        return str(sample["error"])
-        
-    results = data.get("testing_criteria_results") or data.get("results") or []
-    if isinstance(results, list):
-        crit_errors = []
-        for r in results:
-            if isinstance(r, dict) and r.get("error"):
-                crit_errors.append(f"{r.get('name', 'evaluator')}: {r.get('error')}")
-        if crit_errors:
-            return " | ".join(crit_errors)
-            
-    return None
-
-
-def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
-    """Generates a styled HTML dashboard report."""
+def generate_html_report(rows_data, avg_score, passed):
     status_color = "#107c41" if passed else "#d13438"
     status_text = "PASSED" if passed else "FAILED"
 
     table_rows_html = ""
     for idx, r in enumerate(rows_data, 1):
-        rel_str = f"{r['relevance']:.1f} / 5.0" if r['relevance'] is not None else "N/A"
-        grd_str = f"{r['groundedness']:.1f} / 5.0" if r['groundedness'] is not None else "N/A"
+        score_str = f"{r['score'] * 100:.0f}%" if r['score'] is not None else "N/A"
 
         table_rows_html += f"""
         <tr>
             <td style="text-align:center;">{idx}</td>
             <td><b>{clean_html(r['query'])}</b></td>
-            <td style="max-width: 500px; word-wrap: break-word;">{clean_html(r['response'])}</td>
-            <td style="max-width: 300px; word-wrap: break-word;"><small>{clean_html(r['ground_truth'])}</small></td>
-            <td style="text-align:center; font-weight:bold; color:#0078d4;">{rel_str}</td>
-            <td style="text-align:center; font-weight:bold; color:#107c41;">{grd_str}</td>
+            <td><pre style="font-size:11px;">{clean_html(r['tool_calls'])}</pre></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">{score_str}</td>
         </tr>
         """
 
@@ -200,7 +209,7 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Agent Evaluation Report</title>
+    <title>AI Agent Tool Selection Report</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f8f9fa; color: #333; }}
         h1 {{ margin-bottom: 5px; color: #111; }}
@@ -215,10 +224,11 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
         th, td {{ padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: top; font-size: 13px; }}
         th {{ background-color: #0078d4; color: white; font-weight: 600; text-transform: uppercase; font-size: 11px; }}
         tr:hover {{ background-color: #f1f3f5; }}
+        pre {{ background: #f1f3f5; padding: 6px; border-radius: 4px; overflow-x: auto; margin: 0; }}
     </style>
 </head>
 <body>
-    <h1>🤖 AI Agent Evaluation Report</h1>
+    <h1>🤖 AI Agent Evaluation Report (builtin.tool_selection)</h1>
     <div class="subtitle">Target Agent: <b>{AGENT_NAME}</b> | Judge Model: {JUDGE_MODEL_DEPLOYMENT}</div>
     
     <div class="cards">
@@ -227,17 +237,9 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
             <div class="badge">{status_text}</div>
         </div>
         <div class="card">
-            <div class="card-title">Overall Score</div>
-            <div class="card-value">{overall_avg:.2f} <small style="font-size:14px; color:#888;">/ 5.0</small></div>
-            <small style="color:#666;">Threshold: {EVAL_SCORE_THRESHOLD}</small>
-        </div>
-        <div class="card">
-            <div class="card-title">Relevance Score</div>
-            <div class="card-value">{avg_rel:.2f} <small style="font-size:14px; color:#888;">/ 5.0</small></div>
-        </div>
-        <div class="card">
-            <div class="card-title">Groundedness Score</div>
-            <div class="card-value">{avg_grd:.2f} <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <div class="card-title">Tool Selection Accuracy</div>
+            <div class="card-value">{avg_score * 100:.1f}%</div>
+            <small style="color:#666;">Threshold: {EVAL_SCORE_THRESHOLD * 100:.0f}%</small>
         </div>
     </div>
 
@@ -246,11 +248,9 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
         <thead>
             <tr>
                 <th style="width: 4%; text-align:center;">#</th>
-                <th style="width: 22%;">User Query</th>
-                <th style="width: 42%;">Generated Agent Response</th>
-                <th style="width: 22%;">Ground Truth Context</th>
-                <th style="width: 5%; text-align:center;">Relevance</th>
-                <th style="width: 5%; text-align:center;">Groundedness</th>
+                <th style="width: 35%;">User Query</th>
+                <th style="width: 50%;">Generated Agent Tool Calls</th>
+                <th style="width: 11%; text-align:center;">Tool Score</th>
             </tr>
         </thead>
         <tbody>
@@ -265,194 +265,184 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
 
 
 # ============================================================================
-# EXECUTION
+# MAIN EXECUTION
 # ============================================================================
-with AIProjectClient(
-    endpoint=PROJECT_ENDPOINT,
-    credential=DefaultAzureCredential()
-) as project_client:
+def main():
+    print(f"🧪 Initializing Tool Selection Evaluation for Agent: '{AGENT_NAME}'...")
 
-    # 1. Upload Dataset
-    dataset_name = "snow-agent-eval-dataset"
-    dynamic_version = str(int(time.time()))
+    raw_rows = load_dataset_resilient(LOCAL_DATASET_PATH)
+    if not raw_rows:
+        print(f"❌ Error: Could not parse dataset '{LOCAL_DATASET_PATH}'!")
+        sys.exit(1)
 
-    print(f"📤 Uploading local dataset '{LOCAL_DATASET_PATH}'...")
+    local_dataset_rows = []
+    for row in raw_rows:
+        if isinstance(row, dict):
+            raw_tools = row.get("tool_definitions") or DEFAULT_DUMMY_TOOLS
+            row["tool_definitions"] = format_tool_definitions(raw_tools)
+            local_dataset_rows.append(row)
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False, encoding="utf-8") as temp_file:
+        for row in local_dataset_rows:
+            temp_file.write(json.dumps(row) + "\n")
+        normalized_dataset_path = temp_file.name
+
     try:
-        dataset = project_client.datasets.upload_file(
-            name=dataset_name,
-            version=dynamic_version,
-            file_path=LOCAL_DATASET_PATH
-        )
-    except ResourceExistsError:
-        dataset = project_client.datasets.get(name=dataset_name, version="1")
+        with DefaultAzureCredential() as credential, AIProjectClient(
+            endpoint=PROJECT_ENDPOINT, credential=credential
+        ) as project_client, project_client.get_openai_client() as client:
 
-    openai_client = project_client.get_openai_client()
+            dataset_name = "snow-agent-eval-tool-selection"
+            dynamic_version = str(int(time.time()))
 
-    # 2. Register Evaluation Definition
-    data_source_config = {
-        "type": "custom",
-        "item_schema": {
-            "type": "object",
-            "properties": {"query": {"type": "string"}},
-            "required": ["query"]
-        },
-        "include_sample_schema": True
-    }
+            print("📤 Uploading dataset to Azure AI Foundry...")
+            try:
+                dataset = project_client.datasets.upload_file(
+                    name=dataset_name,
+                    version=dynamic_version,
+                    file_path=normalized_dataset_path
+                )
+            except ResourceExistsError:
+                dataset = project_client.datasets.get(name=dataset_name, version="1")
 
-    testing_criteria = [
-        TestingCriterionAzureAIEvaluator(
-            type="azure_ai_evaluator",
-            name="Relevance",
-            evaluator_name="builtin.relevance",
-            data_mapping={
-                "query": "{{item.query}}",
-                "response": "{{sample.output_text}}"
-            },
-            initialization_parameters={"deployment_name": JUDGE_MODEL_DEPLOYMENT}
-        ),
-        TestingCriterionAzureAIEvaluator(
-            type="azure_ai_evaluator",
-            name="Groundedness",
-            evaluator_name="builtin.groundedness",
-            data_mapping={
-                "response": "{{sample.output_text}}",
-                "context": "{{item.ground_truth}}"
-            },
-            initialization_parameters={"deployment_name": JUDGE_MODEL_DEPLOYMENT}
-        )
-    ]
+            data_source_config = DataSourceConfigCustom(
+                type="custom",
+                item_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "object"}}]},
+                        "response": {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "object"}}]},
+                        "tool_calls": {"anyOf": [{"type": "object"}, {"type": "array", "items": {"type": "object"}}]},
+                        "tool_definitions": {"anyOf": [{"type": "object"}, {"type": "array", "items": {"type": "object"}}]},
+                    },
+                    "required": ["query", "tool_definitions"],
+                },
+                include_sample_schema=True,
+            )
 
-    evaluation = openai_client.evals.create(
-        name=f"Agent_Quality_Eval_{AGENT_NAME}",
-        data_source_config=data_source_config,
-        testing_criteria=testing_criteria
-    )
+            # FIXED DATA MAPPING: Maps 'response' to 'sample.output' and 'tool_calls' to 'sample.tool_calls'
+            testing_criteria = [
+                TestingCriterionAzureAIEvaluator(
+                    type="azure_ai_evaluator",
+                    name="tool_selection",
+                    evaluator_name="builtin.tool_selection",
+                    initialization_parameters={"model": JUDGE_MODEL_DEPLOYMENT},
+                    data_mapping={
+                        "query": "{{item.query}}",
+                        "response": "{{sample.output_text}}",
+                        "tool_calls": "{{sample.tool_calls}}",
+                        "tool_definitions": "{{item.tool_definitions}}",
+                    },
+                )
+            ]
 
-    # 3. Trigger Evaluation Run
-    print(f"🚀 Triggered evaluation run for agent '{AGENT_NAME}'...")
-    eval_run = openai_client.evals.runs.create(
-        eval_id=evaluation.id,
-        name=f"Run_{AGENT_NAME}",
-        data_source={
-            "type": "azure_ai_target_completions",
-            "source": {
-                "type": "file_id",
-                "id": dataset.id
-            },
-            "input_messages": {
-                "type": "template",
-                "template": [
-                    {
-                        "type": "message",
-                        "role": "user",
-                        "content": {"type": "input_text", "text": "{{item.query}}"}
+            print("Creating Evaluation...")
+            eval_object = client.evals.create(
+                name=f"Agent_Tool_Selection_Eval_{AGENT_NAME}",
+                data_source_config=data_source_config,
+                testing_criteria=testing_criteria,
+            )
+            print(f"✅ Evaluation Object Created ID: {eval_object.id}")
+
+            print(f"🚀 Triggering completion run for target agent '{AGENT_NAME}'...")
+            eval_run_object = client.evals.runs.create(
+                eval_id=eval_object.id,
+                name=f"Run_{AGENT_NAME}",
+                data_source={
+                    "type": "azure_ai_target_completions",
+                    "source": {
+                        "type": "file_id",
+                        "id": dataset.id
+                    },
+                    "input_messages": {
+                        "type": "template",
+                        "template": [
+                            {
+                                "type": "message",
+                                "role": "user",
+                                "content": {"type": "input_text", "text": "{{item.query}}"}
+                            }
+                        ]
+                    },
+                    "target": {
+                        "type": "azure_ai_agent",
+                        "name": AGENT_NAME
                     }
-                ]
-            },
-            "target": {
-                "type": "azure_ai_agent",
-                "name": AGENT_NAME
-            }
-        }
-    )
+                }
+            )
 
-    # 4. Status Polling
-    terminal_states = {"completed", "failed", "errored", "canceled", "partially_completed"}
-    sys.stdout.write("⏳ Polling job status: ")
-    sys.stdout.flush()
+            print(f"✅ Eval Run Triggered ID: {eval_run_object.id}")
 
-    while True:
-        run_status_obj = openai_client.evals.runs.retrieve(
-            eval_id=evaluation.id,
-            run_id=eval_run.id
-        )
-        current_status = getattr(run_status_obj, "status", "unknown").lower()
-        sys.stdout.write("▪")
-        sys.stdout.flush()
+            terminal_states = {"completed", "failed", "errored", "canceled", "partially_completed"}
+            sys.stdout.write("⏳ Polling evaluation job status: ")
+            sys.stdout.flush()
 
-        if current_status in terminal_states or any(k in current_status for k in ["complete", "error", "fail"]):
-            print(f" [{current_status.upper()}]")
-            break
-        time.sleep(6)
+            while True:
+                run_status_obj = client.evals.runs.retrieve(
+                    eval_id=eval_object.id,
+                    run_id=eval_run_object.id
+                )
+                current_status = getattr(run_status_obj, "status", "unknown").lower()
+                sys.stdout.write("▪")
+                sys.stdout.flush()
 
-    # 5. Extract Results & Compute Metrics
-    output_items = list(openai_client.evals.runs.output_items.list(
-        eval_id=evaluation.id,
-        run_id=eval_run.id
-    ))
+                if current_status in terminal_states or any(k in current_status for k in ["complete", "error", "fail"]):
+                    print(f" [{current_status.upper()}]")
+                    break
+                time.sleep(5)
 
-    rows_summary = []
-    rel_scores, grd_scores = [], []
-    row_errors = []
+            output_items = list(client.evals.runs.output_items.list(
+                eval_id=eval_object.id,
+                run_id=eval_run_object.id
+            ))
 
-    for idx, item in enumerate(output_items, 1):
-        data = item.model_dump() if hasattr(item, "model_dump") else (item if isinstance(item, dict) else vars(item))
+            rows_summary = []
+            scores = []
 
-        query = parse_query(data, idx - 1)
-        ground_truth = parse_ground_truth(data, idx - 1)
-        response = parse_response(data)
+            for idx, item in enumerate(output_items):
+                data = item.model_dump() if hasattr(item, "model_dump") else (item if isinstance(item, dict) else vars(item))
 
-        rel = parse_metric_score(data, "relevance")
-        grd = parse_metric_score(data, "groundedness")
-        
-        # Check for explicit row errors
-        err_msg = extract_row_error(data)
-        if err_msg or data.get("status") in ["errored", "failed"]:
-            row_errors.append((idx, data.get("status", "errored"), err_msg or "Unknown error payload"))
+                query = parse_query(data, idx, local_dataset_rows)
+                tool_calls_str = parse_tool_calls(data)
+                score = parse_metric_score(data, "tool_selection")
 
-        if rel is not None:
-            rel_scores.append(rel)
-        if grd is not None:
-            grd_scores.append(grd)
+                if score is not None:
+                    scores.append(score)
 
-        rows_summary.append({
-            "query": query,
-            "ground_truth": ground_truth,
-            "response": response,
-            "relevance": rel,
-            "groundedness": grd
-        })
+                rows_summary.append({
+                    "query": query,
+                    "tool_calls": tool_calls_str,
+                    "score": score
+                })
 
-    avg_rel = sum(rel_scores) / len(rel_scores) if rel_scores else 0.0
-    avg_grd = sum(grd_scores) / len(grd_scores) if grd_scores else 0.0
-    all_scores = rel_scores + grd_scores
-    overall_avg = sum(all_scores) / len(all_scores) if all_scores else 0.0
-    passed = overall_avg >= EVAL_SCORE_THRESHOLD and len(row_errors) == 0
+            avg_score = sum(scores) / len(scores) if scores else 0.0
+            passed = (avg_score >= EVAL_SCORE_THRESHOLD) and (current_status == "completed")
 
-    # 6. Generate HTML Report
-    generate_html_report(rows_summary, avg_rel, avg_grd, overall_avg, passed)
+            generate_html_report(rows_summary, avg_score, passed)
 
-    # 7. Print Clean Terminal Summary
-    print("\n" + "=" * 80)
-    print("📊 EVALUATION SUMMARY DASHBOARD")
-    print("=" * 80)
-    print(f"🎯 Target Agent:        {AGENT_NAME}")
-    print(f"📌 Evaluation Run ID:   {eval_run.id}")
-    print(f"🏁 Final Status:         {getattr(run_status_obj, 'status', 'COMPLETED')}")
-    print(f"🔢 Total Evaluated Rows: {len(rows_summary)}")
-    print("-" * 80)
-    print(f"   • Relevance Score:    {avg_rel:.2f} / 5.0")
-    print(f"   • Groundedness Score: {avg_grd:.2f} / 5.0")
-    print(f"   • Overall Average:    {overall_avg:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})")
-    print("-" * 80)
+            print("\n" + "=" * 80)
+            print("📊 EVALUATION SUMMARY DASHBOARD")
+            print("=" * 80)
+            print(f"🎯 Target Agent:             {AGENT_NAME}")
+            print(f"📌 Evaluation Run ID:        {eval_run_object.id}")
+            print(f"🏁 Final Status:              {getattr(run_status_obj, 'status', 'COMPLETED')}")
+            print(f"🔢 Total Evaluated Rows:      {len(rows_summary)}")
+            print("-" * 80)
+            print(f"   • Tool Selection Accuracy: {avg_score * 100:.1f}% (Threshold: {EVAL_SCORE_THRESHOLD * 100:.0f}%)")
+            print("-" * 80)
 
-    # 8. ERROR DIAGNOSTICS LOGGING
-    top_level_error = getattr(run_status_obj, "error", None)
-    if top_level_error or row_errors:
-        print("\n🚨 ERROR DIAGNOSTIC LOGS")
-        print("-" * 80)
-        if top_level_error:
-            print(f"❌ Top-Level Run Error: {top_level_error}")
-        if row_errors:
-            print("❌ Row Failures:")
-            for row_num, status, err in row_errors:
-                print(f"   [Row #{row_num} | Status: {status.upper()}]: {err}")
-        print("-" * 80)
-    
-    if passed:
-        print("✅ VERDICT: EVALUATION PASSED")
-    else:
-        print("❌ VERDICT: EVALUATION FAILED / ERRORED")
-        
-    print(f"\n📄 Styled HTML Dashboard generated: '{HTML_REPORT_PATH}'")
-    print("=" * 80 + "\n")
+            if passed:
+                print("✅ VERDICT: EVALUATION PASSED")
+            else:
+                print("❌ VERDICT: EVALUATION FAILED")
+
+            print(f"\n📄 Styled HTML Dashboard generated: '{HTML_REPORT_PATH}'")
+            print("=" * 80 + "\n")
+
+    finally:
+        if os.path.exists(normalized_dataset_path):
+            os.remove(normalized_dataset_path)
+
+
+if __name__ == "__main__":
+    main()

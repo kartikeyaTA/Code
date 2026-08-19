@@ -12,8 +12,8 @@ from azure.ai.projects.models import TestingCriterionAzureAIEvaluator
 # CONFIGURATION
 # ============================================================================
 PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
-AGENT_NAME = "txrh-demoagent-2-copy-eval-candidate"
-LOCAL_DATASET_PATH = "snow_eval_dataset.jsonl"
+AGENT_NAME = "txrh-demoagent-2-copy"
+LOCAL_DATASET_PATH = "snow_eval_data.jsonl"
 JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
 HTML_REPORT_PATH = "eval_report.html"
 EVAL_SCORE_THRESHOLD = 3.5
