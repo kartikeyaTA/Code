@@ -1,0 +1,114 @@
+{
+  "session_id": "b70d2ea8-3e23-4afc-a363-acd0e36995de",
+  "started_at": "2026-06-19T08:17:36.813897+00:00",
+  "source": "browser",
+  "user_id": "dev-user",
+  "user_name": "Dev User",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-06-19T08:17:45.079549+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Tell me about the onboarding process.",
+      "ts": "2026-06-19T08:17:56.601383+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "One moment, I'm pulling up that information.",
+      "ts": "2026-06-19T08:17:58.308700+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The onboarding process includes recruitment, background checks, and a 3 to 6-month probation period to assess new hires' suitability. It aims to ensure new employees fit skills-wise and culturally with the team. Does that answer your question?",
+      "ts": "2026-06-19T08:18:01.145141+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Can you tell me about the leave policy?",
+      "ts": "2026-06-19T08:18:09.067184+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "One moment, I'm pulling up that information.",
+      "ts": "2026-06-19T08:18:10.230852+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The leave policy includes annual leave accrued monthly for rest, sick leave for illness or medical appointments, parental leave as per law, and bereavement leave for death of an immediate family member. Does that answer your question?",
+      "ts": "2026-06-19T08:18:13.158442+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How many leaves I can apply per month?",
+      "ts": "2026-06-19T08:18:24.880519+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Let me check on that for you.",
+      "ts": "2026-06-19T08:18:26.243637+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "You can apply for leaves based on the type of leave like annual or sick leave, but the policy states annual leave is accrued monthly for rest and recreation. It does not specify a fixed number of leaves per month you can apply for. For exact monthly leave limits, the details are not provided in the documents I have . Does that answer your question?",
+      "ts": "2026-06-19T08:18:29.902630+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Okay, then can you create a ticket for me?",
+      "ts": "2026-06-19T08:18:42.345304+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Could you please tell me more about the issue you need a ticket for?",
+      "ts": "2026-06-19T08:18:43.868090+00:00"
+    },
+    {
+      "role": "user",
+      "text": "I'm not getting the information for an exact number of leaves that I can apply.",
+      "ts": "2026-06-19T08:18:53.729424+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "I couldn't find a resolution for that. Would you like me to create a support ticket?",
+      "ts": "2026-06-19T08:18:55.549492+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Yes.",
+      "ts": "2026-06-19T08:19:01.429045+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hold on a second while I look that up.",
+      "ts": "2026-06-19T08:19:03.616844+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Hello.",
+      "ts": "2026-06-19T08:19:27.572644+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "One moment, I'm pulling up that information.",
+      "ts": "2026-06-19T08:19:32.954720+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Your ticket has been created. The ticket number is INC0010055. Someone will get back to you shortly.",
+      "ts": "2026-06-19T08:19:35.343370+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Okay, thanks.",
+      "ts": "2026-06-19T08:20:00.932497+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Great. Let me know if you need anything else.",
+      "ts": "2026-06-19T08:20:03.096970+00:00"
+    }
+  ]
+}

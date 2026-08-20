@@ -1,0 +1,71 @@
+{
+  "session_id": "f0bf709e-d152-47a2-ba9e-236472b58857",
+  "started_at": "2026-04-22T11:24:02.014186+00:00",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you with IT support today?",
+      "ts": "2026-04-22T11:24:07.715453+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Hi I just joined this week. I wanted to check what my working hours are.",
+      "ts": "2026-04-22T11:24:16.197967+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Just a moment please...",
+      "ts": "2026-04-22T11:24:17.852063+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Your standard working hours are 40 hours per week, with flexible arrangements possible based on role and manager approval, according to the HR policies. Does that answer your question?",
+      "ts": "2026-04-22T11:24:20.174599+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Thanks, that helps. I would also like to understand the onboarding process.",
+      "ts": "2026-04-22T11:24:36.959055+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hold on a second while I look that up...",
+      "ts": "2026-04-22T11:24:40.387536+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The onboarding process includes a recruitment phase with background checks, followed by a probation period of 3 to 6 months to assess your suitability. During this time, you'll be introduced to your role, expected to adhere to professional conduct, and provided with necessary training to integrate into the organization smoothly. Does that answer your question?",
+      "ts": "2026-04-22T11:24:43.121297+00:00"
+    },
+    {
+      "role": "user",
+      "text": "OK, OK, I got it. Can you tell me about the leave policy?",
+      "ts": "2026-04-22T11:24:57.060742+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "One moment, I'm pulling up that information...",
+      "ts": "2026-04-22T11:24:58.734088+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The leave policy includes annual leave accrued monthly for rest, sick leave for illness or appointments, parental leave per legal guidelines, and bereavement leave for immediate family death. This supports employee well-being and work-life balance based on the HR policies in my knowledge base. Does that answer your question?",
+      "ts": "2026-04-22T11:25:01.955337+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Understood. One last thing, I'm not able to reset my password. Can you help me with that?",
+      "ts": "2026-04-22T11:25:18.089325+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Sorry to hear that, let me create a ticket for you to get help with resetting your password.",
+      "ts": "2026-04-22T11:25:20.167446+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "I've raised ticket INC0010054 for you to help with resetting your password. Someone from the team will get back to you shortly. Does that answer your question?",
+      "ts": "2026-04-22T11:25:22.512264+00:00"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "session_id": "e93d7046-ac47-4680-9ea1-82e6741604b9",
+  "started_at": "2026-07-22T08:16:34.465004+00:00",
+  "source": "browser",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I help you today?",
+      "ts": "2026-07-22T08:16:43.292289+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How do I create an e-mail signature?",
+      "ts": "2026-07-22T08:16:52.262670+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hold on a second while I look that up.",
+      "ts": "2026-07-22T08:16:53.941763+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Open a new message, go to Message > Signature > Signatures, then on the E-mail Signature tab click New and name it.\nEnter and format your signature, add items like a business card, hyperlink, or picture if needed, then click OK. Are you satisfied with the agent's response?",
+      "ts": "2026-07-22T08:16:57.055791+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Yes, I am.",
+      "ts": "2026-07-22T08:17:15.840438+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Glad to help!",
+      "ts": "2026-07-22T08:17:17.169479+00:00"
+    }
+  ]
+}

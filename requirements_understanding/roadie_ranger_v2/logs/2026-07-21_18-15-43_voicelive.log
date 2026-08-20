@@ -1,0 +1,4 @@
+2026-07-21 18:15:43,553:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-21 18:15:43,553:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-07-21 18:16:06,273:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-21 18:16:11,757:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential

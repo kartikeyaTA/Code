@@ -1,0 +1,85 @@
+2026-06-19 14:31:16,779:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:31:16,781:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-06-19 14:31:54,696:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:31:55,604:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:31:58,335:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:31:58,377:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:31:59,050:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:31:59,798:main:ERROR:TextLive session error
+Traceback (most recent call last):
+  File "/mnt/d/Projects/TexasRH/phase2/code/roadie_ranger_v2/main.py", line 854, in run
+    await asyncio.gather(self._listen_voicelive(), self._setup_and_forward())
+  File "/mnt/d/Projects/TexasRH/phase2/code/roadie_ranger_v2/main.py", line 898, in _setup_and_forward
+    msg = await self.ws.receive_json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/starlette/websockets.py", line 134, in receive_json
+    raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+RuntimeError: WebSocket is not connected. Need to call "accept" first.
+2026-06-19 14:32:01,313:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:32:01,379:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:32:02,100:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:32:14,022:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:32:14,139:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:32:14,888:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:32:20,842:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:32:20,909:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:32:21,602:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:32:30,992:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:32:34,586:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:32:35,245:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:33:32,753:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:33:36,795:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:33:38,184:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:33:50,705:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:33:50,991:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:33:51,904:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:34:55,579:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:34:55,614:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:34:56,424:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:35:10,399:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:35:10,696:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:35:11,470:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:35:12,662:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:35:13,443:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:35:14,396:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:35:14,748:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:35:15,062:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:35:15,507:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:35:16,397:main:ERROR:TextLive session error
+Traceback (most recent call last):
+  File "/mnt/d/Projects/TexasRH/phase2/code/roadie_ranger_v2/main.py", line 854, in run
+    await asyncio.gather(self._listen_voicelive(), self._setup_and_forward())
+  File "/mnt/d/Projects/TexasRH/phase2/code/roadie_ranger_v2/main.py", line 898, in _setup_and_forward
+    msg = await self.ws.receive_json()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/starlette/websockets.py", line 134, in receive_json
+    raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+RuntimeError: WebSocket is not connected. Need to call "accept" first.
+2026-06-19 14:35:17,903:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:35:17,934:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:35:18,609:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:35:43,894:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:02,533:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:04,146:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:36:14,477:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:14,539:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:15,218:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:36:31,486:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:31,551:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:32,219:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:36:38,410:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:38,699:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:39,448:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:36:42,504:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:42,562:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:43,326:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:36:55,011:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:36:55,078:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:36:55,825:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:40:15,115:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:40:15,369:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:40:16,777:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:41:16,043:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-06-19 14:41:22,526:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:41:23,710:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:41:32,410:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256

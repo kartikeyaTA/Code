@@ -1,0 +1,34 @@
+{
+  "session_id": "bb39400d-82d1-4439-aa45-b01ca31ab24c",
+  "started_at": "2026-07-21T12:46:06.273472+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-07-21T12:46:15.163270+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How do I quit an application that isn't responding?",
+      "ts": "2026-07-21T12:46:16.146141+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "In Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit. You can also press Command-Option-Esc.\nAre you satisfied with the agent's response?",
+      "ts": "2026-07-21T12:46:19.093743+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yes",
+      "ts": "2026-07-21T12:46:24.766376+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Glad to hear that. Would you like to give feedback?",
+      "ts": "2026-07-21T12:46:32.316950+00:00"
+    }
+  ]
+}

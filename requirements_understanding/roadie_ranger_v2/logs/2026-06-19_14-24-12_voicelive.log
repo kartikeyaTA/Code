@@ -1,0 +1,24 @@
+2026-06-19 14:24:12,137:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:24:12,139:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-06-19 14:24:52,902:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-06-19 14:24:54,758:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-06-19 14:24:54,764:main:ERROR:VoiceLive session error
+Traceback (most recent call last):
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/azure/ai/voicelive/aio/_patch.py", line 783, in __aenter__
+    connection_obj = await session.ws_connect(str(url), headers=headers, **self.__connection_options)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/aiohttp/client.py", line 1087, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/aiohttp/client.py", line 647, in _request
+    raise err_exc_cls(url)
+aiohttp.client_exceptions.InvalidUrlClientError: your_endpoint_url/voice-live/realtime?api-version=2026-01-01-preview&agent-name=your_agent_id&agent-project-name=your_project_name
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/d/Projects/TexasRH/phase2/code/roadie_ranger_v2/main.py", line 554, in run
+    async with connect(
+  File "/home/skalsangra/miniconda3/envs/txrh-voice/lib/python3.11/site-packages/azure/ai/voicelive/aio/_patch.py", line 788, in __aenter__
+    raise ConnectionError(f"Failed to establish WebSocket connection: {e}") from e
+azure.ai.voicelive.aio._patch.ConnectionError: Failed to establish WebSocket connection: your_endpoint_url/voice-live/realtime?api-version=2026-01-01-preview&agent-name=your_agent_id&agent-project-name=your_project_name

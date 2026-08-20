@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+azure-ai-voicelive==1.2.0b5
+azure-identity
+azure-storage-blob
+azure-data-tables
+pyaudio
+websockets
+aiohttp
+python-jose[cryptography]
+bcrypt

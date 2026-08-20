@@ -1,0 +1,44 @@
+{
+  "session_id": "cc694159-3d4d-4bb1-a82f-b1494fe50ee4",
+  "started_at": "2026-07-21T13:16:48.927515+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-07-21T13:16:56.663129+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How do I quit an application that isn't responding?",
+      "ts": "2026-07-21T13:17:05.837154+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "On Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit; you can also press Command-Option-Esc.  \nAre you satisfied with the agent's response?",
+      "ts": "2026-07-21T13:17:33.969923+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yes",
+      "ts": "2026-07-21T13:17:36.135040+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Ticket created successfully. Ticket Number: INC0010078, Short Description: User satisfied with guidance on quitting an unresponsive application, State: New, Priority: 4.\n\nWould you like to give feedback?",
+      "ts": "2026-07-21T13:17:40.354141+00:00"
+    },
+    {
+      "role": "user",
+      "text": "the response was precise and concise. loved it",
+      "ts": "2026-07-21T13:17:51.697209+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Thank you for your feedback! I’m glad you found the response precise and concise.",
+      "ts": "2026-07-21T13:17:54.263293+00:00"
+    }
+  ]
+}

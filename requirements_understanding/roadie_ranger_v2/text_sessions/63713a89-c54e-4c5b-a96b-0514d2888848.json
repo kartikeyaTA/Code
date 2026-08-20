@@ -1,0 +1,44 @@
+{
+  "session_id": "63713a89-c54e-4c5b-a96b-0514d2888848",
+  "started_at": "2026-07-22T08:13:24.448010+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-07-22T08:13:31.244214+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Can I upgrade my operating system? What are the system requirements?",
+      "ts": "2026-07-22T08:13:35.558455+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Yes—there is KB information for Mac OS X and Windows 8.x upgrade requirements. For example, many Mac upgrades require 2GB memory, OS X v10.6.8 or later, and 8GB–64GB free space depending on version; Windows 8.x generally requires at least a 1 GHz processor, 1–2 GB RAM, and 16–20 GB free space.\nAre you satisfied with the agent's response?",
+      "ts": "2026-07-22T08:13:59.417872+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yeah i am",
+      "ts": "2026-07-22T08:14:12.426742+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Glad to hear that! If you need anything else, feel free to ask.",
+      "ts": "2026-07-22T08:14:14.447059+00:00"
+    },
+    {
+      "role": "user",
+      "text": "cool",
+      "ts": "2026-07-22T08:14:19.529658+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "You're welcome! How can I assist you today?",
+      "ts": "2026-07-22T08:14:21.149636+00:00"
+    }
+  ]
+}

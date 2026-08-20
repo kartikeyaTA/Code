@@ -1,0 +1,8 @@
+2026-07-22 13:43:06,526:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-22 13:43:06,526:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-07-22 13:43:24,450:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-22 13:43:27,243:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-07-22 13:46:32,354:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256
+2026-07-22 13:46:34,469:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-22 13:46:38,623:azure.identity.aio._credentials.chained:INFO:ChainedTokenCredential acquired a token from AzureCliCredential
+2026-07-22 13:47:27,226:azure.ai.voicelive.aio._patch:WARNING:Unexpected WebSocket message type: 256

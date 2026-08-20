@@ -1,117 +1,154 @@
-import base64
-import contextvars
 import os
+import base64
+from typing import Any
+
 import httpx
 from fastmcp import FastMCP
-from starlette.datastructures import Headers
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from dotenv import load_dotenv
 
-# --- CONTEXT VAR ---
-snow_token_var = contextvars.ContextVar("snow_token", default="")
 
-# --- CONFIGURATION ---
-SERVICENOW_BASE_URL = "https://dev408306.service-now.com/api/now"
-SERVICENOW_USERNAME = "admin"
-SERVICENOW_PASSWORD_FALLBACK = "c5wfjC5C@!ZX"
+# =============================================================================
+# ENVIRONMENT & SERVICENOW CONFIGURATION
+# =============================================================================
+
+load_dotenv()
+
+SERVICENOW_INSTANCE_URL = os.getenv(
+    "SERVICENOW_INSTANCE_URL",
+    "https://dev408306.service-now.com"
+)
+
+SERVICENOW_BASE_URL = f"{SERVICENOW_INSTANCE_URL}/api/now"
+
+# ServiceNow PDI credentials (used strictly for backend calls to ServiceNow)
+SERVICENOW_USERNAME = os.getenv("SERVICENOW_USERNAME", "admin")
+SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD", "c5wfjC5C@!ZX")
+
+
+# =============================================================================
+# MCP SERVER
+# =============================================================================
 
 mcp = FastMCP("servicenow-mcp")
 
 
-# --- MIDDLEWARE ---
-class ServiceNowTokenMiddleware:
-    def __init__(self, app):
-        self.app = app
+# =============================================================================
+# SERVICENOW HELPERS
+# =============================================================================
 
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-
-        headers = Headers(scope=scope)
-        incoming_snow_key = headers.get("my-snow-secret-key", "")
-        token_id = snow_token_var.set(incoming_snow_key)
-
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            snow_token_var.reset(token_id)
-
-
-# --- HELPERS ---
 def _basic_auth_header() -> str:
-    snow_password = snow_token_var.get()
-    if not snow_password:
-        snow_password = SERVICENOW_PASSWORD_FALLBACK
-
-    token = base64.b64encode(
-        f"{SERVICENOW_USERNAME}:{snow_password}".encode()
-    ).decode()
-    return f"Basic {token}"
+    """
+    Creates the HTTP Basic Authentication header for ServiceNow outbound calls.
+    """
+    credentials = f"{SERVICENOW_USERNAME}:{SERVICENOW_PASSWORD}"
+    encoded = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+    return f"Basic {encoded}"
 
 
-# --- HEALTH & ROOT ROUTES ---
-@mcp.custom_route("/health", methods=["GET"])
-async def health(request: Request):
-    return JSONResponse({"status": "ok"})
+def _get_servicenow_username() -> str:
+    return SERVICENOW_USERNAME
 
 
-@mcp.custom_route("/", methods=["GET"])
-async def root_ping(request: Request):
-    return JSONResponse({"status": "running", "mcp_endpoint": "/mcp"})
+async def get_servicenow_headers() -> dict[str, str]:
+    return {
+        "Authorization": _basic_auth_header(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
 
 
-# --- MCP TOOLS ---
+async def get_cached_username(request: Request | None = None) -> str:
+    return _get_servicenow_username()
+
+
+# =============================================================================
+# SERVICENOW HTTP HELPERS
+# =============================================================================
+
+async def snow_get(
+    path: str,
+    params: dict[str, Any] | None = None,
+) -> httpx.Response:
+    headers = await get_servicenow_headers()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        return await client.get(
+            f"{SERVICENOW_BASE_URL}{path}",
+            params=params,
+            headers=headers,
+        )
+
+
+async def snow_post(
+    path: str,
+    payload: dict[str, Any],
+) -> httpx.Response:
+    headers = await get_servicenow_headers()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        return await client.post(
+            f"{SERVICENOW_BASE_URL}{path}",
+            json=payload,
+            headers=headers,
+        )
+
+
+async def snow_patch(
+    path: str,
+    payload: dict[str, Any],
+) -> httpx.Response:
+    headers = await get_servicenow_headers()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        return await client.patch(
+            f"{SERVICENOW_BASE_URL}{path}",
+            json=payload,
+            headers=headers,
+        )
+
+
+def _display(data: dict[str, Any], field: str) -> str:
+    val = data.get(field, {})
+
+    return (
+        val.get("display_value", "")
+        if isinstance(val, dict)
+        else str(val or "")
+    )
+
+
+# =============================================================================
+# MCP TOOLS: INCIDENT MANAGEMENT
+# =============================================================================
+
 @mcp.tool()
 async def create_incident(
     short_description: str,
-    description: str = "",
-    caller_id: str = "",
-    category: str = "",
-    subcategory: str = "",
-    impact: str = "",
-    urgency: str = "",
-    priority: str = "",
-    assignment_group: str = "",
-    assigned_to: str = "",
-    state: str = "1",
-    contact_type: str = "",
-    location: str = "",
-    cmdb_ci: str = "",
-    work_notes: str = "",
-    comments: str = "",
+    description: str = ""
 ) -> dict:
-    """Create a new incident in ServiceNow."""
-    payload = {"short_description": short_description, "state": state}
+    """
+    Create a new incident in ServiceNow.
+    """
+    print("Inside create_incident")
 
-    optional_fields = {
-        "description": description,
-        "caller_id": caller_id,
-        "category": category,
-        "subcategory": subcategory,
-        "impact": impact,
-        "urgency": urgency,
-        "priority": priority,
-        "assignment_group": assignment_group,
-        "assigned_to": assigned_to,
-        "contact_type": contact_type,
-        "location": location,
-        "cmdb_ci": cmdb_ci,
-        "work_notes": work_notes,
-        "comments": comments,
+    state = "1"
+    agent_identity_string = "Created by Roadie Ranger Agent - "
+
+    payload = {
+        "short_description": agent_identity_string + short_description,
+        "state": state,
     }
+
+    optional_fields = {"description": description}
     payload.update({k: v for k, v in optional_fields.items() if v})
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(
-            f"{SERVICENOW_BASE_URL}/table/incident",
-            json=payload,
-            headers={
-                "Authorization": _basic_auth_header(),
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
-        )
+    print("payload:", payload)
+
+    response = await snow_post("/table/incident", payload)
+
+    print("response:", response.status_code)
 
     if response.status_code not in (200, 201):
         return {
@@ -128,29 +165,29 @@ async def create_incident(
             "detail": str(body),
         }
 
-    def display(field):
-        val = data.get(field, {})
-        return (
-            val.get("display_value", "")
-            if isinstance(val, dict)
-            else str(val)
-        )
-
     return {
         "sys_id": data.get("sys_id", ""),
         "number": data.get("number", ""),
         "short_description": data.get("short_description", ""),
-        "state": display("state"),
-        "priority": display("priority"),
+        "state": _display(data, "state"),
         "created_on": data.get("sys_created_on", ""),
     }
 
 
 @mcp.tool()
-async def get_incidents_by_user(target_username: str) -> list:
-    """Retrieve all incidents opened by a specific user within the last 7 days."""
-    url = f"{SERVICENOW_BASE_URL}/table/incident"
-    query = f"opened_by.user_name={target_username}^sys_created_on>=javascript:gs.daysAgoStart(7)"
+async def list_my_incidents() -> list:
+    """
+    Retrieve incidents opened by the configured ServiceNow user within the last 7 days.
+    """
+    print("Inside list_my_incidents")
+
+    target_username = await get_cached_username()
+    print(f"Target Username: {target_username}")
+
+    query = (
+        f"opened_by.user_name={target_username}"
+        f"^sys_created_on>=javascript:gs.daysAgoStart(7)"
+    )
 
     params = {
         "sysparm_query": query,
@@ -158,119 +195,116 @@ async def get_incidents_by_user(target_username: str) -> list:
         "sysparm_limit": 100,
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": _basic_auth_header(),
-    }
+    response = await snow_get("/table/incident", params=params)
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(url, params=params, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("result", [])
+    print("response:", response.status_code)
+
+    if response.status_code != 200:
+        return [
+            {
+                "error": f"ServiceNow returned status code {response.status_code}",
+                "detail": response.text,
+            }
+        ]
+
+    data = response.json()
+    return data.get("result", [])
 
 
 @mcp.tool()
-async def get_incident_by_number_and_user(ticket_number: str, target_username: str) -> dict:
-    """Retrieve details of a specific incident using its ticket number and the username of the person who opened it.
-
-    Args:
-        ticket_number: The exact incident number (e.g., 'INC0010001').
-        target_username: The system username (user_name) of the person who opened the ticket.
+async def get_incident_by_number(ticket_number: str) -> dict:
     """
-    url = f"{SERVICENOW_BASE_URL}/table/incident"
-    query = f"number={ticket_number}^opened_by.user_name={target_username}"
+    Retrieve a ServiceNow incident by incident number.
+    """
+    print(f"Inside get_incident_by_number: {ticket_number}")
+
+    target_username = await get_cached_username()
+    print(f"Target Username: {target_username}")
+
+    query = (
+        f"number={ticket_number}"
+        f"^opened_by.user_name={target_username}"
+    )
 
     params = {
         "sysparm_query": query,
         "sysparm_display_value": "true",
-        "sysparm_limit": 1  # We only expect a single exact match
+        "sysparm_limit": 1,
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": _basic_auth_header()
-    }
+    response = await snow_get("/table/incident", params=params)
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.get(url, params=params, headers=headers)
+    if response.status_code != 200:
+        return {
+            "error": f"ServiceNow returned status code {response.status_code}",
+            "detail": response.text,
+        }
 
-        if response.status_code != 200:
-            return {
-                "error": f"ServiceNow returned status code {response.status_code}",
-                "detail": response.text
-            }
+    data = response.json()
+    results = data.get("result", [])
 
-        data = response.json()
-        results = data.get("result", [])
+    if not results:
+        return {
+            "message": f"No ticket found matching number '{ticket_number}' for user '{target_username}'."
+        }
 
-        if not results:
-            return {"message": f"No ticket found matching number '{ticket_number}' for user '{target_username}'."}
-
-        return results[0]
+    return results[0]
 
 
 @mcp.tool()
 async def update_incident(
-    sys_id: str,
-    short_description: str = "",
-    description: str = "",
-    state: str = "",
-    impact: str = "",
-    urgency: str = "",
-    priority: str = "",
-    assignment_group: str = "",
-    assigned_to: str = "",
-    work_notes: str = "",
-    comments: str = "",
+    sys_id: str = "",
+    ticket_id: str = "",
+    comments: str = ""
 ) -> dict:
-    """Update an existing incident in ServiceNow using its sys_id.
-
-    Args:
-        sys_id: The unique 32-character identifier (sys_id) of the incident record.
-        short_description: Updated brief summary of the incident.
-        description: Updated detailed description.
-        state: Update state — 1=New, 2=In Progress, 3=On Hold, 4=Resolved, 5=Closed, 6=Canceled.
-        impact: Update impact level — 1=High, 2=Medium, 3=Low.
-        urgency: Update urgency level — 1=High, 2=Medium, 3=Low.
-        priority: Update priority — 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning.
-        assignment_group: Name or sys_id of the group to assign the incident to.
-        assigned_to: Username or sys_id of the person assigned.
-        work_notes: Internal notes to append (not visible to caller).
-        comments: Customer-facing comments to append (visible to caller).
     """
-    url = f"{SERVICENOW_BASE_URL}/table/incident/{sys_id}"
+    Update an existing ServiceNow incident.
+    """
+    print("Inside update_incident")
 
-    fields = {
-        "short_description": short_description,
-        "description": description,
-        "state": state,
-        "impact": impact,
-        "urgency": urgency,
-        "priority": priority,
-        "assignment_group": assignment_group,
-        "assigned_to": assigned_to,
-        "work_notes": work_notes,
-        "comments": comments,
-    }
+    if not sys_id and not ticket_id:
+        return {"error": "Either sys_id or ticket_id must be provided."}
 
+    print("sys_id:", sys_id)
+    print("ticket_id:", ticket_id)
+
+    if not sys_id and ticket_id:
+        print("sys_id is absent and ticket_id is present")
+
+        lookup_response = await snow_get(
+            "/table/incident",
+            params={
+                "sysparm_query": f"number={ticket_id}",
+                "sysparm_limit": "1",
+                "sysparm_fields": "sys_id,number",
+            },
+        )
+
+        if lookup_response.status_code != 200:
+            return {
+                "error": f"Failed to lookup incident {ticket_id}",
+                "detail": lookup_response.text,
+            }
+
+        lookup_body = lookup_response.json()
+        results = lookup_body.get("result", [])
+
+        if not results:
+            return {"error": f"Incident {ticket_id} not found"}
+
+        sys_id = results[0]["sys_id"]
+
+    fields = {"comments": comments}
     payload = {k: v for k, v in fields.items() if v}
+
+    print("payload:", payload)
 
     if not payload:
         return {"message": "No update fields were provided. Record remains unchanged."}
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.patch(
-            url,
-            json=payload,
-            headers={
-                "Authorization": _basic_auth_header(),
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
-        )
+    response = await snow_patch(f"/table/incident/{sys_id}", payload)
+
+    print("response:", response.status_code)
 
     if response.status_code != 200:
         return {
@@ -281,102 +315,30 @@ async def update_incident(
     body = response.json()
     data = body.get("result", {})
 
-    if not isinstance(data, dict):
-        return {"error": "Unexpected response from ServiceNow", "detail": str(body)}
-
-    def display(field):
-        val = data.get(field, {})
-        return val.get("display_value", "") if isinstance(val, dict) else str(val)
-
     return {
         "sys_id": data.get("sys_id", ""),
         "number": data.get("number", ""),
         "short_description": data.get("short_description", ""),
-        "state": display("state"),
-        "priority": display("priority"),
         "updated_on": data.get("sys_updated_on", ""),
     }
 
 
-# @mcp.tool()
-# async def close_incident_by_number(
-#     ticket_number: str,
-#     close_code: str = "Solved (Permanently)",
-#     close_notes: str = "Ticket closed automatically by Customer Support Agent.",
-# ) -> dict:
-#     """Closes an existing incident in ServiceNow using its ticket number.
+# =============================================================================
+# MCP TOOLS: KNOWLEDGE MANAGEMENT
+# =============================================================================
 
-#     Args:
-#         ticket_number: The display number of the incident (e.g., 'INC0010001').
-#         close_code: The reason the ticket is being closed. Standard OOTB options include:
-#                     'Solved (Permanently)', 'Solved (Workaround)', 'Solved by Change',
-#                     'Not Solved (Not Reproducible)', 'Not Solved (Too Costly)'.
-#         close_notes: Summary details explaining the final resolution.
-#     """
-#     headers = {
-#         "Authorization": _basic_auth_header(),
-#         "Content-Type": "application/json",
-#         "Accept": "application/json",
-#     }
-
-#     async with httpx.AsyncClient(timeout=30) as client:
-#         # Step 1: Look up sys_id from ticket number
-#         search_url = f"{SERVICENOW_BASE_URL}/table/incident"
-#         search_params = {
-#             "sysparm_query": f"number={ticket_number}",
-#             "sysparm_fields": "sys_id",
-#             "sysparm_limit": 1
-#         }
-
-#         search_response = await client.get(search_url, params=search_params, headers=headers)
-
-#         if search_response.status_code != 200:
-#             return {
-#                 "error": f"Failed to look up ticket number. ServiceNow returned status {search_response.status_code}",
-#                 "detail": search_response.text
-#             }
-
-#         search_results = search_response.json().get("result", [])
-#         if not search_results:
-#             return {"error": f"No ticket found with ticket number '{ticket_number}'."}
-
-#         sys_id = search_results[0].get("sys_id")
-
-#         # Step 2: Update state to Closed (state='5')
-#         update_url = f"{SERVICENOW_BASE_URL}/table/incident/{sys_id}"
-#         payload = {
-#             "state": "5",
-#             "close_code": close_code,
-#             "close_notes": close_notes
-#         }
-
-#         response = await client.patch(update_url, json=payload, headers=headers)
-
-#     if response.status_code != 200:
-#         return {
-#             "error": f"ServiceNow rejected closure with status code {response.status_code}",
-#             "detail": response.text,
-#         }
-
-#     body = response.json()
-#     data = body.get("result", {})
-
-#     return {
-#         "ticket_number": data.get("number", ticket_number),
-#         "sys_id": data.get("sys_id", ""),
-#         "status": "Closed",
-#         "message": f"Ticket {ticket_number} has been successfully closed."
-#     }
-
-
-@mcp.tool()
 async def search_kb_via_table_api(
-    user_query: str, max_results: int = 2
+    user_query: str,
+    max_results: int = 2,
 ) -> list:
-    """Queries the ServiceNow kb_knowledge table using a raw string text search."""
+    print("Inside search_kb_via_table_api")
+
     url = f"{SERVICENOW_BASE_URL}/table/kb_knowledge"
+
     encoded_query = (
-        f"IR_AND_OR_QUERY={user_query}^workflow_state=published^active=true"
+        f"IR_AND_OR_QUERY={user_query}"
+        "^workflow_state=published"
+        "^active=true"
     )
 
     params = {
@@ -391,25 +353,97 @@ async def search_kb_via_table_api(
         "Authorization": _basic_auth_header(),
     }
 
+    print("KB URL:", url)
+    print("KB query:", encoded_query)
+
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(url, params=params, headers=headers)
 
-        if response.status_code == 200:
-            return response.json().get("result", [])
-        else:
-            return [
+    print("KB response status:", response.status_code)
+
+    if response.status_code == 200:
+        results = response.json().get("result", [])
+        print(f"Retrieved {len(results)} KB articles")
+        return results
+
+    return [
+        {
+            "error": f"Search Error: {response.status_code}",
+            "detail": response.text,
+        }
+    ]
+
+
+@mcp.tool()
+async def search_knowledge_articles(query: str) -> list[dict]:
+    """
+    Search the ServiceNow kb_knowledge table for relevant published and active articles.
+    """
+    print("Inside search_knowledge_articles")
+
+    try:
+        results = await search_kb_via_table_api(user_query=query, max_results=2)
+
+        if not results:
+            return []
+
+        articles = []
+        for item in results:
+            if "error" in item:
+                return [item]
+
+            articles.append(
                 {
-                    "error": f"Search Error: {response.status_code}",
-                    "detail": response.text,
+                    "sys_id": item.get("sys_id", ""),
+                    "number": item.get("number", ""),
+                    "short_description": item.get("short_description", ""),
+                    "text": item.get("text", ""),
                 }
-            ]
+            )
+
+        return articles
+
+    except httpx.HTTPError as e:
+        print(f"ServiceNow KB search failed: {e}")
+        return [{"error": "ServiceNow KB search failed", "detail": str(e)}]
+
+    except Exception as e:
+        print(f"Unexpected KB search error: {e}")
+        return [{"error": "Unexpected KB search error", "detail": str(e)}]
 
 
-# --- STARLETTE APPS / ROUTES ---
+# =============================================================================
+# HEALTH & ROUTE DEFINITIONS
+# =============================================================================
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health(request: Request):
+    return JSONResponse(
+        {
+            "status": "ok",
+            "service": "servicenow-mcp",
+            "auth_mode": "unauthenticated",
+        }
+    )
+
+
+@mcp.custom_route("/", methods=["GET"])
+async def root_ping(request: Request):
+    return JSONResponse(
+        {
+            "status": "running",
+            "mcp_endpoint": "/mcp",
+            "auth_mode": "unauthenticated",
+        }
+    )
+
+
+# =============================================================================
+# STARLETTE APP (UNAUTHENTICATED)
+# =============================================================================
+
 app = mcp.http_app(
     transport="http",
     path="/mcp",
-    host_origin_protection=False
+    host_origin_protection=False,
 )
-
-app.add_middleware(ServiceNowTokenMiddleware)

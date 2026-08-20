@@ -1,0 +1,14 @@
+{
+  "session_id": "b09dc420-b562-49a3-ac71-66c982960171",
+  "started_at": "2026-07-21T07:55:13.510765+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "user",
+      "text": "Hi. Good morning",
+      "ts": "2026-07-21T07:55:25.194549+00:00"
+    }
+  ]
+}

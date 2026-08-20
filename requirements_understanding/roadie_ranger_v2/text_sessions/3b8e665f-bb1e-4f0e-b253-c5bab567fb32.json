@@ -1,0 +1,44 @@
+{
+  "session_id": "3b8e665f-bb1e-4f0e-b253-c5bab567fb32",
+  "started_at": "2026-06-19T09:02:34.581304+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-sanjay",
+  "user_name": "sanjay",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-06-19T09:02:37.994292+00:00"
+    },
+    {
+      "role": "user",
+      "text": "tell me about onboarding process",
+      "ts": "2026-06-19T09:03:01.308793+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The onboarding process includes recruitment to hire the right fit, a probation period of 3 to 6 months, and background verification. It ensures new hires settle in and meet role expectations. \n\nDoes that answer your question?",
+      "ts": "2026-06-19T09:03:04.573961+00:00"
+    },
+    {
+      "role": "user",
+      "text": "no",
+      "ts": "2026-06-19T09:03:11.564882+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "The onboarding process involves recruitment to find the right fit, followed by a probation period of 3 to 6 months to assess suitability. It also includes background verification before finalizing employment. This ensures new hires align well with their roles and the company culture.\n\nDoes that answer your question?",
+      "ts": "2026-06-19T09:03:16.244631+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yup",
+      "ts": "2026-06-19T09:03:25.529863+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Great. Let me know if you need anything else.",
+      "ts": "2026-06-19T09:03:27.117641+00:00"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "session_id": "8bfa9a20-4127-4d05-8864-89f6b767cd80",
+  "started_at": "2026-07-21T10:06:18.597614+00:00",
+  "source": "browser",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "user",
+      "text": "Hi, how are you?",
+      "ts": "2026-07-21T10:06:35.674086+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hello! I’m doing well, thank you. How can I assist you today?",
+      "ts": "2026-07-21T10:06:48.864181+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How do I create an e-mail signature?",
+      "ts": "2026-07-21T10:06:58.115935+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hold on a second while I look that up.",
+      "ts": "2026-07-21T10:06:59.724071+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Open a new message, go to **Message > Signature > Signatures**, then on the **E-mail Signature** tab click **New**, name it, and enter your signature text.\nYou can format the text and add a business card, hyperlink, or picture, then click **OK**. Are you satisfied with the agent's response?",
+      "ts": "2026-07-21T10:07:04.984268+00:00"
+    },
+    {
+      "role": "user",
+      "text": "Yes, I am satisfied.",
+      "ts": "2026-07-21T10:07:22.550244+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Glad to hear that. Would you like to give feedback?",
+      "ts": "2026-07-21T10:07:24.063880+00:00"
+    },
+    {
+      "role": "user",
+      "text": "the answer was very concise. Thanks.",
+      "ts": "2026-07-21T10:07:33.954164+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Thank you for your feedback! I'm glad the answer was concise and helpful.",
+      "ts": "2026-07-21T10:07:35.666318+00:00"
+    }
+  ]
+}

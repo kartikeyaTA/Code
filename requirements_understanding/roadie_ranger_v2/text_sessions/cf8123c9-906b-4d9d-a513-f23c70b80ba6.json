@@ -1,0 +1,54 @@
+{
+  "session_id": "cf8123c9-906b-4d9d-a513-f23c70b80ba6",
+  "started_at": "2026-07-21T07:58:23.027037+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! Welcome to support — how can I help you today?",
+      "ts": "2026-07-21T07:58:29.072342+00:00"
+    },
+    {
+      "role": "user",
+      "text": "hi. how are u",
+      "ts": "2026-07-21T07:58:34.411926+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hi! I'm doing well, thanks. How can I help you today?",
+      "ts": "2026-07-21T07:58:36.352788+00:00"
+    },
+    {
+      "role": "user",
+      "text": "what is a phising scam",
+      "ts": "2026-07-21T07:58:46.377951+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "A phishing scam is a fraudulent message, usually an email, that pretends to be from a legitimate company and tries to trick you into revealing private information or clicking a fake website.  \nAre you satisfied with the agent's response?",
+      "ts": "2026-07-21T07:58:50.511560+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yes",
+      "ts": "2026-07-21T07:59:13.060281+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Glad to hear that. Ticket created successfully. Ticket Number: INC0010075, Summary: User asked about phishing scams, Created on: 2026-07-21 07:59:16.\n\nWould you like to give feedback?",
+      "ts": "2026-07-21T07:59:18.466133+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yes. i am happy with the response the agent has given",
+      "ts": "2026-07-21T07:59:36.410395+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Thank you for your feedback. I'm glad you're happy with the response.",
+      "ts": "2026-07-21T08:00:32.124445+00:00"
+    }
+  ]
+}

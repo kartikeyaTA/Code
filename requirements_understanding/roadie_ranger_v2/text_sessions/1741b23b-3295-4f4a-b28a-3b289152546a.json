@@ -1,0 +1,54 @@
+{
+  "session_id": "1741b23b-3295-4f4a-b28a-3b289152546a",
+  "started_at": "2026-07-21T09:41:38.013566+00:00",
+  "source": "browser_text",
+  "user_id": "dev-local-prithivee.r@tigeranalytics.com",
+  "user_name": "prithivee.r@tigeranalytics.com",
+  "turns": [
+    {
+      "role": "agent",
+      "text": "Hello! How can I assist you today?",
+      "ts": "2026-07-21T09:41:48.741048+00:00"
+    },
+    {
+      "role": "user",
+      "text": "hi. how are u",
+      "ts": "2026-07-21T09:41:54.320619+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Hello! I’m doing well, thank you. How can I help you today?",
+      "ts": "2026-07-21T09:41:55.765280+00:00"
+    },
+    {
+      "role": "user",
+      "text": "How do I quit an application that isn't responding?",
+      "ts": "2026-07-21T09:42:15.306572+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "On Mac OS X, use Apple menu > Force Quit..., select the app, and click Force Quit; you can also press Command-Option-Esc.\nForce quitting will not save your latest changes. Are you satisfied with the agent's response?",
+      "ts": "2026-07-21T09:43:31.985299+00:00"
+    },
+    {
+      "role": "user",
+      "text": "yes",
+      "ts": "2026-07-21T09:44:10.068008+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Thank you. A ticket has been created: INC0010076 - User confirmed solution for quitting unresponsive application.\nWould you like to give feedback?",
+      "ts": "2026-07-21T09:44:14.685671+00:00"
+    },
+    {
+      "role": "user",
+      "text": "i dont like this response. it is short\\",
+      "ts": "2026-07-21T09:44:35.437160+00:00"
+    },
+    {
+      "role": "agent",
+      "text": "Thank you for your feedback. I understand that the response felt too short.",
+      "ts": "2026-07-21T09:44:37.080209+00:00"
+    }
+  ]
+}

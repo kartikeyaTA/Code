@@ -1,0 +1,25 @@
+2026-07-22 13:41:30,565:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-22 13:41:30,566:storage_client:INFO:AZURE_STORAGE_ACCOUNT_URL not set — session storage disabled
+2026-07-22 13:42:20,479:azure.identity.aio._credentials.managed_identity:INFO:ManagedIdentityCredential will use IMDS
+2026-07-22 13:42:30,529:azure.core.pipeline.policies.http_logging_policy:INFO:Request URL: 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=REDACTED'
+Request method: 'GET'
+Request headers:
+    'User-Agent': 'azsdk-python-identity/1.25.3 Python/3.11.3 (Windows-10-10.0.22631-SP0)'
+No body was attached to the request
+2026-07-22 13:42:30,547:main:ERROR:TextLive session error
+Traceback (most recent call last):
+  File "C:\Users\prithivee.r\Downloads\roadie_ranger_v2 (1)\roadie_ranger_v2\main.py", line 875, in run
+    async with connect(
+  File "C:\Users\prithivee.r\Downloads\roadie_ranger_v2 (1)\roadie_ranger_v2\venv_test_texas\Lib\site-packages\azure\ai\voicelive\aio\_patch.py", line 778, in __aenter__
+    auth_headers = await self._get_auth_headers()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\prithivee.r\Downloads\roadie_ranger_v2 (1)\roadie_ranger_v2\venv_test_texas\Lib\site-packages\azure\ai\voicelive\aio\_patch.py", line 803, in _get_auth_headers
+    token = await self._credential.get_token(*self.__credential_scopes)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\prithivee.r\Downloads\roadie_ranger_v2 (1)\roadie_ranger_v2\venv_test_texas\Lib\site-packages\azure\identity\aio\_credentials\chained.py", line 126, in get_token
+    raise ClientAuthenticationError(message=message)
+azure.core.exceptions.ClientAuthenticationError: ChainedTokenCredential failed to retrieve a token from the included credentials.
+Attempted credentials:
+	AzureCliCredential: Timed out waiting for Azure CLI
+	ManagedIdentityCredential: ManagedIdentityCredential authentication unavailable, no response from the IMDS endpoint.
+To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azsdk/python/identity/defaultazurecredential/troubleshoot.
