@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Agent Evaluation Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f8f9fa; color: #333; }
+        h1 { margin-bottom: 5px; color: #111; }
+        .subtitle { color: #666; margin-bottom: 25px; }
+        .cards { display: flex; gap: 15px; margin-bottom: 30px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); flex: 1; border-top: 4px solid #0078d4; }
+        .card.status { border-top-color: #107c41; }
+        .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; margin-bottom: 8px; }
+        .card-value { font-size: 26px; font-weight: bold; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 4px; color: #fff; background-color: #107c41; font-size: 18px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; vertical-align: top; font-size: 13px; }
+        th { background-color: #0078d4; color: white; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+        tr:hover { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+    <h1>🤖 AI Agent Evaluation Report</h1>
+    <div class="subtitle">Target Agent: <b>txrh-demoagent-2-copy</b> | Judge Model: roadie-ranger-foundry-resource/gpt-5.4</div>
+    
+    <div class="cards">
+        <div class="card status">
+            <div class="card-title">Verdict Status</div>
+            <div class="badge">PASSED</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Overall Score</div>
+            <div class="card-value">3.70 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+            <small style="color:#666;">Threshold: 3.5</small>
+        </div>
+        <div class="card">
+            <div class="card-title">Relevance Score</div>
+            <div class="card-value">3.80 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Groundedness Score</div>
+            <div class="card-value">3.60 <small style="font-size:14px; color:#888;">/ 5.0</small></div>
+        </div>
+    </div>
+
+    <h2>Test Row Breakdown</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 4%; text-align:center;">#</th>
+                <th style="width: 22%;">User Query</th>
+                <th style="width: 42%;">Generated Agent Response</th>
+                <th style="width: 22%;">Ground Truth Context</th>
+                <th style="width: 5%; text-align:center;">Relevance</th>
+                <th style="width: 5%; text-align:center;">Groundedness</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        <tr>
+            <td style="text-align:center;">1</td>
+            <td><b>What is a phishing scam?</b></td>
+            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;annotations&quot;: [], &quot;text&quot;: &quot;Phishing scams are fraudulent email messages that appear to come from legitimate organizations and try to trick you into revealing private information or clicking spoofed links. [Reference: KB0000028]  \nAre you satisfied with the agent&#x27;s response?\n\nTicket created successfully INC0010552. I created a ticket because this was a QUERY, and ticket creation/updation is mandatory for queries.&quot;, &quot;type&quot;: &quot;output_text&quot;, &quot;logprobs&quot;: []}]</td>
+            <td style="max-width: 300px; word-wrap: break-word;"><small>A phishing scam is typically a fraudulent email that appears to come from a legitimate organization and tries to get you to reveal private information or visit a spoofed websites. [Reference: KB0000028]</small></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">4.0 / 5.0</td>
+            <td style="text-align:center; font-weight:bold; color:#107c41;">4.0 / 5.0</td>
+        </tr>
+        
+        <tr>
+            <td style="text-align:center;">2</td>
+            <td><b>How do I Create An Email Signature?</b></td>
+            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;annotations&quot;: [], &quot;text&quot;: &quot;Open a new message, go to Message &gt; Signature &gt; Signatures, click New, name it, then enter and format your signature text. You can also add a business card, hyperlink, or picture, then click OK. [Reference: KB0000024]\n\nAre you satisfied with the agent&#x27;s response?\n\nTicket created successfully INC0010553. I created a ticket because this was a query, and ticket creation/updation is mandatory for queries.&quot;, &quot;type&quot;: &quot;output_text&quot;, &quot;logprobs&quot;: []}]</td>
+            <td style="max-width: 300px; word-wrap: break-word;"><small>Open a new message, go to Message &gt; Signature &gt; Signatures, click New, name it, enter and format your signature, then click OK; the new or edited signature won&#x27;t appear in the currently open message and must be inserted. [Ref: KB0000024]</small></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">4.0 / 5.0</td>
+            <td style="text-align:center; font-weight:bold; color:#107c41;">4.0 / 5.0</td>
+        </tr>
+        
+        <tr>
+            <td style="text-align:center;">3</td>
+            <td><b>How do I quit an application that isn&#x27;t responding?</b></td>
+            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;annotations&quot;: [], &quot;text&quot;: &quot;In Mac OS X, choose Apple menu &gt; Force Quit..., select the application, and click Force Quit; you can also press Command-Option-Esc. [Reference: KB0000013]\n\nAre you satisfied with the agent&#x27;s response?\nTicket created successfully INC0010554. I created a ticket because this was a query, and ticket creation/updation is mandatory for queries.&quot;, &quot;type&quot;: &quot;output_text&quot;, &quot;logprobs&quot;: []}]</td>
+            <td style="max-width: 300px; word-wrap: break-word;"><small>On Mac OS X, use Apple menu &gt; Force Quit..., select the app, and click Force Quit; or press Command-Option-Esc. Force quitting won&#x27;t save latest changes. Reference: KB0000013</small></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">4.0 / 5.0</td>
+            <td style="text-align:center; font-weight:bold; color:#107c41;">4.0 / 5.0</td>
+        </tr>
+        
+        <tr>
+            <td style="text-align:center;">4</td>
+            <td><b>Can I upgrade my operating system? What are the system requirements?</b></td>
+            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;annotations&quot;: [], &quot;text&quot;: &quot;Yes\u2014supported Mac models can upgrade, and requirements depend on the OS version; e.g., OS X 10.12 requires a supported Mac model, 2GB memory, OS X v10.6.8 or later, and 64GB free space. Reference: KB0005010.  \nAre you satisfied with the agent&#x27;s response?\n\nTicket created successfully INC0010555. I created a ticket because this was a QUERY intent, and ticket creation/updation is mandatory for queries.&quot;, &quot;type&quot;: &quot;output_text&quot;, &quot;logprobs&quot;: []}]</td>
+            <td style="max-width: 300px; word-wrap: break-word;"><small>For Mac OS X, upgrade support depends on version/model; e.g., OS X 10.12 requires a Mid-2008+ supported Mac, 2GB memory, OS X 10.6.8 or later, and 64GB available space. [KB0005010]<br>Windows 7 KB requirements list a 1 GHz processor, 1 GB RAM (32-bit) or 2 GB (64-bit), and 16/20 GB free space. [KB0000021]</small></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">3.0 / 5.0</td>
+            <td style="text-align:center; font-weight:bold; color:#107c41;">2.0 / 5.0</td>
+        </tr>
+        
+        <tr>
+            <td style="text-align:center;">5</td>
+            <td><b>Are Copyrighted Files Illegal to Have On My Computer?</b></td>
+            <td style="max-width: 500px; word-wrap: break-word;">[{&quot;annotations&quot;: [], &quot;text&quot;: &quot;It is legal only if the material is in the public domain, you have permission from the copyright holder, or the use qualifies as fair use; otherwise unauthorized downloading/copying may be illegal. Reference: KB0000009.  \nAre you satisfied with the agent&#x27;s response?\n\nTicket created successfully INC0010556. I created a ticket because this was a QUERY intent, and ticket creation/updation is mandatory for queries.&quot;, &quot;type&quot;: &quot;output_text&quot;, &quot;logprobs&quot;: []}]</td>
+            <td style="max-width: 300px; word-wrap: break-word;"><small>It is legal only if the material is in the public domain, you have permission from the copyright holder, or fair use applies; otherwise unauthorized downloading/sharing may be infringement. Even legally obtained copies must be protected from unauthorized copying by others. Reference: KB0000009</small></td>
+            <td style="text-align:center; font-weight:bold; color:#0078d4;">4.0 / 5.0</td>
+            <td style="text-align:center; font-weight:bold; color:#107c41;">4.0 / 5.0</td>
+        </tr>
+        
+        </tbody>
+    </table>
+</body>
+</html>
