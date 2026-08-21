@@ -20,7 +20,7 @@ LOCAL_DATASET_PATH = "snow_eval_data.jsonl"
 JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
 HTML_REPORT_PATH = "eval_report.html"
 EVAL_SCORE_THRESHOLD = 3.5
-CONSENT_TIMEOUT_SECONDS = 300  # 5 Minutes waiting window for consent sign-in
+CONSENT_TIMEOUT_SECONDS = 300  # 5 minutes waiting window for consent sign-in
 
 if not os.path.exists(LOCAL_DATASET_PATH):
     print(f"❌ Local Error: '{LOCAL_DATASET_PATH}' not found!", flush=True)
@@ -49,21 +49,46 @@ def find_consent_item(response) -> dict | None:
 
 
 def handle_consent_if_needed(oai_client, response, original_prompt: str, timeout_seconds: int = CONSENT_TIMEOUT_SECONDS):
-    """Prints consent link to pipeline logs and polls until sign-in is complete or timed out."""
+    """Prints consent link to pipeline logs/summary and polls until sign-in is complete or timed out."""
     consent = find_consent_item(response)
     if consent is None:
         return response  # Already consented or no OAuth required
 
     link = str(consent.get("consent_link") or "")
+    tool_label = consent.get("server_label", "MCP Tool")
+
+    # 1. Generate Azure DevOps Pipeline Summary Tab Entry
+    summary_path = os.path.join(os.getcwd(), "oauth_consent_summary.md")
+    try:
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write("# 🔐 OAuth Consent Required\n\n")
+            f.write(f"**Tool Needing Authorization:** `{tool_label}`\n\n")
+            f.write(f"[👉 **CLICK HERE TO GRANT OAUTH CONSENT**]({link})\n\n")
+            f.write("> **Note:** Complete sign-in in your browser. The pipeline will automatically detect authorization and resume.\n")
+        
+        # Azure DevOps Logging Commands
+        print(f"##vso[task.uploadsummary]{summary_path}", flush=True)
+        print(f"##vso[task.logissue type=warning]OAuth consent required for '{tool_label}'. Click the link on the Pipeline Summary tab or copy from logs below.", flush=True)
+    except Exception:
+        pass
+
+    # 2. Print Chunked URL to Console Logs (Prevents ADO >500 char single-line truncation)
     print("\n" + "=" * 80, flush=True)
     print("🔐 OAUTH CONSENT REQUIRED FOR PIPELINE RUN", flush=True)
-    print(f" Tool needing sign-in : {consent.get('server_label', 'MCP Tool')}", flush=True)
-    print(" Copy/Open the link below IN A BROWSER SIGNED IN AS THE TARGET USER:", flush=True)
-    print("-" * 80, flush=True)
-    print(link, flush=True)
+    print(f" Tool needing sign-in : {tool_label}", flush=True)
     print("=" * 80, flush=True)
+    print("\n📌 OPTION 1: Go to the 'Summary' tab of this Pipeline Run for a clickable link.", flush=True)
+    print("📌 OPTION 2: Copy the untruncated URL chunks below and join them without spaces:\n", flush=True)
+    
+    # Break link into 100-character segments to avoid console line truncation
+    chunk_size = 100
+    for i in range(0, len(link), chunk_size):
+        print(link[i:i + chunk_size], flush=True)
+
+    print("\n" + "=" * 80, flush=True)
     print(f"⏳ Waiting up to {timeout_seconds // 60} minutes for browser sign-in...\n", flush=True)
 
+    # 3. Poll for authorization completion
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         time.sleep(10)  # Poll every 10 seconds
