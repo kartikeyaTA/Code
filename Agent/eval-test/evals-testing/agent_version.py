@@ -1,3 +1,17 @@
+#azure-ai-projects>=2.3.0
+# Pipeline flow
+# 2 Pipelines 
+
+# Push/PR open
+# Create Rev
+# Divert 0% traffic 
+# Run evals for that Rev
+# Publish Report 
+
+# After Push/Merged
+# On approval 
+# Divert traffic 100%
+
 import os
 import sys
 import time
@@ -16,6 +30,7 @@ sys.stdout.reconfigure(line_buffering=True)
 # ============================================================================
 PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
 AGENT_NAME = "txrh-demoagent-2-copy1352324"
+AGENT_VERSION = "8"  # 👈 Set target agent version string
 LOCAL_DATASET_PATH = "snow_eval_data.jsonl"
 JUDGE_MODEL_DEPLOYMENT = "roadie-ranger-foundry-resource/gpt-5.4"
 HTML_REPORT_PATH = "eval_report.html"
@@ -48,8 +63,19 @@ def find_consent_item(response) -> dict | None:
     return None
 
 
-def handle_consent_if_needed(oai_client, response, original_prompt: str, timeout_seconds: int = CONSENT_TIMEOUT_SECONDS):
-    """Prints consent link to pipeline logs/summary and polls until sign-in is complete or timed out."""
+def handle_consent_if_needed(
+    oai_client,
+    response,
+    original_prompt: str,
+    timeout_seconds: int = CONSENT_TIMEOUT_SECONDS,
+    agent_reference: dict | None = None,
+):
+    """Prints consent link to pipeline logs/summary and polls until sign-in is complete or timed out.
+
+    agent_reference: optional {"type": "agent_reference", "name": ..., "version": ...} dict.
+    When provided, it is passed via extra_body on the resumed call so the resumed
+    request targets the same pinned agent version as the original request.
+    """
     consent = find_consent_item(response)
     if consent is None:
         return response  # Already consented or no OAuth required
@@ -65,8 +91,7 @@ def handle_consent_if_needed(oai_client, response, original_prompt: str, timeout
             f.write(f"**Tool Needing Authorization:** `{tool_label}`\n\n")
             f.write(f"[👉 **CLICK HERE TO GRANT OAUTH CONSENT**]({link})\n\n")
             f.write("> **Note:** Complete sign-in in your browser. The pipeline will automatically detect authorization and resume.\n")
-        
-        # Azure DevOps Logging Commands
+
         print(f"##vso[task.uploadsummary]{summary_path}", flush=True)
         print(f"##vso[task.logissue type=warning]OAuth consent required for '{tool_label}'. Click the link on the Pipeline Summary tab or copy from logs below.", flush=True)
     except Exception:
@@ -79,8 +104,7 @@ def handle_consent_if_needed(oai_client, response, original_prompt: str, timeout
     print("=" * 80, flush=True)
     print("\n📌 OPTION 1: Go to the 'Summary' tab of this Pipeline Run for a clickable link.", flush=True)
     print("📌 OPTION 2: Copy the untruncated URL chunks below and join them without spaces:\n", flush=True)
-    
-    # Break link into 100-character segments to avoid console line truncation
+
     chunk_size = 100
     for i in range(0, len(link), chunk_size):
         print(link[i:i + chunk_size], flush=True)
@@ -96,11 +120,14 @@ def handle_consent_if_needed(oai_client, response, original_prompt: str, timeout
         sys.stdout.flush()
 
         try:
-            resumed_response = oai_client.responses.create(
-                input=original_prompt,
-                previous_response_id=consent.get("response_id"),
-            )
-            # If no consent item remains, authorization succeeded
+            create_kwargs = {
+                "input": original_prompt,
+                "previous_response_id": consent.get("response_id"),
+            }
+            if agent_reference:
+                create_kwargs["extra_body"] = {"agent_reference": agent_reference}
+
+            resumed_response = oai_client.responses.create(**create_kwargs)
             if find_consent_item(resumed_response) is None:
                 print("\n\n✅ OAuth consent granted successfully! Resuming evaluation pipeline job...\n", flush=True)
                 return resumed_response
@@ -248,6 +275,7 @@ def parse_metric_score(data, metric_name):
 def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
     status_color = "#107c41" if passed else "#d13438"
     status_text = "PASSED" if passed else "FAILED"
+    agent_display = f"{AGENT_NAME} (v{AGENT_VERSION})" if AGENT_VERSION else AGENT_NAME
 
     table_rows_html = ""
     for idx, r in enumerate(rows_data, 1):
@@ -288,8 +316,8 @@ def generate_html_report(rows_data, avg_rel, avg_grd, overall_avg, passed):
 </head>
 <body>
     <h1>🤖 AI Agent Evaluation Report</h1>
-    <div class="subtitle">Target Agent: <b>{AGENT_NAME}</b> | Judge Model: {JUDGE_MODEL_DEPLOYMENT}</div>
-    
+    <div class="subtitle">Target Agent: <b>{agent_display}</b> | Judge Model: {JUDGE_MODEL_DEPLOYMENT}</div>
+
     <div class="cards">
         <div class="card status">
             <div class="card-title">Verdict Status</div>
@@ -359,12 +387,24 @@ with AIProjectClient(
     openai_client = project_client.get_openai_client()
 
     # 2. Pre-Flight OAuth Consent Verification
-    print("🔑 Verifying OAuth consent status for Agent...", flush=True)
+    #    NOTE: get_openai_client(agent_name=...) binds to the agent's STABLE/PUBLISHED
+    #    endpoint and has no way to pin a version. To actually probe consent for the
+    #    version under test, use the unbound client and pass an explicit
+    #    agent_reference (with version) via extra_body on the responses.create() call.
+    print(f"🔑 Verifying OAuth consent status for Agent '{AGENT_NAME}' (version: {AGENT_VERSION or 'latest'})...", flush=True)
     try:
-        agent_oai = project_client.get_openai_client(agent_name=AGENT_NAME)
+        agent_oai = project_client.get_openai_client()  # unbound — version is set per-call below
         test_prompt = local_dataset_rows[0].get("query", "Hello") if local_dataset_rows else "Hello"
-        initial_resp = agent_oai.responses.create(input=test_prompt)
-        handle_consent_if_needed(agent_oai, initial_resp, test_prompt)
+
+        agent_reference = {"type": "agent_reference", "name": AGENT_NAME}
+        if AGENT_VERSION:
+            agent_reference["version"] = str(AGENT_VERSION)
+
+        initial_resp = agent_oai.responses.create(
+            input=test_prompt,
+            extra_body={"agent_reference": agent_reference},
+        )
+        handle_consent_if_needed(agent_oai, initial_resp, test_prompt, agent_reference=agent_reference)
         print("✅ OAuth Authentication confirmed. Proceeding to batch evaluation.\n", flush=True)
     except Exception as ex:
         print(f"⚠️ Pre-flight check warning: {ex}. Attempting run...\n", flush=True)
@@ -407,17 +447,25 @@ with AIProjectClient(
         )
     ]
 
+    eval_name = f"Agent_Quality_Eval_{AGENT_NAME}_v{AGENT_VERSION}" if AGENT_VERSION else f"Agent_Quality_Eval_{AGENT_NAME}"
     evaluation = openai_client.evals.create(
-        name=f"Agent_Quality_Eval_{AGENT_NAME}",
+        name=eval_name,
         data_source_config=data_source_config,
         testing_criteria=testing_criteria
     )
 
-    # 4. Trigger Evaluation Run
-    print(f"🚀 Triggered evaluation run for agent '{AGENT_NAME}'...", flush=True)
+    # 4. Trigger Evaluation Run for Specific Agent Version
+    target_spec = {
+        "type": "azure_ai_agent",
+        "name": AGENT_NAME
+    }
+    if AGENT_VERSION:
+        target_spec["version"] = str(AGENT_VERSION)
+
+    print(f"🚀 Triggered evaluation run for agent '{AGENT_NAME}' (version: {AGENT_VERSION or 'latest'})...", flush=True)
     eval_run = openai_client.evals.runs.create(
         eval_id=evaluation.id,
-        name=f"Run_{AGENT_NAME}",
+        name=f"Run_{AGENT_NAME}_v{AGENT_VERSION}" if AGENT_VERSION else f"Run_{AGENT_NAME}",
         data_source={
             "type": "azure_ai_target_completions",
             "source": {
@@ -437,10 +485,7 @@ with AIProjectClient(
                     }
                 ]
             },
-            "target": {
-                "type": "azure_ai_agent",
-                "name": AGENT_NAME
-            }
+            "target": target_spec
         }
     )
 
@@ -508,7 +553,7 @@ with AIProjectClient(
     print("\n" + "=" * 80, flush=True)
     print("📊 EVALUATION SUMMARY DASHBOARD", flush=True)
     print("=" * 80, flush=True)
-    print(f"🎯 Target Agent:        {AGENT_NAME}", flush=True)
+    print(f"🎯 Target Agent:        {AGENT_NAME} (Version: {AGENT_VERSION or 'latest'})", flush=True)
     print(f"📌 Evaluation Run ID:   {eval_run.id}", flush=True)
     print(f"🏁 Final Status:         {getattr(run_status_obj, 'status', 'COMPLETED')}", flush=True)
     print(f"🔢 Total Evaluated Rows: {len(rows_summary)}", flush=True)
@@ -517,11 +562,11 @@ with AIProjectClient(
     print(f"   • Groundedness Score: {avg_grd:.2f} / 5.0", flush=True)
     print(f"   • Overall Average:    {overall_avg:.2f} / 5.0 (Threshold: {EVAL_SCORE_THRESHOLD})", flush=True)
     print("-" * 80, flush=True)
-    
+
     if passed:
         print("✅ VERDICT: EVALUATION PASSED", flush=True)
     else:
         print("❌ VERDICT: EVALUATION FAILED (Below Threshold)", flush=True)
-        
+
     print(f"\n📄 Styled HTML Dashboard generated: '{HTML_REPORT_PATH}'", flush=True)
     print("=" * 80 + "\n", flush=True)
