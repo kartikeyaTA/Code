@@ -1,0 +1,148 @@
+import os
+from typing import Optional
+
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel
+
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+
+
+app = FastAPI()
+
+
+PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
+AGENT_NAME = "txrh-demoagent-2-copy1352324"
+
+if not PROJECT_ENDPOINT:
+    raise RuntimeError("PROJECT_ENDPOINT environment variable is not set")
+
+if not AGENT_NAME:
+    raise RuntimeError("AGENT_NAME environment variable is not set")
+
+
+class ChatRequest(BaseModel):
+    user_message: str
+    previous_response_id: Optional[str] = None
+
+
+class ChatResponse(BaseModel):
+    response: str
+    response_id: str
+
+credential = DefaultAzureCredential()
+
+project_client = AIProjectClient(
+endpoint=PROJECT_ENDPOINT,
+credential=credential,
+)
+
+async def get_deployed_version():
+
+    agent = project_client.agents.get(agent_name=AGENT_NAME)
+
+    endpoint_cfg = agent.agent_endpoint
+    rules = None
+    if endpoint_cfg and endpoint_cfg.version_selector:
+        rules = endpoint_cfg.version_selector.version_selection_rules
+
+    active_version = None
+
+    if not rules:
+        # Default policy ("Always use latest")
+        active_version = str(agent.versions.latest.version)
+        print(f"✅ No explicit routing pin — using latest version: {active_version}")
+    else:
+        print("✅ Explicit version routing configured:")
+        for rule in rules:
+            print(f"   version={rule.agent_version}  traffic={rule.traffic_percentage}%")
+
+        # Pick the version receiving traffic (> 0%)
+        active_rule = max(rules, key=lambda r: getattr(r, "traffic_percentage", 0))
+        active_version = str(active_rule.agent_version)
+
+    return active_version
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(
+    request: ChatRequest
+):
+    active_version = await get_deployed_version()
+    try:
+        oai = project_client.get_openai_client(
+        )
+
+        print("OpenAI client called")
+
+    except Exception as exc:
+        print("Failed to get OpenAI client:", exc)
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to initialize OpenAI client",
+        )
+
+    previous_response_id = (
+        request.previous_response_id.strip()
+        if request.previous_response_id
+        else ""
+    )
+
+    try:
+
+        if previous_response_id != "":
+            foundry_response = oai.responses.create(
+            input=request.user_message,
+            previous_response_id=previous_response_id,
+            extra_body={
+                        "agent_reference": {
+                            "name": AGENT_NAME,
+                            "version": active_version,
+                            "type": "agent_reference"
+                        }
+                        }
+        )
+        else:
+
+            foundry_response = oai.responses.create(
+                input=request.user_message,
+                extra_body={
+                            "agent_reference": {
+                                "name": AGENT_NAME,
+                                "version": active_version,
+                                "type": "agent_reference"
+                            }
+                            }
+            )
+
+    except Exception as exc:
+        print("Foundry response creation failed:", exc)
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate response from Foundry",
+        )
+
+    # --------------------------------------------------------
+    # 7. Extract response text
+    # --------------------------------------------------------
+
+    try:
+        response_text = foundry_response.output_text
+
+    except AttributeError:
+        response_text = str(foundry_response)
+
+
+    response_id = foundry_response.id
+
+    return ChatResponse(
+        response=response_text,
+        response_id=response_id
+    )
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "healthy"
+    }
