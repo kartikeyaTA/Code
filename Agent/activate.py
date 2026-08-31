@@ -8,7 +8,7 @@ from azure.ai.projects.models import (
 
 PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
 AGENT_NAME = "txrh-demoagent-2-copy1352324"
-TARGET_VERSION = "6"
+TARGET_VERSION = "5"
 
 with AIProjectClient(
     endpoint=PROJECT_ENDPOINT,

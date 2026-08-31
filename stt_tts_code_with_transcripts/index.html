@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>/chat test client</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; background: #0b0c0f; color: #e8e9ec; }
+  h1 { font-size: 1.1rem; }
+  #url { width: 100%; padding: 8px; margin-bottom: 8px; background: #14161b; color: #e8e9ec; border: 1px solid #333; border-radius: 6px; }
+  button { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 1rem; margin-right: 8px; user-select: none; touch-action: none; }
+  #connectBtn { background: #4f8cff; color: white; }
+  #micBtn { background: #ff4f4f; color: white; }
+  #micBtn.speaking { background: #ff8a4f; }
+  #micBtn:disabled, #connectBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #status { color: #8a8f98; margin: 12px 0; }
+  #log { background: #14161b; border-radius: 8px; padding: 12px; height: 320px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }
+  .you { color: #e8e9ec; }
+  .agent { color: #4f8cff; }
+  .sys { color: #8a8f98; }
+  .err { color: #ff4f4f; }
+  .barge { color: #ff8a4f; }
+</style>
+</head>
+<body>
+  <h1>/chat WebSocket test client</h1>
+  <input id="url" value="ws://localhost:3001/chat" />
+  <div>
+    <button id="connectBtn">Connect</button>
+    <button id="micBtn" disabled>● Hold to talk</button>
+  </div>
+  <p id="status">Not connected</p>
+  <div id="log"></div>
+
+  <script>
+    const urlInput = document.getElementById('url');
+    const connectBtn = document.getElementById('connectBtn');
+    const micBtn = document.getElementById('micBtn');
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+
+    let ws, audioContext, micStream, micNode, playbackAudio;
+    let recording = false;
+    let agentSpeaking = false;
+
+    function log(text, cls = 'sys') {
+      const line = document.createElement('div');
+      line.className = cls;
+      line.textContent = text;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Stops whatever the agent is currently saying, right now. Called both when the
+    // user barges in with the mic and when playback finishes naturally.
+    function stopAgentPlayback() {
+      if (playbackAudio) {
+        playbackAudio.pause();
+        playbackAudio.currentTime = 0;
+      }
+      agentSpeaking = false;
+      micBtn.classList.remove('speaking');
+    }
+
+    connectBtn.addEventListener('click', () => {
+      ws = new WebSocket(urlInput.value);
+
+      ws.addEventListener('open', () => {
+        statusEl.textContent = 'Connected';
+        log('[connected]');
+        connectBtn.disabled = true;
+      });
+
+      ws.addEventListener('message', (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'session_ready') {
+          log(`[session_ready] session=${msg.session_id}`);
+          micBtn.disabled = false;
+        } else if (msg.type === 'status') {
+          statusEl.textContent = msg.text;
+          if (msg.text === 'interrupted') {
+            log('[barge-in acknowledged by server]', 'barge');
+          } else {
+            log(`[status] ${msg.text}`);
+          }
+        } else if (msg.type === 'user_text') {
+          log('You: ' + msg.text, 'you');
+        } else if (msg.type === 'agent_text') {
+          log('Agent: ' + msg.text, 'agent');
+        } else if (msg.type === 'agent_audio') {
+          log(`[agent_audio] ${msg.format}, playing...`);
+          const bin = atob(msg.audio_base64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          const blob = new Blob([bytes], { type: 'audio/mpeg' });
+          const url = URL.createObjectURL(blob);
+          if (playbackAudio) playbackAudio.pause();
+          playbackAudio = new Audio(url);
+          agentSpeaking = true;
+          micBtn.classList.add('speaking');
+          playbackAudio.addEventListener('ended', () => {
+            agentSpeaking = false;
+            micBtn.classList.remove('speaking');
+          });
+          playbackAudio.play();
+        } else if (msg.type === 'error') {
+          log('[error] ' + msg.message, 'err');
+        } else {
+          log('[' + msg.type + '] ' + JSON.stringify(msg));
+        }
+      });
+
+      ws.addEventListener('close', () => {
+        statusEl.textContent = 'Disconnected';
+        log('[disconnected]');
+        connectBtn.disabled = false;
+        micBtn.disabled = true;
+      });
+
+      ws.addEventListener('error', (e) => log('[ws error] ' + e, 'err'));
+    });
+
+    async function startMic() {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+      audioContext = new AudioContext({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(micStream);
+      micNode = audioContext.createScriptProcessor(4096, 1, 1);
+      source.connect(micNode);
+      micNode.connect(audioContext.destination);
+
+      micNode.onaudioprocess = (evt) => {
+        if (!recording || ws.readyState !== WebSocket.OPEN) return;
+        const float32 = evt.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(float32.length);
+        for (let i = 0; i < float32.length; i++) {
+          const s = Math.max(-1, Math.min(1, float32[i]));
+          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        ws.send(pcm16.buffer);
+      };
+    }
+
+    // Push-to-talk: hold the button to stream, release to send end_turn.
+    // Barge-in: pressing the button WHILE the agent is talking (or still
+    // thinking/synthesizing) stops playback locally and tells the server to cancel
+    // whatever turn is in flight, before this new turn starts recording.
+    async function beginTurn() {
+      if (!audioContext) await startMic();
+
+      if (agentSpeaking) {
+        log('[barge-in] interrupting agent', 'barge');
+        stopAgentPlayback();
+      }
+
+      ws.send(JSON.stringify({ type: 'start_turn' }));
+      recording = true;
+      micBtn.textContent = '● Recording... release to send';
+      log('[recording started]');
+    }
+
+    function endTurn() {
+      if (!recording) return;
+      recording = false;
+      micBtn.textContent = '● Hold to talk';
+      log('[recording stopped, sending end_turn]');
+      ws.send(JSON.stringify({ type: 'end_turn' }));
+    }
+
+    micBtn.addEventListener('mousedown', beginTurn);
+    micBtn.addEventListener('mouseup', endTurn);
+    micBtn.addEventListener('mouseleave', () => { if (recording) endTurn(); });
+
+    // Touch support (mousedown/mouseup don't fire reliably on mobile).
+    micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); beginTurn(); });
+    micBtn.addEventListener('touchend', (e) => { e.preventDefault(); endTurn(); });
+  </script>
+</body>
+</html>

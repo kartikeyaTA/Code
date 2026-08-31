@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RoadieRanger Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* (Styles remain the same as previous) */
+    :root {
+      --bg-main: #f9f9f9;
+      --bg-sidebar: #f0f0f0;
+      --primary-blue: #4285F4;
+      --primary-hover: #3367D6;
+      --text-main: #333;
+      --text-light: #777;
+      --agent-bg: #ffffff;
+    }
+    body { margin: 0; font-family: 'Inter', sans-serif; display: flex; height: 100vh; background-color: var(--bg-main); color: var(--text-main); }
+    .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+    .new-chat-btn { background: white; border: 1px solid #ccc; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 500; text-align: left; margin-bottom: 20px; transition: 0.2s; }
+    .new-chat-btn:hover { background: #e9e9e9; }
+    .history-title { font-size: 0.8rem; color: var(--text-light); font-weight: 600; margin-bottom: 10px; }
+    .history-item { font-size: 0.9rem; padding: 10px 8px; border-radius: 6px; cursor: pointer; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+    .history-item.active { background-color: #e0e0e0; font-weight: 600; color: #000; }
+    .history-item:hover:not(.active) { background-color: #e4e4e4; }
+    .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #eaeaea; }
+    .logo { font-size: 1.5rem; font-weight: 600; color: #000; }
+    .logo span { color: var(--primary-blue); }
+    .status-badge { display: flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; border: 1px solid #e0e0e0; font-size: 0.85rem; font-weight: 500; color: var(--text-light); background: white; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #ccc; }
+    .status-dot.ready { background-color: #34A853; }
+    .status-dot.recording { background-color: #EA4335; }
+    .chat-container { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 24px; }
+    .message-wrapper { display: flex; flex-direction: column; max-width: 800px; margin: 0 auto; width: 100%; }
+    .message-wrapper.agent { align-items: flex-start; }
+    .message-wrapper.user { align-items: flex-end; }
+    .message-label { font-size: 0.75rem; color: var(--text-light); margin-bottom: 6px; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px; }
+    .message { padding: 16px 20px; border-radius: 12px; font-size: 1rem; line-height: 1.5; box-shadow: 0 2px 6px rgba(0,0,0,0.04); max-width: 80%; }
+    .message.agent { background-color: var(--agent-bg); border: 1px solid #eee; color: #333; }
+    .message.user { background-color: var(--primary-blue); color: white; }
+    .controls-wrapper { padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 15px; background: linear-gradient(transparent, var(--bg-main) 20%); }
+    .buttons-row { display: flex; align-items: center; gap: 20px; }
+    .btn { padding: 12px 24px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-connect { background-color: #A3BDFC; color: white; }
+    .btn-connect:hover { background-color: #8babf1; }
+    .btn-connect.active { background-color: #34A853; }
+    .btn-disconnect { background-color: transparent; border: 1px solid #ccc; color: #555; }
+    .btn-disconnect:hover { background-color: #f0f0f0; }
+    .btn-mic { width: 64px; height: 64px; border-radius: 50%; background-color: #e0e0e0; display: flex; justify-content: center; align-items: center; border: none; cursor: not-allowed; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .btn-mic.active { background-color: var(--primary-blue); cursor: pointer; box-shadow: 0 0 0 10px rgba(66, 133, 244, 0.2); }
+    .btn-mic.recording { background-color: #EA4335; box-shadow: 0 0 0 10px rgba(234, 67, 53, 0.2); animation: pulse 1.5s infinite; }
+    .mic-inner { width: 24px; height: 24px; border-radius: 50%; background-color: white; transition: all 0.2s; }
+    .btn-mic.recording .mic-inner { border-radius: 4px; width: 16px; height: 16px; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(234, 67, 53, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0); } }
+    .helper-text { font-size: 0.85rem; color: var(--text-light); font-family: 'Space Mono', monospace; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+    <div class="history-title">RECENT</div>
+    <div id="recentList"></div>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <div class="logo">Roadie<span>Ranger</span></div>
+      <div class="status-badge">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">OFFLINE</span>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chat"></div>
+
+    <div class="controls-wrapper">
+      <div class="buttons-row">
+        <button class="btn btn-connect" id="btnConnect" onclick="connectSystem()">CONNECT</button>
+        <button class="btn-mic" id="btnMic" onclick="toggleMic()" disabled><div class="mic-inner"></div></button>
+        <button class="btn btn-disconnect" id="btnDisconnect" onclick="disconnectSystem()">DISCONNECT</button>
+      </div>
+      <div class="helper-text" id="helperText">System disconnected.</div>
+    </div>
+  </div>
+
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+
+  <script>
+    let ws;
+    let recognizer;
+    let synthesizer;
+    let buffer = "";
+    let currentBotMsg = null;
+    let isConnected = false;
+    let isRecording = false;
+
+    // Session Management Variables
+    let currentSessionId = null;
+    let sessions = JSON.parse(localStorage.getItem('voice_sessions')) || [];
+
+    const ui = {
+      chat: document.getElementById('chat'),
+      statusDot: document.getElementById('statusDot'),
+      statusText: document.getElementById('statusText'),
+      btnConnect: document.getElementById('btnConnect'),
+      btnMic: document.getElementById('btnMic'),
+      helperText: document.getElementById('helperText'),
+      recentList: document.getElementById('recentList')
+    };
+
+    // ==========================================
+    // Session & UI Rendering
+    // ==========================================
+
+    function generateId() {
+      return Math.random().toString(36).substring(2, 15);
+    }
+
+    function initApp() {
+      renderRecentSessions();
+      if (sessions.length > 0) {
+        loadSession(sessions[0].id);
+      } else {
+        startNewChat();
+      }
+    }
+
+    function startNewChat() {
+      disconnectSystem();
+      currentSessionId = generateId();
+
+      // Setup base new session
+      const newSession = {
+        id: currentSessionId,
+        title: "New Conversation",
+        messages: [{ sender: 'agent', text: "Welcome! Click 'Connect' to initialize the system, then use the Mic button to talk." }]
+      };
+
+      sessions.unshift(newSession);
+      saveSessions();
+      loadSession(currentSessionId);
+    }
+
+    function loadSession(id) {
+      if (isConnected) disconnectSystem();
+      currentSessionId = id;
+
+      // Render Messages
+      const session = sessions.find(s => s.id === id);
+      ui.chat.innerHTML = '';
+      if (session && session.messages) {
+        session.messages.forEach(msg => appendMessage(msg.sender, msg.text, false));
+      }
+      renderRecentSessions();
+    }
+
+    function renderRecentSessions() {
+      ui.recentList.innerHTML = '';
+      sessions.forEach(session => {
+        const div = document.createElement('div');
+        div.className = `history-item ${session.id === currentSessionId ? 'active' : ''}`;
+        div.innerText = session.title;
+        div.onclick = () => loadSession(session.id);
+        ui.recentList.appendChild(div);
+      });
+    }
+
+    function saveSessions() {
+      localStorage.setItem('voice_sessions', JSON.stringify(sessions));
+      renderRecentSessions();
+    }
+
+    function saveMessageToSession(sender, text) {
+      const session = sessions.find(s => s.id === currentSessionId);
+      if (session) {
+        // Auto-title generation based on first user message
+        if (sender === 'user' && session.title === "New Conversation") {
+          session.title = text.substring(0, 25) + (text.length > 25 ? "..." : "");
+        }
+
+        // If updating an active streaming agent message
+        if (sender === 'agent' && currentBotMsg) {
+           session.messages[session.messages.length - 1].text = text;
+        } else {
+           session.messages.push({ sender, text });
+        }
+        saveSessions();
+      }
+    }
+
+    // ==========================================
+    // Core Logic & Audio
+    // ==========================================
+
+    function updateStatus(state) {
+      ui.statusDot.className = 'status-dot';
+      if (state === 'ready') {
+        ui.statusDot.classList.add('ready');
+        ui.statusText.innerText = 'READY';
+        ui.helperText.innerText = 'Click 🎤 to speak';
+        ui.btnMic.disabled = false;
+        ui.btnMic.classList.add('active');
+        ui.btnMic.classList.remove('recording');
+        ui.btnConnect.innerText = 'CONNECTED';
+        ui.btnConnect.classList.add('active');
+      } else if (state === 'recording') {
+        ui.statusDot.classList.add('recording');
+        ui.statusText.innerText = 'LISTENING';
+        ui.helperText.innerText = 'Listening... Click to stop';
+        ui.btnMic.classList.add('recording');
+      } else {
+        ui.statusText.innerText = 'OFFLINE';
+        ui.helperText.innerText = 'System disconnected.';
+        ui.btnMic.disabled = true;
+        ui.btnMic.className = 'btn-mic';
+        ui.btnConnect.innerText = 'CONNECT';
+        ui.btnConnect.classList.remove('active');
+      }
+    }
+
+    function appendMessage(sender, text, save = true) {
+      const wrapper = document.createElement('div');
+      wrapper.className = `message-wrapper ${sender}`;
+
+      const label = document.createElement('div');
+      label.className = 'message-label';
+      label.innerText = sender === 'user' ? 'YOU' : 'AGENT';
+
+      const msg = document.createElement('div');
+      msg.className = `message ${sender}`;
+      msg.innerText = text;
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(msg);
+      ui.chat.appendChild(wrapper);
+      ui.chat.scrollTop = ui.chat.scrollHeight;
+
+      if (save) saveMessageToSession(sender, text);
+      return msg;
+    }
+
+    function connectSystem() {
+      if (isConnected) return;
+
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+          "5tuQ87INGykxcax9sFLaAjX9LXZg13UcVbTeg8VzG399Ke9jvdd5JQQJ99CDACYeBjFXJ3w3AAAYACOGx3Mo",
+          "eastus"
+      );
+      speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
+      synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+      recognizer.recognized = (s, e) => {
+          if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech && e.result.text) {
+              const text = e.result.text;
+              appendMessage('user', text);
+              currentBotMsg = null;
+
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                  ws.send(text);
+              }
+              // ✅ FIX: Removed auto mic-toggle. The user must click to stop the mic.
+          }
+      };
+
+      // Connect with current session ID for LangGraph memory
+      ws = new WebSocket("ws://" + window.location.host + "/ws/voice/" + currentSessionId);
+
+      ws.onopen = () => {
+          isConnected = true;
+          updateStatus('ready');
+      };
+
+      ws.onmessage = (event) => {
+          const chunk = event.data;
+
+          if (!currentBotMsg) {
+              currentBotMsg = appendMessage('agent', '');
+          }
+
+          currentBotMsg.innerText += chunk;
+          buffer += chunk;
+
+          // Update the session save state for the active chunking
+          saveMessageToSession('agent', currentBotMsg.innerText);
+
+          if (buffer.includes(".") || buffer.includes("?") || buffer.includes("!")) {
+              speak(buffer);
+              buffer = "";
+          }
+      };
+
+      ws.onclose = () => {
+          disconnectSystem();
+      };
+    }
+
+    function toggleMic() {
+      if (!isConnected || !recognizer) return;
+
+      if (isRecording) {
+        recognizer.stopContinuousRecognitionAsync(() => {
+          isRecording = false;
+          updateStatus('ready');
+        });
+      } else {
+        recognizer.startContinuousRecognitionAsync(() => {
+          isRecording = true;
+          updateStatus('recording');
+          if (synthesizer) synthesizer.stopSpeakingAsync();
+        });
+      }
+    }
+
+    function speak(text) {
+      if (!synthesizer) return;
+      synthesizer.speakTextAsync(text);
+    }
+
+    function disconnectSystem() {
+      if (isRecording && recognizer) recognizer.stopContinuousRecognitionAsync();
+      if (ws) ws.close();
+      if (synthesizer) { synthesizer.close(); synthesizer = null; }
+      isConnected = false;
+      isRecording = false;
+      buffer = "";
+      currentBotMsg = null;
+      updateStatus('offline');
+    }
+
+    // Initialize on load
+    window.onload = initApp;
+  </script>
+</body>
+</html>
