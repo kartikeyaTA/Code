@@ -1,0 +1,6 @@
+dummy-client-1234
+dummy-client-1234
+https://oauth-mock.mock.beeceptor.com/oauth/token/github
+https://oauth-mock.mock.beeceptor.com/oauth/authorize
+https://oauth-mock.mock.beeceptor.com/oauth/token/github
+user
