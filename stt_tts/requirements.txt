@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+azure-cognitiveservices-speech
+azure-identity
+azure-ai-projects
