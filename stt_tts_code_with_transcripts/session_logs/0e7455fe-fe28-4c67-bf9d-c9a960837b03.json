@@ -1,0 +1,23 @@
+{
+  "session_id": "0e7455fe-fe28-4c67-bf9d-c9a960837b03",
+  "started_at": "2026-08-31T11:28:02.502198+00:00",
+  "ended_at": "2026-08-31T11:31:16.923485+00:00",
+  "turn_count": 1,
+  "turns": [
+    {
+      "turn": 1,
+      "timestamp": "2026-08-31T11:29:08.110969+00:00",
+      "user_text": "Hello, show me all my incidents.",
+      "agent_text": "Here are all your incidents from the last 7 days:\n\n- INC0010614 – Information requested about phishing scams (opened 2026-08-31, state: New)  \n- INC0010613 – How to delete a user (opened 2026-08-27, state: New)  \n- INC0010612 – Guidance on phishing scam prevention (opened 2026-08-27, state: New)  \n- INC0010611 – Information about phishing scams (opened 2026-08-27, state: New)  \n- INC0010610 – Information request about phishing scams (opened 2026-08-27, state: New)  \n- INC0010609 – How to quit an application that isn’t responding (opened 2026-08-27, state: New)  \n- INC0010608 – How to quit an application that isn’t responding (opened 2026-08-27, state: New)  \n- INC0010607 – Inquiry about phishing scams (opened 2026-08-27, state: New)  \n- INC0010606 – Information about phishing scams (opened 2026-08-26, state: New)  \n- INC0010605 – Information about phishing scams (opened 2026-08-26, state: New)  \n- INC0010604 – Information about voice features like ChatGPT (opened 2026-08-26, state: New)  \n- INC0010603 – Information requested about phishing scams (opened 2026-08-26, state: New)  \n- INC0010602 – Information requested about phishing scams (opened 2026-08-25, state: New)  \n- INC0010601 – Information requested about phishing scams (opened 2026-08-25, state: New)  \n- INC0010600 – User inquiry about phishing scams (opened 2026-08-25, state: New)  \n- INC0010599 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010598 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010597 – “A watershed fishing scan” (opened 2026-08-25, state: New)  \n- INC0010596 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010595 – What is a fish? (opened 2026-08-25, state: New)  \n- INC0010594 – “I want to something.” (opened 2026-08-25, state: New)  \n- INC0010593 – “It is a fishing *.” (opened 2026-08-25, state: New)  \n- INC0010592 – Refund policy and delivery times (opened 2026-08-25, state: New)  \n- INC0010591 – Refund policy and support hours for Germany (opened 2026-08-25, state: New)  \n- INC0010590 – Customer unhappy and requested a ticket opened (opened 2026-08-25, state: New)  \n- INC0010589 – New account setup process and security (opened 2026-08-25, state: New)  \n- INC0010588 – Account login issue – password reset link expired (opened 2026-08-25, state: New)  \n- INC0010587 – Payment not going through on new app version (opened 2026-08-25, state: New)  \n- INC0010586 – Delayed shipment refund policy / ticket status / weekend hours (opened 2026-08-25, state: New)  \n- INC0010585 – Resetting online banking password (opened 2026-08-25, state: New)  \n- INC0010584 – Refund policy for defective products (opened 2026-08-25, state: New)  \n- INC0010583 – Warranty for Model X smartphone (opened 2026-08-25, state: New)  \n- INC0010582 – Order from last week not shipped (opened 2026-08-25, state: New)  \n- INC0010581 – Recent payment not reflected in account (opened 2026-08-25, state: New)  \n- INC0010580 – Intermittent internet connection drops (opened 2026-08-25, state: New)  \n- INC0010579 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010578 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010577 – What is a phishing scam? (opened 2026-08-25, state: New)  \n- INC0010576 – What is a phishing scam? (opened 2026-08-24, state: New)  \n- INC0010575 – Tell me about the phishing scam (opened 2026-08-24, state: New)  \n- INC0010574 – What is a fishing scam? (opened 2026-08-24, state: New)  \n- INC0010573 – What is a phishing scam? (opened 2026-08-24, state: New)  \n- INC0010572 – What is a phishing scam? (opened 2026-08-24, state: New)  \n- INC0010571 – Fishing scheme / how to stop phishing scam (opened 2026-08-24, state: New)  \n- INC0010570 – Tell me about the phishing scam (opened 2026-08-24, state: New)  \n- INC0010569 – Tell me about the phishing scam (opened 2026-08-24, state: New)  \n\nThis was a VIEW_TICKETS request, so I did not create or update any ticket.",
+      "tokens": {
+        "input_tokens": 72686,
+        "output_tokens": 1333,
+        "total_tokens": 74019
+      },
+      "latency_ms": 48404,
+      "interrupted": false,
+      "consent_required": false,
+      "consent_link": null
+    }
+  ]
+}

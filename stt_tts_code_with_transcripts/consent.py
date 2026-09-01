@@ -111,9 +111,9 @@ log = logging.getLogger("chat-backend")
 
 SPEECH_REGION = "eastus"  # e.g. "eastus"
 SPEECH_RESOURCE_ID = (
-    "/subscriptions/c34b42f0-a89c-4e9d-9205-57ae6b91357f/resourceGroups/"
-    "VisualStudioOnline-C88866B319C044FFB02C78F550AEF0FB/providers/"
-    "Microsoft.CognitiveServices/accounts/txrh"
+    "/subscriptions/7514ef27-0355-4347-b91e-6c0085baa70a/resourceGroups/"
+    "txrh_tiger_rg/providers/"
+    "Microsoft.CognitiveServices/accounts/txrhspeechservice"
 )  # full ARM resource ID
 SPEECH_RECOGNITION_LANGUAGE = os.environ.get("SPEECH_RECOGNITION_LANGUAGE", "en-US")
 SPEECH_SYNTHESIS_VOICE = os.environ.get("SPEECH_SYNTHESIS_VOICE", "en-US-AvaNeural")
@@ -121,10 +121,10 @@ SPEECH_SYNTHESIS_VOICE = os.environ.get("SPEECH_SYNTHESIS_VOICE", "en-US-AvaNeur
 # Audio format the FRONTEND must send: raw PCM16 mono at this sample rate.
 INPUT_SAMPLE_RATE = int(os.environ.get("INPUT_SAMPLE_RATE", "16000"))
 
-FOUNDRY_PROJECT_ENDPOINT = "https://txrh-aif-roadierangerdev-6279-stosup-phmo-standard.services.ai.azure.com/api/projects/txrh-proj-RoadieRangerDev-6279-StoSup-pHmO-standard-default"
+FOUNDRY_PROJECT_ENDPOINT = "https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project"
 
-FOUNDRY_AGENT_NAME = "voice-agent"
-SPEECH_ENDPOINT = "https://roadierangerdev-6279-stosup-phmo.cognitiveservices.azure.com"
+FOUNDRY_AGENT_NAME = "txrh-demoagent-2"
+#SPEECH_ENDPOINT = "https://eastus.api.cognitive.microsoft.com/"
 
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
 
@@ -148,8 +148,8 @@ MAX_TURN_AUDIO_BYTES = int(os.environ.get("MAX_TURN_AUDIO_BYTES", str(2 * 60 * I
 # Do NOT include the "aad#..." prefix in SPEECH_AUTH_TOKEN — that prefix is added below.
 # ======================================================================================
 
-FOUNDRY_AUTH_TOKEN =''
-SPEECH_AUTH_TOKEN = ""
+FOUNDRY_AUTH_TOKEN ="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlQ1aDQwcTdHMHg0OXFuNDFsTTkta0tqcEQ5OCIsImtpZCI6IlQ1aDQwcTdHMHg0OXFuNDFsTTkta0tqcEQ5OCJ9.eyJhdWQiOiJodHRwczovL2FpLmF6dXJlLmNvbSIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0L2U3MTRlZjMxLWZhYWItNDFkMi05ZjFlLWU2ZGY0YWYxNmFiOC8iLCJpYXQiOjE3ODgxNzUwMTUsIm5iZiI6MTc4ODE3NTAxNSwiZXhwIjoxNzg4MTc5MTcxLCJhY3IiOiIxIiwiYWlvIjoiQVhRQWkvOGNBQUFBcHgwdCthUWpRdzUxVWtrOWlqMWgvbnNGbXZHL1IrdU1PNTE4bHBBTkp3WXNrdHgzamFlMVRDZmVsTm00NHRST1I1emR5Sm5yV0hwVWplNHQxakRHTUVYeVVQbWQ2anZsRDZidjQ2SmZLc3NabXFiODdiMk8wMFRJcEtrRXRCWjNxWm5tQW5VL3A2N3NIcXRQNkx6NWtnPT0iLCJhbXIiOlsicHdkIiwibWZhIl0sImFwcGlkIjoiMDRiMDc3OTUtOGRkYi00NjFhLWJiZWUtMDJmOWUxYmY3YjQ2IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJSIiwiZ2l2ZW5fbmFtZSI6IlByaXRoaXZlZSIsImdyb3VwcyI6WyI4MDE0ZWI2NC05YWQzLTRiMmEtOWZlNy00NDllYzQ2NzQ0YjIiLCJkMDExZDU2OC04MTRiLTRlY2UtODhjOC1iOGFiODIwZjdhOGIiXSwiaWR0eXAiOiJ1c2VyIiwiaXBhZGRyIjoiNDkuNDMuMTYzLjk1IiwibmFtZSI6IlByaXRoaXZlZSBSIiwib2lkIjoiNjU0NjI0OTUtMzI3ZC00MjExLWJkMjEtMzY5ZTZiMWEyZDMwIiwicHVpZCI6IjEwMDMyMDAzODE5QkJEQTgiLCJyaCI6IjEuQVZZQU1lOFU1NnY2MGtHZkh1YmZTdkZxdUY5dnBoamYyeGRNbmRjV05IRXFuTDRBQUxCV0FBLiIsInNjcCI6InVzZXJfaW1wZXJzb25hdGlvbiIsInNpZCI6IjAwN2VkNGRhLTljN2EtNjY2Mi1mMzllLTc3MGI2MmU4ZjBlNiIsInN1YiI6IlNTNTlPNmxISFJfV2RSdnRBVnYwSl93SUtFMFdpM2NmV19IQ2dMQVFHelUiLCJ0aWQiOiJlNzE0ZWYzMS1mYWFiLTQxZDItOWYxZS1lNmRmNGFmMTZhYjgiLCJ1bmlxdWVfbmFtZSI6InByaXRoaXZlZS5yQHRpZ2VyYW5hbHl0aWNzLmNvbSIsInVwbiI6InByaXRoaXZlZS5yQHRpZ2VyYW5hbHl0aWNzLmNvbSIsInV0aSI6IkF5bGNwTVVmS0VHbTEtU1ZGUUlrQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfYWN0X2ZjdCI6IjUgMyIsInhtc19mdGQiOiJXX2ViSUpLSnZmdjB4dFVlbnFSX1F2M05WWjVnYUtZUDNtUXY3aEpHbS1zQmEyOXlaV0Z6YjNWMGFDMWtjMjF6IiwieG1zX2lkcmVsIjoiMSAyOCIsInhtc19zdWJfZmN0IjoiMTAgMyJ9.BOhXNIKHqLxtPuIe76BptiGmBnohQhZkbp1ib4Rthtcx4NTETNloUUhOANBQ2b58hHV7KFq2h9QA3DHSDcFkKz756TxsXziVjNo6y1DyxZZunzQ2s3zUJoxPKJQ0l2T_USgRnGsul3q0M7UHjpvNQJeTcUPSFUNfFGZZAzkDQPyRCdUWnY92pfOJfQIACFECFk0PK4jzmmYUFkSdop81M2qSvgLQR1bnbq8F_-ovZ9aOG-CY5Ej3-sBE93knyUgcd6oiQqH-K7UgFHqAZnJ5_LxhFLdRrV-uOCwlwJ1ckqzH5EhRik5A79RUGnjZ3TYu1a1KnoRvSyitHCl3IIN0Wg"
+SPEECH_AUTH_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlQ1aDQwcTdHMHg0OXFuNDFsTTkta0tqcEQ5OCIsImtpZCI6IlQ1aDQwcTdHMHg0OXFuNDFsTTkta0tqcEQ5OCJ9.eyJhdWQiOiJodHRwczovL2NvZ25pdGl2ZXNlcnZpY2VzLmF6dXJlLmNvbSIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0L2U3MTRlZjMxLWZhYWItNDFkMi05ZjFlLWU2ZGY0YWYxNmFiOC8iLCJpYXQiOjE3ODgxNzQ5OTYsIm5iZiI6MTc4ODE3NDk5NiwiZXhwIjoxNzg4MTc5NDYzLCJhY3IiOiIxIiwiYWlvIjoiQVhRQWkvOGNBQUFBNnh5SHV6YkVjUUxRZWJIME5hQ3h4Tjk2Nnl5a3RqYTMvSVhzdXU2b1A3dDlsZmZiUzYvUmIyZmJTVTQySGpUL2FMaDBTTlhFSXlHM3Q3UjIvTWg2bWVmOTZPTzZkcmhsTUJaTzNOWDlSRzFvdDd6Qk9aNSttVEcycEhNYVBGRURNUmhHVm9YYzZyOXc0SFpPNDd6UWJBPT0iLCJhbXIiOlsicHdkIiwibWZhIl0sImFwcGlkIjoiMDRiMDc3OTUtOGRkYi00NjFhLWJiZWUtMDJmOWUxYmY3YjQ2IiwiYXBwaWRhY3IiOiIwIiwiZmFtaWx5X25hbWUiOiJSIiwiZ2l2ZW5fbmFtZSI6IlByaXRoaXZlZSIsImdyb3VwcyI6WyI4MDE0ZWI2NC05YWQzLTRiMmEtOWZlNy00NDllYzQ2NzQ0YjIiLCJkMDExZDU2OC04MTRiLTRlY2UtODhjOC1iOGFiODIwZjdhOGIiXSwiaWR0eXAiOiJ1c2VyIiwiaXBhZGRyIjoiNDkuNDMuMTYzLjk1IiwibmFtZSI6IlByaXRoaXZlZSBSIiwib2lkIjoiNjU0NjI0OTUtMzI3ZC00MjExLWJkMjEtMzY5ZTZiMWEyZDMwIiwicHVpZCI6IjEwMDMyMDAzODE5QkJEQTgiLCJyaCI6IjEuQVZZQU1lOFU1NnY2MGtHZkh1YmZTdkZxdUpBaU1YM0lLRHhIb08yT1UzU2JiVzBBQUxCV0FBLiIsInNjcCI6InVzZXJfaW1wZXJzb25hdGlvbiIsInNpZCI6IjAwN2VkNGRhLTljN2EtNjY2Mi1mMzllLTc3MGI2MmU4ZjBlNiIsInN1YiI6Ik5iNl9iREdqbVQ3aERSdmloQW1ONi05WjZKZWR3ZEdDdTQxbG1LVXUtSGsiLCJ0aWQiOiJlNzE0ZWYzMS1mYWFiLTQxZDItOWYxZS1lNmRmNGFmMTZhYjgiLCJ1bmlxdWVfbmFtZSI6InByaXRoaXZlZS5yQHRpZ2VyYW5hbHl0aWNzLmNvbSIsInVwbiI6InByaXRoaXZlZS5yQHRpZ2VyYW5hbHl0aWNzLmNvbSIsInV0aSI6Im00c3I1c1hOZFVxekg0Mnh3ckIyQUEiLCJ2ZXIiOiIxLjAiLCJ3aWRzIjpbImI3OWZiZjRkLTNlZjktNDY4OS04MTQzLTc2YjE5NGU4NTUwOSJdLCJ4bXNfYWN0X2ZjdCI6IjUgMyIsInhtc19mdGQiOiJLakd5X0tmQXVMbFEtcFE2NGRVeFZzRmxVNXo5QWsyY01xSnRlV0lLSndRQmFtRndZVzVsWVhOMExXUnpiWE0iLCJ4bXNfaWRyZWwiOiIxIDI4IiwieG1zX3N1Yl9mY3QiOiIzIDEyIn0.NhIeZuHNI4HK5n9eWUtC-TAavqmVg0l1j4ceq-u1ldc9AeURoufSTB_1I_wpnx3lgftCZNuHqQ18qF-oOd65vk46lWdy5nUyzNhcbLHjqxciCzNc8fp-Mbk8gxX6ehRb6Qhz9POCnuI6vgZN2R2i57nsJe3fMqeTgHs3lLIf_YGHMfPnNVLsOPXTkAs4Fkdle5Fyo5kX1M0JbJlPMCu2CcE1-xczez4lZFAVbl88bLmlsAwSatcDu8Do6jLfislQmRR5f_3ZssdEdgN4t4wobckKtY1fWgG5Xl85TcgHiP4rYCo3G5i-sAkzckuEx3PivC287ZBlmPolywTEMchNag"
 
 # --------------------------------------------------------------------------------------
 # Static (hardcoded) token credential for Foundry
@@ -216,9 +216,15 @@ def _get_speech_auth_token() -> str:
     return f"aad#{SPEECH_RESOURCE_ID}#{SPEECH_AUTH_TOKEN}"
 
 
+# def _new_speech_config() -> speechsdk.SpeechConfig:
+#     cfg = speechsdk.SpeechConfig(endpoint=SPEECH_ENDPOINT)
+#     cfg.authorization_token = _get_speech_auth_token()
+#     cfg.speech_recognition_language = SPEECH_RECOGNITION_LANGUAGE
+#     cfg.speech_synthesis_voice_name = SPEECH_SYNTHESIS_VOICE
+#     return cfg
+
 def _new_speech_config() -> speechsdk.SpeechConfig:
-    cfg = speechsdk.SpeechConfig(endpoint=SPEECH_ENDPOINT)
-    cfg.authorization_token = _get_speech_auth_token()
+    cfg = speechsdk.SpeechConfig(auth_token=_get_speech_auth_token(), region=SPEECH_REGION)
     cfg.speech_recognition_language = SPEECH_RECOGNITION_LANGUAGE
     cfg.speech_synthesis_voice_name = SPEECH_SYNTHESIS_VOICE
     return cfg
