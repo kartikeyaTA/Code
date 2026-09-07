@@ -1,0 +1,51 @@
+Architecture
+    Services used and trade offs -> ingress, private endpoints
+        Container Apps
+        Web App
+        Cosmos DB
+        Microsoft Foundry
+        Azure Speech
+        APIM
+        Servicenow
+Authentication (SSO/OBO)
+    4 app registrations
+    how each application is authorizing itself and exchanging tokens
+    How is SSO working
+    From Texas side -> provide sample document on how the app registrations were created.
+Frontend and BFF
+    Frontend 
+    BFF
+Foundry Agent
+    Creation / Updation
+    prompts
+    tool
+    text / voice agents
+Text backend
+    Session handling via previous response id
+    Streaming
+    Logging to cosmos DB (conversations, turns)
+    Logging to Log analytics
+    Newrelic
+    Core logic -> how integration is done with foundry agent
+Voice backend (STT and TTS)
+    STT
+    TTS
+    Barge-in
+    Session handling via previous response id
+    Functionality to start/stop listening    
+    Logging to cosmos DB (conversations, turns)
+    Logging to Log analytics
+    Core logic -> how integration is done with foundry agent
+MCP -> Servicenow
+    custom mcp server
+    explain abt each tool -> function, parameters, example usecase, output
+    Need for MCP
+    How is MCP being called (APIM)
+CI - CD
+    CI
+    CD
+    Code promotion
+    Rollback
+    App Vulnerability Scanning
+    Image Scanning
+    Unit Testing
