@@ -1,0 +1,21 @@
+{
+    "properties": {
+        "roleName": "Speech_User_Custom3",
+        "description": "",
+        "assignableScopes": [
+
+        ],
+        "permissions": [
+            {
+                "actions": [
+                    "Microsoft.CognitiveServices/accounts/read"
+                ],
+                "notActions": [],
+                "dataActions": [
+                    "Microsoft.CognitiveServices/accounts/SpeechServices/unified-speech/frontend/action"
+                ],
+                "notDataActions": []
+            }
+        ]
+    }
+}
