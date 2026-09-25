@@ -29,4 +29,5 @@ This is what we have planned as per our understanding please provide the rating 
 
 P.S: If we have already discussed not to have multiple uat and prod deployment proper cycles should be there so not to have multiple revisions. If this is not followed we would merge PR open and close into single pipeline running after code is merged to respective branches.​‌
 
+https://portal.azure.com/#view/Microsoft_Azure_Billing/ManagementPartnerBlade
 
