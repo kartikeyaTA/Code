@@ -50,7 +50,7 @@ func azure functionapp publish rag-scheduled-indexer-app --force
 needed env 
 
 AzureWebJobsStorage__accountName  -> txrhragsnowkb
-AzureWebJobsStorage__clientId -> 6ece4a54-6f47-448a-8ca3-b675df1cfc1e
+AzureWebJobsStorage__clientId -> managedidentity_client_id
 AzureWebJobsStorage__credential -> managedidentity
 AzureWebJobsStorage --> DefaultEndpointsProtocol=https;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==;EndpointSuffix=core.windows.net
 
