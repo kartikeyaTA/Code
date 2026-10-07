@@ -1,0 +1,76 @@
+Required Permissions
+
+1. Assign Role on Azure AI Search
+Grant your VM's Managed Identity permission to read, write, and create index objects in AI Search:
+1. Go to your **Azure AI Search** resource -> **Access Control (IAM)** -> **+ Add role assignment**.
+2. Search for the role **`Search Index Data Contributor`** and select it.
+3. Under the **Members** tab, set **Assign access to** to **Managed identity**.
+4. Click **+ Select members**, select your VM (or User-Assigned Identity), and click **Select**.
+5. Click **Review + assign**.
+
+#### 2. Assign Role on Azure AI Foundry / OpenAI
+
+Grant your VM's Managed Identity permission to call model endpoints and generate vector embeddings:
+
+1. Go to your **Azure AI Foundry / Azure OpenAI** resource -> **Access Control (IAM)** -> **+ Add role assignment**.
+2. Search for the role **`Cognitive Services OpenAI User`** and select it.
+3. Under the **Members** tab, set **Assign access to** to **Managed identity**.
+4. Click **+ Select members**, select your VM (or User-Assigned Identity), and click **Select**.
+5. Click **Review + assign**.
+
+#### 3. Assign Role on Azure Blob Storage
+
+Grant your VM's Managed Identity permission to read the JSON files from Blob Storage:
+
+1. Go to your Storage Account **`txrhragsnowkb`** -> **Access Control (IAM)** -> **+ Add role assignment**.
+2. Search for the role **`Storage Blob Data Contributor`** and select it.
+3. Under **Members**, select your VM's Managed Identity.
+4. Click **Review + assign**.
+
+### Summary Table of Permissions
+
+| Connection Target | Identity Requesting Access | Required Role Assignment |
+| --- | --- | --- |
+| **Azure AI Search** | Azure VM Managed Identity | **Search Index Data Contributor** |
+| **Azure AI Foundry** | Azure VM Managed Identity | **Cognitive Services OpenAI User** |
+| **Azure AI Foundry** | Azure AI Search Managed Identity *(for Skillset execution)* | **Cognitive Services OpenAI User** |
+| **Azure Blob Storage** | Azure VM Managed Identity | **Storage Blob Data Contributor** |
+
+
+pip install azure-search-documents azure-identity
+pip install azure-identity azure-storage-blob
+npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+mkdir -p rag-azure-function
+cd rag-azure-function
+func init --python --version 4
+func new --name ScheduledRAGIndexer --template "Timer trigger"
+func azure functionapp publish rag-scheduled-indexer-app --force
+
+needed env 
+
+AzureWebJobsStorage__accountName  -> txrhragsnowkb
+AzureWebJobsStorage__clientId -> 6ece4a54-6f47-448a-8ca3-b675df1cfc1e
+AzureWebJobsStorage__credential -> managedidentity
+AzureWebJobsStorage --> DefaultEndpointsProtocol=https;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==;EndpointSuffix=core.windows.net
+
+Command Used to do AI serach from Portal
+{
+  "vectorQueries": [
+    {
+      "text": "How do I log into Pulse app?",
+      "fields": "embedding_vector",
+      "kind": "text",
+      "k": 1
+    }
+  ],
+  "select": "sys_id, number, short_description, description",
+  "top": 1
+}
+
+Curl used to trigger Azure functions
+curl -X POST \
+  "https://rag-scheduled-indexer-app.azurewebsites.net/admin/functions/ScheduledRAGIndexer" \
+  -H "Content-Type: application/json" \
+  -H "x-functions-key: master_key" \
+  -d '{}'

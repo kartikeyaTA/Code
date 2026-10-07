@@ -1,0 +1,14 @@
+{
+  "sys_updated_on": "2026-10-01 15:45:10",
+  "number": "KB0013202",
+  "sys_created_on": "2026-08-05 14:22:00",
+  "meta_description": "Updating menu items, prices, and daily specials in POS.",
+  "meta": "menu management, price update, item availability, 86 item",
+  "display_number": "KB0013202 v1.2",
+  "short_description": "Menu Configuration Guide",
+  "description": "Explains how to add new items, update pricing, and mark ingredients out of stock.",
+  "u_legacy_number": "KB0012508",
+  "sys_id": "5c9e4311bb801452aa009911e328002b",
+  "kb_name": "Restaurant Systems",
+  "embedding_text": "Menu Configuration Guide. Explains how to add new items, update pricing, and mark ingredients out of stock."
+}
