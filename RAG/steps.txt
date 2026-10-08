@@ -73,3 +73,10 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -H "x-functions-key: master_key" \
   -d '{}'
+
+curl -X POST "https://testing-apim-txrh.azure-api.net/models/openai/deployments/text-embedding-3-small/embeddings?api-version=1" \
+  -H "Content-Type: application/json" \
+  -H "api-key: 91c88533264a48858d06b82e4694fbc0" \
+  -d '{
+    "input": "Testing embedding model response"
+  }'
