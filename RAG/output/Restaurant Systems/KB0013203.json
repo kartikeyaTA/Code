@@ -1,0 +1,14 @@
+{
+  "sys_updated_on": "2026-10-02 08:30:00",
+  "number": "KB0013203",
+  "sys_created_on": "2026-08-10 11:05:12",
+  "meta_description": "Resolving network connectivity drops on Kitchen Display Systems (KDS).",
+  "meta": "KDS, screen offline, network error, kitchen display unit",
+  "display_number": "KB0013203 v1.0",
+  "short_description": "Kitchen Display Network Troubleshooting",
+  "description": "Fixing offline status and sync delay errors between register terminals and kitchen screens.",
+  "u_legacy_number": "KB0012514",
+  "sys_id": "5c9e4311bb801452aa009911e328002c",
+  "kb_name": "Restaurant Systems",
+  "embedding_text": "Kitchen Display Network Troubleshooting. Fixing offline status and sync delay errors between register terminals and kitchen screens."
+}

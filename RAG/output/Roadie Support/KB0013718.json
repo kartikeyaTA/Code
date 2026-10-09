@@ -1,0 +1,14 @@
+{
+  "sys_updated_on": "2026-10-06 09:20:11",
+  "number": "KB0013718",
+  "sys_created_on": "2026-08-18 10:15:30",
+  "meta_description": "Steps for drivers to follow when a delivery recipient is unreachable.",
+  "meta": "undeliverable, customer missing, return trip, driver support",
+  "display_number": "KB0013718 v1.1",
+  "short_description": "Undeliverable Package Protocol",
+  "description": "Protocol for waiting periods, contacting recipients, and initiating return trips to original drop-offs.",
+  "u_legacy_number": "KB0013140",
+  "sys_id": "170a61852ff2c7105015dd1bcfa4e3c2",
+  "kb_name": "Roadie Support",
+  "embedding_text": "Undeliverable Package Protocol. Protocol for waiting periods, contacting recipients, and initiating return trips to original drop-offs."
+}

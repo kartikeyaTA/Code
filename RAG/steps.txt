@@ -50,9 +50,10 @@ func azure functionapp publish rag-scheduled-indexer-app --force
 needed env 
 
 AzureWebJobsStorage__accountName  -> txrhragsnowkb
-AzureWebJobsStorage__clientId -> managedidentity_client_id
+AzureWebJobsStorage__clientId -> 6ece4a54-6f47-448a-8ca3-b675df1cfc1e
 AzureWebJobsStorage__credential -> managedidentity
-AzureWebJobsStorage --> blob stroge account Connection key present in access keys in stroage account
+AzureWebJobsStorage --> DefaultEndpointsProtocol=https;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==;EndpointSuffix=core.windows.net
+
 Command Used to do AI serach from Portal
 {
   "vectorQueries": [
@@ -71,13 +72,5 @@ Curl used to trigger Azure functions
 curl -X POST \
   "https://rag-scheduled-indexer-app.azurewebsites.net/admin/functions/ScheduledRAGIndexer" \
   -H "Content-Type: application/json" \
-  -H "x-functions-key: master_key" \
+  -H "x-functions-key: 2UjVD-fOuYNm3Hp2OxtAr0FToRUOry9OYAFaKR8ZEi8BAzFuvviQaw==" \
   -d '{}'
-
-curl -X POST "https://testing-apim-txrh.azure-api.net/models/openai/v1/embeddings" \
-  -H "Content-Type: application/json" \
-  -H "api-key: 91c88533264a48858d06b82e4694fbc0" \
-  -d '{
-    "model": "text-embedding-3-small",
-    "input": "Testing embedding model response"
-  }'

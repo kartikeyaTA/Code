@@ -38,7 +38,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_FOLDER = os.path.join(SCRIPT_DIR, "output")
 
 SEARCH_ENDPOINT = "https://txrhrag.search.windows.net"
-FOUNDRY_ENDPOINT = "https://voice-open-ai-txrh.openai.azure.com/"
+APIM_ENDPOINT = "https://testing-apim-txrh.azure-api.net/models"
+# Set before running:  export APIM_SUBSCRIPTION_KEY="<new regenerated key>"
+APIM_SUBSCRIPTION_KEY ="91c88533264a48858d06b82e4694fbc0"
 EMBEDDING_DEPLOYMENT_NAME = "text-embedding-3-small"
 
 BLOB_ACCOUNT_URL = "https://txrhragsnowkb.blob.core.windows.net"
@@ -110,10 +112,10 @@ def run_rag_pipeline():
     # 3. Create Skillset
     embedding_skill = AzureOpenAIEmbeddingSkill(
         description="Generates vector embeddings keylessly via Azure AI Foundry",
-        resource_url=FOUNDRY_ENDPOINT,
+        resource_url=APIM_ENDPOINT,
         deployment_name=EMBEDDING_DEPLOYMENT_NAME,
         model_name=EMBEDDING_DEPLOYMENT_NAME,
-        auth_identity=SearchIndexerDataNoneIdentity(),
+        api_key=APIM_SUBSCRIPTION_KEY,
         inputs=[
             InputFieldMappingEntry(
                 name="text", source="/document/embedding_text"
@@ -131,7 +133,8 @@ def run_rag_pipeline():
         skills=[embedding_skill],
     )
     indexer_client.create_or_update_skillset(skillset)
-
+    print("Skillset created using APIM endpoint.")
+    
     # 4. Create Index
     fields = [
         SearchField(
@@ -184,9 +187,10 @@ def run_rag_pipeline():
             AzureOpenAIVectorizer(
                 vectorizer_name="myVectorizer",
                 parameters=AzureOpenAIVectorizerParameters(
-                    resource_url=FOUNDRY_ENDPOINT,
+                    resource_url=APIM_ENDPOINT,
                     deployment_name=EMBEDDING_DEPLOYMENT_NAME,
                     model_name=EMBEDDING_DEPLOYMENT_NAME,
+                    api_key=APIM_SUBSCRIPTION_KEY,
                 ),
             )
         ],
@@ -195,7 +199,8 @@ def run_rag_pipeline():
         name=INDEX_NAME, fields=fields, vector_search=vector_search
     )
     index_client.create_or_update_index(index)
-
+    print("Search Index created.")
+    
     # 5. Run Indexer
     parameters = IndexingParameters(
         configuration=IndexingParametersConfiguration(parsing_mode="json")
@@ -221,20 +226,17 @@ def run_rag_pipeline():
     while True:
         status = indexer_client.get_indexer_status(INDEXER_NAME)
         last_result = status.last_result
-        if last_result:
+        if status.status.lower() != "in-progress" and last_result:
             execution_status = last_result.status.lower()
-            if execution_status in [
-                "success",
-                "transientfailure",
-                "persistentfailure",
-            ]:
-                logging.info(
-                    f"Indexer execution finished with status: '{last_result.status}'."
-                )
+            if execution_status in ["success", "transientfailure", "persistentfailure"]:
+                logging.info(f"Indexer execution finished with status: '{last_result.status}'.")
                 break
         time.sleep(5)
 
     # 7. Clean up Temporary Blobs
+    logging.info("Waiting for 60 seconds before cleaning up temporary blobs...")
+    time.sleep(60)
+    logging.info("Cleaning up temporary blobs...")
     blobs = list(container_client.list_blobs())
     for blob in blobs:
         container_client.delete_blob(blob.name)
@@ -243,7 +245,7 @@ def run_rag_pipeline():
 
 # 2. MUST BE REGISTERED VIA @app.schedule
 @app.schedule(
-    schedule="0 40 10 * * *",
+    schedule="0 43 7 * * *",
     arg_name="myTimer",
     run_on_startup=False,
     use_monitor=False,
