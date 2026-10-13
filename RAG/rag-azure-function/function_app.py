@@ -245,7 +245,7 @@ def run_rag_pipeline():
 
 # 2. MUST BE REGISTERED VIA @app.schedule
 @app.schedule(
-    schedule="0 43 7 * * *",
+    schedule="0 22 6 * * *",
     arg_name="myTimer",
     run_on_startup=False,
     use_monitor=False,

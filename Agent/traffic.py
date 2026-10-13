@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from azure.core.exceptions import ResourceNotFoundError
@@ -13,10 +14,10 @@ from azure.ai.projects.models import (
 # ============================================================================
 # 1. PARAMETERS & CONFIGURATION
 # ============================================================================
-project_endpoint = 'https://txrh-foundry.services.ai.azure.com/api/projects/txrh-project'
-agent_name = "txrh-demoagent-2-copy1352324"
-prompt_file_path = "prompt.txt"
-model_deployment = "roadie-ranger-foundry-resource/gpt-5.4"
+project_endpoint = 'https://voice-open-ai-txrh.services.ai.azure.com/api/projects/voice-open-ai-txrh'
+agent_name = "hyb"
+prompt_file_path = "Hi"
+model_deployment = "gpt-5"
 
 if not os.path.exists(prompt_file_path):
     print(f"📁 Local Error: '{prompt_file_path}' not found! Creating template file...")
@@ -32,8 +33,7 @@ with open(prompt_file_path, "r", encoding="utf-8") as file:
 # HELPERS
 # ============================================================================
 def get_active_rules(agent):
-    """Returns the current version_selection_rules for an agent, or None if
-    no explicit routing is configured (i.e. the endpoint just tracks 'latest')."""
+    """Returns current version selection rules from the agent endpoint."""
     endpoint_cfg = agent.agent_endpoint
     if endpoint_cfg and endpoint_cfg.version_selector:
         return list(endpoint_cfg.version_selector.version_selection_rules or [])
@@ -47,43 +47,61 @@ def print_routing(label, agent, rules):
         print(f"   No explicit routing — endpoint tracks latest ({agent.versions.latest.version})")
     else:
         for r in rules:
-            print(f"   version={r.agent_version}  traffic={r.traffic_percentage}%")
+            traffic = getattr(r, 'traffic_percentage', 'N/A')
+            version = getattr(r, 'agent_version', 'N/A')
+            print(f"   version={version}  traffic={traffic}%")
 
 
-def deploy_dark(client, agent_name, agent_before, new_version):
-    """Adds `new_version` to the routing table at 0% traffic, WITHOUT touching
-    whatever is currently serving traffic. If there was no explicit routing
-    before (endpoint was tracking 'latest'), the previously-latest version is
-    pinned explicitly at 100% first, so creating this new version doesn't
-    silently make it live by becoming the new 'latest'."""
-    existing_rules = get_active_rules(agent_before)
+def route_50_50_latest_and_previous(client, agent_name):
+    """Fetches all versions, identifies latest & latest-1, and sends explicit REST payload
+    containing 'kind': 'experiment' to bypass Pydantic/SDK serialization drops."""
 
-    if existing_rules is None:
-        # No explicit rules yet -> endpoint was tracking "latest", which was
-        # agent_before.versions.latest.version BEFORE this new version existed.
-        # Pin that one explicitly so it keeps serving traffic.
-        previously_active_version = agent_before.versions.latest.version
-        print(f"   ℹ️ No prior explicit routing found — pinning previously-active "
-              f"version {previously_active_version} at 100% before adding the new one.")
-        existing_rules = [
-            FixedRatioVersionSelectionRule(
-                agent_version=previously_active_version,
-                traffic_percentage=100,
-            )
-        ]
-        print(f"   ℹ️ No prior explicit routing found — pinning previously-active "
-              f"version {previously_active_version} at 100% before adding the new one.")
+    versions_page = client.agents.list_versions(agent_name=agent_name)
+    all_versions = [v.version for v in versions_page]
 
-    # Drop any stale rule for this exact version (e.g. re-running the script),
-    # then append the new version at 0% traffic.
-    merged_rules = [r for r in existing_rules if r.agent_version != new_version]
-    merged_rules.append(
-        FixedRatioVersionSelectionRule(agent_version=new_version, traffic_percentage=0)
-    )
+    try:
+        all_versions.sort(key=lambda x: int(x))
+    except ValueError:
+        all_versions.sort()
 
-    endpoint_config = AgentEndpointConfig(
-        version_selector=VersionSelector(version_selection_rules=merged_rules)
-    )
+    print(f"📚 Available versions for '{agent_name}': {all_versions}")
+
+    if len(all_versions) < 2:
+        print(f"⚠️ Warning: Need at least 2 versions to perform 50-50 split.")
+        if len(all_versions) == 1:
+            latest = all_versions[0]
+            endpoint_config = {
+                "version_selector": {
+                    "kind": "fixed_ratio",
+                    "version_selection_rules": [
+                        {"agent_version": latest, "traffic_percentage": 100}
+                    ]
+                }
+            }
+            return client.agents.update_details(agent_name=agent_name, agent_endpoint=endpoint_config)
+        return None
+
+    latest = all_versions[-1]
+    previous = all_versions[-2]
+
+    print(f"🔀 Configuring 50/50 split between:")
+    print(f"   - Latest version    (v{latest}): 50%")
+    print(f"   - Previous version (v{previous}): 50%")
+
+    # Explicit raw dictionary payload passing both 'kind' and 'type' guarantees 
+    # that Azure AI REST endpoint deserializes this as an Experiment selector.
+    endpoint_config = {
+        "version_selector": {
+            "kind": "experiment",
+            "type": "experiment",
+            "experiment_id": f"exp-{agent_name}-v{previous}-v{latest}",
+            "salt": str(uuid.uuid4()),
+            "version_selection_rules": [
+                {"agent_version": str(latest), "traffic_percentage": 50},
+                {"agent_version": str(previous), "traffic_percentage": 50},
+            ],
+        }
+    }
 
     return client.agents.update_details(agent_name=agent_name, agent_endpoint=endpoint_config)
 
@@ -95,7 +113,7 @@ def expose_version_to_pipeline(version):
     print(f"##vso[task.setvariable variable=AgentVersion;]{version}")
     with open("version.txt", "w", encoding="utf-8") as f:
         f.write(str(version))
-    print(f"🚀 Successfully exposed version '{version}' to the pipeline agent context.")
+    print(f"🚀 Successfully exposed version '{version}' to pipeline context.")
 
 
 # ============================================================================
@@ -109,9 +127,6 @@ with AIProjectClient(
 ) as client:
 
     try:
-        # ------------------------------------------------------------------
-        # Option A: agent exists -> create a new (dark-launched) version
-        # ------------------------------------------------------------------
         print(f"🔍 Searching for existing tracking configuration for '{agent_name}'...")
         existing_agent = client.agents.get(agent_name=agent_name)
 
@@ -129,31 +144,18 @@ with AIProjectClient(
             agent_name=agent_name,
             definition=current_definition
         )
-        TARGET_VERSION = new_version.version
+        print(f"✅ Created new version: {new_version.version}")
 
-        patched_agent = deploy_dark(client, agent_name, existing_agent, TARGET_VERSION)
+        # Update traffic split using raw dictionary payload
+        patched_agent = route_50_50_latest_and_previous(client, agent_name)
 
-        print(f"✅ Agent '{patched_agent.name}': new version {TARGET_VERSION} created and pinned at 0% traffic.")
-        print(f"🎯 UPDATE SUCCESS: Pushed version '{new_version.version}' to '{agent_name}'.")
-
-        # Verify: re-fetch and confirm the previously active version is STILL active
         confirmed_agent = client.agents.get(agent_name=agent_name)
-        print(f"📌 Confirmed active version after this run: {confirmed_agent.versions.latest.version}")
         rules_after = get_active_rules(confirmed_agent)
         print_routing("📋 Routing AFTER this run:", confirmed_agent, rules_after)
 
         expose_version_to_pipeline(new_version.version)
 
     except ResourceNotFoundError:
-        # ------------------------------------------------------------------
-        # Option B: agent does not exist -> create it from scratch.
-        # First version has nothing to protect, so it CAN start at 0% too if
-        # you want a strict "nothing is ever auto-active" policy — flip
-        # FIRST_VERSION_STARTS_LIVE to True if a brand-new agent should be
-        # live immediately instead.
-        # ------------------------------------------------------------------
-        FIRST_VERSION_STARTS_LIVE = False
-
         print(f"\n⚠️ Asset Context Not Found: '{agent_name}' does not exist.")
         print(f"🛠️ Instantiating creation factory layout using model '{model_deployment}'...")
 
@@ -164,26 +166,20 @@ with AIProjectClient(
                 instructions=new_instructions
             )
         )
-        TARGET_VERSION = new_agent_version.version
 
-        endpoint_config = AgentEndpointConfig(
-            version_selector=VersionSelector(
-                version_selection_rules=[
-                    FixedRatioVersionSelectionRule(
-                        agent_version=TARGET_VERSION,
-                        traffic_percentage=100 if FIRST_VERSION_STARTS_LIVE else 0,
-                    ),
+        endpoint_config = {
+            "version_selector": {
+                "kind": "fixed_ratio",
+                "version_selection_rules": [
+                    {"agent_version": str(new_agent_version.version), "traffic_percentage": 100}
                 ]
-            ),
-        )
+            }
+        }
+
         patched_agent = client.agents.update_details(
             agent_name=agent_name,
             agent_endpoint=endpoint_config,
         )
-
-        print(f"\n🎯 CREATION SUCCESS: Brand new agent created directly via code context.")
-        print(f" -> Assigned Initial Tracking Version: {new_agent_version.version} "
-              f"({'LIVE' if FIRST_VERSION_STARTS_LIVE else 'dark, 0% traffic'})")
 
         confirmed_agent = client.agents.get(agent_name=agent_name)
         rules_after = get_active_rules(confirmed_agent)

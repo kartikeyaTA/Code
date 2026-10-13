@@ -20,7 +20,7 @@ search_client = SearchClient(
 
 # 4. Define the Vectorizable Text Query (matches "vectorQueries" in Portal JSON)
 vector_query = VectorizableTextQuery(
-    text="Jacky's Career Updates",  # Matches "text": "Jacky's Performance Issu
+    text="Saurav's Career Updates",  # Matches "text": "Jacky's Performance Issu
     fields="embedding_vector",
     k_nearest_neighbors=1,  # Matches "k": 1
 )

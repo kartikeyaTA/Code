@@ -140,6 +140,10 @@ def create_index():
                     searchable=True),
         SearchField(name="description", type=SearchFieldDataType.String,
                     searchable=True),
+        SearchField(name="embedding_text", type=SearchFieldDataType.String,
+                            searchable=True),
+        SearchField(name="u_legacy_number", type=SearchFieldDataType.String,
+                                    searchable=True),
         SearchField(name="kb_name", type=SearchFieldDataType.String,
                     filterable=True, facetable=True),
         SearchField(
