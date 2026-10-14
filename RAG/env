@@ -19,31 +19,14 @@
     "value": "InstrumentationKey=d499c710-2dce-4130-9ba6-50ddafd42f5a;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/;ApplicationId=afaed39d-aa7d-4bc6-8e1a-211a1c1fe5a8",
     "slotSetting": false
   },
-  {
-    "name": "AzureWebJobsDashboard",
-    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==",
-    "slotSetting": false
-  },
+  
   {
     "name": "AzureWebJobsStorage",
     "value": "DefaultEndpointsProtocol=https;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==;EndpointSuffix=core.windows.net",
     "slotSetting": false
   },
-  {
-    "name": "AzureWebJobsStorage__accountName",
-    "value": "txrhragsnowkb",
-    "slotSetting": false
-  },
-  {
-    "name": "AzureWebJobsStorage__clientId",
-    "value": "6ece4a54-6f47-448a-8ca3-b675df1cfc1e",
-    "slotSetting": false
-  },
-  {
-    "name": "AzureWebJobsStorage__credential",
-    "value": "managedidentity",
-    "slotSetting": false
-  },
+  
+
   {
     "name": "BLOB_ACCOUNT_URL",
     "value": "https://txrhragsnowkb.blob.core.windows.net",
