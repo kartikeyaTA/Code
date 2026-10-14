@@ -74,3 +74,20 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -H "x-functions-key: 2UjVD-fOuYNm3Hp2OxtAr0FToRUOry9OYAFaKR8ZEi8BAzFuvviQaw==" \
   -d '{}'
+
+az functionapp config appsettings set \
+  --name rag-scheduled-indexer-app \
+  --resource-group VisualStudioOnline-C88866B319C044FFB02C78F550AEF0FB \
+  --settings \
+    SEARCH_ENDPOINT="https://txrhrag.search.windows.net" \
+    APIM_ENDPOINT="https://testing-apim-txrh.azure-api.net/models" \
+    APIM_SUBSCRIPTION_KEY="" \
+    EMBEDDING_DEPLOYMENT_NAME="text-embedding-3-small" \
+    BLOB_ACCOUNT_URL="https://txrhragsnowkb.blob.core.windows.net" \
+    BLOB_CONTAINER_NAME="kb-snow-data" \
+    BLOB_RESOURCE_ID="/subscriptions/c34b42f0-a89c-4e9d-9205-57ae6b91357f/resourceGroups/VisualStudioOnline-C88866B319C044FFB02C78F550AEF0FB/providers/Microsoft.Storage/storageAccounts/txrhragsnowkb" \
+    DATA_SOURCE_NAME="kb-blob-datasource" \
+    SKILLSET_NAME="kb-embedding-skillset" \
+    INDEX_NAME="kb-snow-index" \
+    INDEXER_NAME="kb-snow-indexer" \
+    USER_ASSIGNED_CLIENT_ID="6ece4a54-6f47-448a-8ca3-b675df1cfc1e"
