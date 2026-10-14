@@ -1,0 +1,107 @@
+[
+  {
+    "name": "APIM_ENDPOINT",
+    "value": "https://testing-apim-txrh.azure-api.net/models",
+    "slotSetting": false
+  },
+  {
+    "name": "APIM_SUBSCRIPTION_KEY",
+    "value": "91c88533264a48858d06b82e4694fbc0",
+    "slotSetting": false
+  },
+  {
+    "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+    "value": "d499c710-2dce-4130-9ba6-50ddafd42f5a",
+    "slotSetting": true
+  },
+  {
+    "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "value": "InstrumentationKey=d499c710-2dce-4130-9ba6-50ddafd42f5a;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/;ApplicationId=afaed39d-aa7d-4bc6-8e1a-211a1c1fe5a8",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsDashboard",
+    "value": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsStorage",
+    "value": "DefaultEndpointsProtocol=https;AccountName=txrhragsnowkb;AccountKey=VANOlJ6XF0KOm5moXqvwASzBK60LvN/AIUFHaBqiVadfaH37DDXyw7FTOoxeS1LrBHL2DR4y3cA6+AStIhcQ9g==;EndpointSuffix=core.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsStorage__accountName",
+    "value": "txrhragsnowkb",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsStorage__clientId",
+    "value": "6ece4a54-6f47-448a-8ca3-b675df1cfc1e",
+    "slotSetting": false
+  },
+  {
+    "name": "AzureWebJobsStorage__credential",
+    "value": "managedidentity",
+    "slotSetting": false
+  },
+  {
+    "name": "BLOB_ACCOUNT_URL",
+    "value": "https://txrhragsnowkb.blob.core.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "BLOB_CONTAINER_NAME",
+    "value": "kb-snow-data",
+    "slotSetting": false
+  },
+  {
+    "name": "BLOB_RESOURCE_ID",
+    "value": "/subscriptions/c34b42f0-a89c-4e9d-9205-57ae6b91357f/resourceGroups/VisualStudioOnline-C88866B319C044FFB02C78F550AEF0FB/providers/Microsoft.Storage/storageAccounts/txrhragsnowkb",
+    "slotSetting": false
+  },
+  {
+    "name": "DATA_SOURCE_NAME",
+    "value": "kb-blob-datasource",
+    "slotSetting": false
+  },
+  {
+    "name": "EMBEDDING_DEPLOYMENT_NAME",
+    "value": "text-embedding-3-small",
+    "slotSetting": false
+  },
+  {
+    "name": "FUNCTIONS_EXTENSION_VERSION",
+    "value": "~4",
+    "slotSetting": false
+  },
+  {
+    "name": "FUNCTIONS_WORKER_RUNTIME",
+    "value": "python",
+    "slotSetting": false
+  },
+  {
+    "name": "INDEX_NAME",
+    "value": "kb-snow-index",
+    "slotSetting": false
+  },
+  {
+    "name": "INDEXER_NAME",
+    "value": "kb-snow-indexer",
+    "slotSetting": false
+  },
+  {
+    "name": "SEARCH_ENDPOINT",
+    "value": "https://txrhrag.search.windows.net",
+    "slotSetting": false
+  },
+  {
+    "name": "SKILLSET_NAME",
+    "value": "kb-embedding-skillset",
+    "slotSetting": false
+  },
+  {
+    "name": "USER_ASSIGNED_CLIENT_ID",
+    "value": "6ece4a54-6f47-448a-8ca3-b675df1cfc1e",
+    "slotSetting": false
+  }
+]
