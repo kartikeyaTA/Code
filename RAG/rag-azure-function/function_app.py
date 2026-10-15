@@ -37,29 +37,31 @@ app = func.FunctionApp()
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_FOLDER = os.path.join(SCRIPT_DIR, "output")
 
-SEARCH_ENDPOINT = "https://txrhrag.search.windows.net"
-APIM_ENDPOINT = "https://testing-apim-txrh.azure-api.net/models"
-# Set before running:  export APIM_SUBSCRIPTION_KEY="<new regenerated key>"
-APIM_SUBSCRIPTION_KEY ="91c88533264a48858d06b82e4694fbc0"
-EMBEDDING_DEPLOYMENT_NAME = "text-embedding-3-small"
+# Fetch Environment Variables
+SEARCH_ENDPOINT = os.environ.get("SEARCH_ENDPOINT", "")
+APIM_ENDPOINT = os.environ.get("APIM_ENDPOINT", "")
+APIM_SUBSCRIPTION_KEY = os.environ.get("APIM_SUBSCRIPTION_KEY")
+EMBEDDING_DEPLOYMENT_NAME = os.environ.get("EMBEDDING_DEPLOYMENT_NAME", "")
 
-BLOB_ACCOUNT_URL = "https://txrhragsnowkb.blob.core.windows.net"
-BLOB_CONTAINER_NAME = "kb-snow-data"
+BLOB_ACCOUNT_URL = os.environ.get("BLOB_ACCOUNT_URL", "")
+BLOB_CONTAINER_NAME = os.environ.get("BLOB_CONTAINER_NAME", "")
+BLOB_RESOURCE_ID = os.environ.get(
+    "BLOB_RESOURCE_ID",
+    ""
+)
 
-DATA_SOURCE_NAME = "kb-blob-datasource"
-SKILLSET_NAME = "kb-embedding-skillset"
-INDEX_NAME = "kb-snow-index"
-INDEXER_NAME = "kb-snow-indexer"
+DATA_SOURCE_NAME = os.environ.get("DATA_SOURCE_NAME", "")
+SKILLSET_NAME = os.environ.get("SKILLSET_NAME", "")
+INDEX_NAME = os.environ.get("INDEX_NAME", "")
+INDEXER_NAME = os.environ.get("INDEXER_NAME", "")
 
-USER_ASSIGNED_CLIENT_ID = "6ece4a54-6f47-448a-8ca3-b675df1cfc1e"
+
 
 
 def run_rag_pipeline():
     logging.info("Starting Keyless RAG Ingestion Pipeline...")
 
-    credential = DefaultAzureCredential(
-        managed_identity_client_id=USER_ASSIGNED_CLIENT_ID
-    )
+    credential = DefaultAzureCredential()
 
     index_client = SearchIndexClient(SEARCH_ENDPOINT, credential=credential)
     indexer_client = SearchIndexerClient(
@@ -95,15 +97,10 @@ def run_rag_pipeline():
     # 2. Create Data Source
     container = SearchIndexerDataContainer(name=BLOB_CONTAINER_NAME)
     identity = SearchIndexerDataNoneIdentity()
-    resource_id = (
-        "/subscriptions/c34b42f0-a89c-4e9d-9205-57ae6b91357f"
-        "/resourceGroups/VisualStudioOnline-C88866B319C044FFB02C78F550AEF0FB"
-        "/providers/Microsoft.Storage/storageAccounts/txrhragsnowkb"
-    )
     data_source = SearchIndexerDataSourceConnection(
         name=DATA_SOURCE_NAME,
         type="azureblob",
-        connection_string=f"ResourceId={resource_id};",
+        connection_string=f"ResourceId={BLOB_RESOURCE_ID};",
         container=container,
         identity=identity,
     )
@@ -133,7 +130,7 @@ def run_rag_pipeline():
         skills=[embedding_skill],
     )
     indexer_client.create_or_update_skillset(skillset)
-    print("Skillset created using APIM endpoint.")
+    logging.info("Skillset created using APIM endpoint.")
     
     # 4. Create Index
     fields = [
@@ -199,7 +196,7 @@ def run_rag_pipeline():
         name=INDEX_NAME, fields=fields, vector_search=vector_search
     )
     index_client.create_or_update_index(index)
-    print("Search Index created.")
+    logging.info("Search Index created.")
     
     # 5. Run Indexer
     parameters = IndexingParameters(
@@ -243,9 +240,9 @@ def run_rag_pipeline():
     logging.info("Temporary blobs deleted successfully!")
 
 
-# 2. MUST BE REGISTERED VIA @app.schedule
+# 2. REGISTERED VIA @app.schedule
 @app.schedule(
-    schedule="0 22 6 * * *",
+    schedule="0 10 12 * * *",
     arg_name="myTimer",
     run_on_startup=False,
     use_monitor=False,
