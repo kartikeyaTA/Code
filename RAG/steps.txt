@@ -91,3 +91,7 @@ az functionapp config appsettings set \
     INDEX_NAME="kb-snow-index" \
     INDEXER_NAME="kb-snow-indexer" \
     USER_ASSIGNED_CLIENT_ID="6ece4a54-6f47-448a-8ca3-b675df1cfc1e"
+
+https://testing-apim-txrh.azure-api.net/models/openai/deployments/text-embedding-3-small-txrh/embeddings?api-version=2023-05-15
+https://testing-apim-txrh.azure-api.net/models/openai/v1/embeddings
+
