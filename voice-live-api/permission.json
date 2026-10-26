@@ -1,0 +1,25 @@
+{
+    "id": "",
+    "properties": {
+        "roleName": "Voice-live-API role",
+        "description": "",
+        "assignableScopes": [
+            ""
+        ],
+        "permissions": [
+            {
+                "actions": [],
+                "notActions": [],
+                "dataActions": [
+                    "Microsoft.CognitiveServices/accounts/SpeechServices/voiceagent/realtime/action",
+                    "Microsoft.CognitiveServices/accounts/SpeechServices/voicelive/realtime/action",
+                    "Microsoft.CognitiveServices/accounts/SpeechServices/voicelive/capabilities/read",
+                    "Microsoft.CognitiveServices/accounts/AIServices/agents/write",
+                    "Microsoft.CognitiveServices/accounts/AIServices/endpoints/interact/action",
+                    "Microsoft.CognitiveServices/accounts/AIServices/agents/read"
+                ],
+                "notDataActions": []
+            }
+        ]
+    }
+}
